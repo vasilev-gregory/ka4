@@ -359,7 +359,7 @@ const RIR = [[4, "4+", "легко"], [3, "3", "норм"], [2, "2", "норм"]
 const rirLabel = (s) => (s.t === "w" ? "разм." : s.rir === 0 ? "отказ" : s.rir != null ? `RIR ${s.rir === 4 ? "4+" : s.rir}` : "");
 
 // Set row columns: order and visibility are user settings. Weight and reps can't be hidden.
-const COLUMNS = { w: "Вес", r: "Повторы / секунды", p: "Частичные повторы", rir: "RIR (повторов в запасе)", rest: "Отдых перед подходом" };
+const COLUMNS = { w: "Вес", r: "Повторы / секунды", p: "Частичные повторы", rir: "RIR (повторов в запасе)", rest: "Отдых (в кнопке ✓)" };
 const DEFAULT_COLUMNS = [{ key: "w", on: true }, { key: "r", on: true }, { key: "p", on: true }, { key: "rir", on: true }, { key: "rest", on: true }];
 function columnConfig(settings) {
   const saved = (settings && settings.columns) || [];
@@ -367,7 +367,9 @@ function columnConfig(settings) {
   DEFAULT_COLUMNS.forEach((c) => { if (!known.some((k) => k.key === c.key)) known.push({ ...c }); });
   return known;
 }
-const setColumns = (settings) => columnConfig(settings).filter((c) => c.on || c.key === "w" || c.key === "r").map((c) => c.key);
+// rest isn't a real column any more: it's shown inside the ✓ button, so it's excluded here
+const setColumns = (settings) => columnConfig(settings).filter((c) => c.key !== "rest" && (c.on || c.key === "w" || c.key === "r")).map((c) => c.key);
+const restShown = (settings) => columnConfig(settings).some((c) => c.key === "rest" && c.on);
 
 // Sets merged into one (drop set, ladder) share a group id `g` and sit next to each other.
 function setLabels(sets) {
@@ -896,9 +898,10 @@ function WorkoutTab({ data, up, exMap, open }) {
   const [askUpdate, setAskUpdate] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge
   const cols = setColumns(data.settings);
-  const rests = a ? restBefore(a) : {};
+  const restOn = restShown(data.settings);
+  const rests = a && restOn ? restBefore(a) : {};
   let liveKey = null; // where the running "rest so far" is shown
-  if (a && !a.paused && a.lastSetAt) {
+  if (restOn && a && !a.paused && a.lastSetAt) {
     let li = -1, ls = -1;
     a.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { if (s.done && s.at === a.lastSetAt) { li = ei; ls = si; } }));
     if (li >= 0) {
@@ -1225,7 +1228,7 @@ function WorkoutTab({ data, up, exMap, open }) {
                   {c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг") : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : c === "rest" ? "отдых" : "RIR"}
                 </span>
               ))}
-              <span className="w-9" />
+              <span className="w-11" />
             </div>
             {(() => {
               const labels = setLabels(e.sets);
@@ -1277,10 +1280,24 @@ function WorkoutTab({ data, up, exMap, open }) {
                       <span className={inSel ? "" : s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}>{s.t === "w" ? "Р" : labels[si]}</span>
                     </button>
                     {cols.map(cell)}
-                    <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
-                      className={`flex h-11 w-9 shrink-0 items-center justify-center rounded-lg ${s.done ? "bg-amber-400 text-neutral-900" : "bg-neutral-800 text-neutral-400"}`}>
-                      <Check size={20} />
-                    </button>
+                    {(() => {
+                      const key = `${ei}:${si}`;
+                      const live = liveKey === key;
+                      const rv = rests[key];
+                      return (
+                        <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
+                          className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg leading-none ${s.done ? "bg-amber-400 text-neutral-900" : live ? "bg-neutral-800 text-amber-400" : "bg-neutral-800 text-neutral-400"}`}>
+                          {live ? (
+                            <span className="text-xs font-semibold tabular-nums">{fmtDur(now - a.lastSetAt)}</span>
+                          ) : (
+                            <>
+                              <Check size={s.done && rv ? 16 : 20} />
+                              {s.done && rv && <span className="mt-0.5 text-[9px] font-semibold tabular-nums">{rv === "drop" ? "↳" : fmtDur(rv)}</span>}
+                            </>
+                          )}
+                        </button>
+                      );
+                    })()}
                   </div>
                 );
               });
