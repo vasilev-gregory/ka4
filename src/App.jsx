@@ -260,6 +260,17 @@ const fmtShort = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeri
 const RIR = [[4, "4+", "легко"], [3, "3", "норм"], [2, "2", "норм"], [1, "1", "тяжело"], [0, "0", "отказ"]];
 const rirLabel = (s) => (s.t === "w" ? "разм." : s.rir === 0 ? "отказ" : s.rir != null ? `RIR ${s.rir === 4 ? "4+" : s.rir}` : "");
 
+// Set row columns: order and visibility are user settings. Weight and reps can't be hidden.
+const COLUMNS = { w: "Вес", r: "Повторы / секунды", p: "Частичные повторы", rir: "RIR (повторов в запасе)" };
+const DEFAULT_COLUMNS = [{ key: "w", on: true }, { key: "r", on: true }, { key: "p", on: true }, { key: "rir", on: true }];
+function columnConfig(settings) {
+  const saved = (settings && settings.columns) || [];
+  const known = saved.filter((c) => COLUMNS[c.key]);
+  DEFAULT_COLUMNS.forEach((c) => { if (!known.some((k) => k.key === c.key)) known.push({ ...c }); });
+  return known;
+}
+const setColumns = (settings) => columnConfig(settings).filter((c) => c.on || c.key === "w" || c.key === "r").map((c) => c.key);
+
 // Sets merged into one (drop set, ladder) share a group id `g` and sit next to each other.
 function setLabels(sets) {
   let n = 0, sub = 0;
@@ -706,6 +717,7 @@ function WorkoutTab({ data, up, exMap, open }) {
   const [picker, setPicker] = useState(false);
   const [askUpdate, setAskUpdate] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge
+  const cols = setColumns(data.settings);
   const pressT = useRef(null);
   const longFired = useRef(false);
   const focusVal = useRef(null);
@@ -944,10 +956,12 @@ function WorkoutTab({ data, up, exMap, open }) {
             </div>
             {!sort.dragging && (<>
             <div className="flex items-center gap-1.5 px-1 text-[11px] text-neutral-500">
-              <span className="w-8" /><span className="flex-1 text-center">кг</span>
-              <span className="flex-1 text-center">{ex.kind === "time" ? "сек" : "повт."}</span>
-              <span className="w-10 text-center">{ex.kind === "time" ? "" : "частич."}</span>
-              <span className="w-10 text-center">RIR</span>
+              <span className="w-8" />
+              {cols.map((c) => (
+                <span key={c} className={`${c === "w" || c === "r" ? "flex-1" : "w-10"} text-center`}>
+                  {c === "w" ? "кг" : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR"}
+                </span>
+              ))}
               <span className="w-10" /><span className="w-5" />
             </div>
             {(() => {
@@ -957,6 +971,31 @@ function WorkoutTab({ data, up, exMap, open }) {
                 const cont = s.g && si > 0 && e.sets[si - 1].g === s.g;
                 const box = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400";
                 const rirShown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
+                const cell = (c) => {
+                  if (c === "w") return (
+                    <input key={c} value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
+                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
+                  );
+                  if (c === "r") return (
+                    <input key={c} value={s.r} placeholder={s.hr || ""} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
+                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
+                  );
+                  if (c === "p") return ex.kind === "time" ? <span key={c} className="w-10" /> : (
+                    <input key={c} value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
+                      onChange={(ev) => setSet(ei, si, { p: ev.target.value, ...(num(ev.target.value) > 0 && s.t !== "w" ? { rir: 0 } : {}) })}
+                      className={`w-10 ${box} ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                  );
+                  return (
+                    <input key={c} value={rirShown} inputMode="numeric" placeholder="–" aria-label="RIR, повторов в запасе" disabled={s.t === "w"}
+                      onChange={(ev) => {
+                        const raw = ev.target.value;
+                        if (raw.length < rirShown.length) return setSet(ei, si, { rir: null });
+                        const dg = raw.replace(/\D/g, "").slice(-1);
+                        setSet(ei, si, { rir: dg === "" ? null : Math.min(4, parseInt(dg, 10)) });
+                      }}
+                      className={`w-10 ${box} disabled:opacity-30 ${s.rir === 0 ? "text-red-400" : s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                  );
+                };
                 return (
                   <div key={si}
                     className={`flex items-center gap-1.5 rounded-lg px-1 ${cont ? "mt-0.5" : "mt-1.5"} ${s.g ? "border-l-2 border-amber-400" : "border-l-2 border-transparent"} ${inSel ? "bg-neutral-700" : ""}`}>
@@ -965,23 +1004,7 @@ function WorkoutTab({ data, up, exMap, open }) {
                       className={`flex h-11 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${inSel ? "bg-amber-400 text-black" : "bg-black"}`}>
                       <span className={inSel ? "" : s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}>{s.t === "w" ? "Р" : labels[si]}</span>
                     </button>
-                    <input value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
-                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
-                    <input value={s.r} placeholder={s.hr || ""} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
-                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
-                    {ex.kind === "time" ? <span className="w-10" /> : (
-                      <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
-                        onChange={(ev) => setSet(ei, si, { p: ev.target.value, ...(num(ev.target.value) > 0 && s.t !== "w" ? { rir: 0 } : {}) })}
-                        className={`w-10 ${box} ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
-                    )}
-                    <input value={rirShown} inputMode="numeric" placeholder="–" aria-label="RIR, повторов в запасе" disabled={s.t === "w"}
-                      onChange={(ev) => {
-                        const raw = ev.target.value;
-                        if (raw.length < rirShown.length) return setSet(ei, si, { rir: null });
-                        const dg = raw.replace(/\D/g, "").slice(-1);
-                        setSet(ei, si, { rir: dg === "" ? null : Math.min(4, parseInt(dg, 10)) });
-                      }}
-                      className={`w-10 ${box} disabled:opacity-30 ${s.rir === 0 ? "text-red-400" : s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                    {cols.map(cell)}
                     <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
                       className={`flex h-11 w-10 shrink-0 items-center justify-center rounded-lg ${s.done ? "bg-amber-400 text-neutral-900" : "bg-neutral-800 text-neutral-400"}`}>
                       <Check size={20} />
@@ -1477,7 +1500,7 @@ function WorkoutDetail({ data, up, exMap, id, back, open }) {
 
 // ---------- body measurements ----------
 const MEASURES = [
-  ["weight", "Вес", "кг"], ["waist", "Талия", "см"], ["chest", "Грудь", "см"], ["glutes", "Ягодицы", "см"],
+  ["weight", "Вес", "кг"], ["waist", "Талия", "см"], ["belly", "Живот (макс.)", "см"], ["chest", "Грудь", "см"], ["glutes", "Ягодицы", "см"],
   ["biceps", "Бицепс", "см"], ["thigh", "Бедро", "см"], ["calf", "Голень", "см"], ["neck", "Шея", "см"], ["fat", "Жир", "%"],
 ];
 const isoDay = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
@@ -1595,6 +1618,36 @@ function MeasureEditor({ data, up, id, back }) {
 }
 
 // ---------- settings ----------
+function ColumnsSettings({ data, up }) {
+  const cfg = columnConfig(data.settings);
+  const sort = useSortable((from, to) => up((d) => { const c = columnConfig(d.settings); moveItem(c, from, to); d.settings.columns = c; }));
+  const toggleCol = (key) => up((d) => { const c = columnConfig(d.settings); const it = c.find((x) => x.key === key); it.on = !it.on; d.settings.columns = c; });
+  return (
+    <div className="mb-6">
+      <h2 className="mb-1 font-semibold">Колонки подхода</h2>
+      <p className="mb-2 text-xs text-neutral-500">Перетаскивай за ⋮⋮, чтобы поменять порядок. Вес и повторы выключить нельзя.</p>
+      <div className="space-y-1.5">
+        {cfg.map((c, i) => {
+          const fixed = c.key === "w" || c.key === "r";
+          return (
+            <div key={c.key} ref={(el) => { sort.refs.current[i] = el; }} style={sort.itemStyle(i)}
+              className={`flex items-center gap-2 rounded-xl p-2 ${sort.dragFrom === i ? "bg-neutral-800" : "bg-neutral-900"}`}>
+              <button {...sort.handleProps(i, cfg.length)} className="cursor-grab p-1 text-neutral-500" aria-label="Перетащить"><GripVertical size={18} /></button>
+              <span className={`flex-1 ${c.on || fixed ? "" : "text-neutral-500"}`}>{COLUMNS[c.key]}</span>
+              {fixed ? <span className="px-3 text-xs text-neutral-600">всегда</span> : (
+                <button onClick={() => toggleCol(c.key)}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${c.on ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-400"}`}>
+                  {c.on ? "вкл" : "выкл"}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function SettingsTab({ data, up, replace, saved, back }) {
   const [exp, setExp] = useState("");
   const [imp, setImp] = useState("");
@@ -1616,6 +1669,9 @@ function SettingsTab({ data, up, replace, saved, back }) {
   return (
     <div className="p-4 pb-28">
       <Header title="Настройки" back={back} />
+      <p className="-mt-3 mb-4 text-xs text-neutral-400">
+        Версия {__COMMIT__} от {new Date(__BUILD_TIME__).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+      </p>
       <p className={`-mt-2 mb-4 text-xs ${saved.state === "error" ? "text-red-400" : "text-neutral-500"}`}>
         {saved.state === "error" ? `Не сохраняется: ${saved.msg}`
           : saved.at ? `Сохранено в ${new Date(saved.at).toLocaleTimeString("ru-RU")}` : "Изменений пока не было"}
@@ -1633,6 +1689,8 @@ function SettingsTab({ data, up, replace, saved, back }) {
         </span>
       </button>
 
+      <ColumnsSettings data={data} up={up} />
+
       <h2 className="mb-2 font-semibold">Резервная копия</h2>
       <button onClick={doExport} className="w-full rounded-xl bg-neutral-900 py-3 active:bg-neutral-800">Скопировать все данные</button>
       {exp && <textarea readOnly value={exp} onFocus={(e) => e.target.select()} className="mt-2 h-24 w-full rounded-xl bg-neutral-900 p-3 text-xs text-neutral-400" />}
@@ -1646,9 +1704,6 @@ function SettingsTab({ data, up, replace, saved, back }) {
         </ConfirmButton>
       )}
       {msg && <p className="mt-3 text-xs text-amber-400">{msg}</p>}
-      <p className="mt-8 text-xs text-neutral-600">
-        Версия от {new Date(__BUILD_TIME__).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-      </p>
     </div>
   );
 }

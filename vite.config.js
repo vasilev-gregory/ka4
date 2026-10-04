@@ -4,7 +4,10 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
   base: "/ka4/",
-  define: { __BUILD_TIME__: JSON.stringify(new Date().toISOString()) },
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __COMMIT__: JSON.stringify((process.env.GITHUB_SHA || "local").slice(0, 7)),
+  },
   plugins: [
     react(),
     VitePWA({
