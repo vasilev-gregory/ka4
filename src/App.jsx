@@ -260,6 +260,21 @@ const PARTIAL_WEIGHT = 0.3;
 // ---------- rest times ----------
 // Gaps between consecutive confirmed sets. Steps of a drop set don't count, nor gaps across a pause
 // or longer than 15 min (that's not rest, that's a break).
+// rest before each confirmed set: time since the previous confirmed set anywhere in the workout
+function restBefore(w) {
+  const evs = [];
+  w.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { if (s.done && s.at) evs.push({ at: s.at, ei, si, g: s.g }); }));
+  evs.sort((a, b) => a.at - b.at);
+  const pauses = segmentsOf(w).map((sg) => sg.end).filter(Boolean);
+  const out = {};
+  for (let i = 1; i < evs.length; i++) {
+    const a = evs[i - 1], b = evs[i];
+    if (pauses.some((t) => t > a.at && t < b.at)) continue;
+    out[`${b.ei}:${b.si}`] = a.ei === b.ei && a.g && a.g === b.g ? "drop" : b.at - a.at;
+  }
+  return out;
+}
+
 function restStats(w) {
   const evs = [];
   w.exercises.forEach((e, ei) => e.sets.forEach((s) => { if (s.done && s.at) evs.push({ at: s.at, ei, g: s.g }); }));
@@ -343,8 +358,8 @@ const RIR = [[4, "4+", "легко"], [3, "3", "норм"], [2, "2", "норм"]
 const rirLabel = (s) => (s.t === "w" ? "разм." : s.rir === 0 ? "отказ" : s.rir != null ? `RIR ${s.rir === 4 ? "4+" : s.rir}` : "");
 
 // Set row columns: order and visibility are user settings. Weight and reps can't be hidden.
-const COLUMNS = { w: "Вес", r: "Повторы / секунды", p: "Частичные повторы", rir: "RIR (повторов в запасе)" };
-const DEFAULT_COLUMNS = [{ key: "w", on: true }, { key: "r", on: true }, { key: "p", on: true }, { key: "rir", on: true }];
+const COLUMNS = { w: "Вес", r: "Повторы / секунды", p: "Частичные повторы", rir: "RIR (повторов в запасе)", rest: "Отдых перед подходом" };
+const DEFAULT_COLUMNS = [{ key: "w", on: true }, { key: "r", on: true }, { key: "p", on: true }, { key: "rir", on: true }, { key: "rest", on: true }];
 function columnConfig(settings) {
   const saved = (settings && settings.columns) || [];
   const known = saved.filter((c) => COLUMNS[c.key]);
@@ -880,6 +895,7 @@ function WorkoutTab({ data, up, exMap, open }) {
   const [askUpdate, setAskUpdate] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge
   const cols = setColumns(data.settings);
+  const rests = a ? restBefore(a) : {};
   // hold a column title (кг, повт., …) and slide it left/right to reorder columns for all exercises
   const [colDrag, setColDrag] = useState(null); // {ei, key, dx, to}
   const hdrRefs = useRef({});
@@ -1052,6 +1068,11 @@ function WorkoutTab({ data, up, exMap, open }) {
     });
     setSel(null);
   };
+  const delSel = () => {
+    const { ei, set } = sel;
+    up((d) => { const ex0 = d.active.exercises[ei]; ex0.sets = ex0.sets.filter((_, i) => !set.has(i)); normalizeGroups(ex0.sets); });
+    setSel(null);
+  };
   const unmergeSel = () => {
     const { ei, set } = sel;
     up((d) => { const ss = d.active.exercises[ei].sets; set.forEach((i) => { if (ss[i]) delete ss[i].g; }); normalizeGroups(ss); });
@@ -1183,16 +1204,16 @@ function WorkoutTab({ data, up, exMap, open }) {
               </ConfirmButton>
             </div>
             {!sort.dragging && (<>
-            <div className="flex items-center gap-1.5 px-1 text-[11px] text-neutral-500">
-              <span className="w-8" />
+            <div className="flex items-center gap-1 px-1 text-[11px] text-neutral-500">
+              <span className="w-7" />
               {cols.map((c) => (
                 <span key={c} {...colHeaderProps(ei, c)}
-                  className={`${c === "w" || c === "r" ? "flex-1" : "w-10"} rounded py-1 text-center ${
+                  className={`${c === "w" || c === "r" ? "flex-1" : c === "rest" ? "w-9" : "w-9"} rounded py-1 text-center ${
                     colDrag && colDrag.ei === ei ? (colDrag.key === c ? "bg-amber-400 text-black" : cols[colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
-                  {c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг") : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR"}
+                  {c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг") : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : c === "rest" ? "отдых" : "RIR"}
                 </span>
               ))}
-              <span className="w-10" /><span className="w-5" />
+              <span className="w-9" />
             </div>
             {(() => {
               const labels = setLabels(e.sets);
@@ -1202,6 +1223,14 @@ function WorkoutTab({ data, up, exMap, open }) {
                 const box = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400";
                 const rirShown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
                 const cell = (c) => {
+                  if (c === "rest") {
+                    const v = rests[`${ei}:${si}`];
+                    return (
+                      <span key={c} className="w-9 shrink-0 text-center text-[11px] tabular-nums text-neutral-500">
+                        {v === "drop" ? "↳" : v ? fmtDur(v) : ""}
+                      </span>
+                    );
+                  }
                   if (c === "w") return (
                     <input key={c} value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
                       className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
@@ -1210,10 +1239,10 @@ function WorkoutTab({ data, up, exMap, open }) {
                     <input key={c} value={s.r} placeholder={s.hr || ""} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
                       className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
                   );
-                  if (c === "p") return ex.kind === "time" ? <span key={c} className="w-10" /> : (
+                  if (c === "p") return ex.kind === "time" ? <span key={c} className="w-9" /> : (
                     <input key={c} value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
                       onChange={(ev) => setSet(ei, si, { p: ev.target.value, ...(num(ev.target.value) > 0 && s.t !== "w" ? { rir: 0 } : {}) })}
-                      className={`w-10 ${box} ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                      className={`w-9 ${box} ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
                   );
                   return (
                     <input key={c} value={rirShown} inputMode="numeric" placeholder="–" aria-label="RIR, повторов в запасе" disabled={s.t === "w"}
@@ -1223,32 +1252,32 @@ function WorkoutTab({ data, up, exMap, open }) {
                         const dg = raw.replace(/\D/g, "").slice(-1);
                         setSet(ei, si, { rir: dg === "" ? null : Math.min(4, parseInt(dg, 10)) });
                       }}
-                      className={`w-10 ${box} disabled:opacity-30 ${s.rir === 0 ? "text-red-400" : s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                      className={`w-9 ${box} disabled:opacity-30 ${s.rir === 0 ? "text-red-400" : s.done ? "text-amber-300" : "text-neutral-300"}`} />
                   );
                 };
                 return (
                   <div key={si}
-                    className={`flex items-center gap-1.5 rounded-lg px-1 ${cont ? "mt-0.5" : "mt-1.5"} ${s.g ? "border-l-2 border-amber-400" : "border-l-2 border-transparent"} ${inSel ? "bg-neutral-700" : ""}`}>
+                    className={`flex items-center gap-1 rounded-lg px-1 ${cont ? "mt-0.5" : "mt-1.5"} ${s.g ? "border-l-2 border-amber-400" : "border-l-2 border-transparent"} ${inSel ? "bg-neutral-700" : ""}`}>
                     <button {...pressProps(ei, si)} aria-label="Подход: тап — разминка, удержание — выбрать"
                       style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
-                      className={`flex h-11 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${inSel ? "bg-amber-400 text-black" : "bg-black"}`}>
+                      className={`flex h-11 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${inSel ? "bg-amber-400 text-black" : "bg-black"}`}>
                       <span className={inSel ? "" : s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}>{s.t === "w" ? "Р" : labels[si]}</span>
                     </button>
                     {cols.map(cell)}
                     <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
-                      className={`flex h-11 w-10 shrink-0 items-center justify-center rounded-lg ${s.done ? "bg-amber-400 text-neutral-900" : "bg-neutral-800 text-neutral-400"}`}>
+                      className={`flex h-11 w-9 shrink-0 items-center justify-center rounded-lg ${s.done ? "bg-amber-400 text-neutral-900" : "bg-neutral-800 text-neutral-400"}`}>
                       <Check size={20} />
                     </button>
-                    <button onClick={() => delSet(ei, si)} className="w-5 shrink-0 text-neutral-600" aria-label="Удалить подход"><X size={16} /></button>
                   </div>
                 );
               });
             })()}
             {sel && sel.ei === ei ? (
               <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-neutral-800 p-2 text-xs">
-                <span className="flex-1 text-neutral-300">Выбрано: {sel.set.size}</span>
+                <span className="flex-1 text-neutral-300">{sel.set.size}</span>
                 <button disabled={sel.set.size < 2} onClick={mergeSel} className="rounded-md bg-amber-400 px-3 py-2 font-semibold text-black disabled:opacity-40">Объединить</button>
-                <button onClick={unmergeSel} className="rounded-md bg-neutral-700 px-3 py-2">Разъединить</button>
+                <button onClick={unmergeSel} className="rounded-md bg-neutral-700 px-3 py-2">Разъед.</button>
+                <button onClick={delSel} className="rounded-md bg-red-600 px-3 py-2 text-white">Удалить</button>
                 <button onClick={() => setSel(null)} className="px-2 py-2 text-neutral-400">Отмена</button>
               </div>
             ) : (
