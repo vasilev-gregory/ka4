@@ -2542,6 +2542,65 @@ function StretchHistory({ data, up }) {
 }
 
 // ---------- settings ----------
+// Sends the whole data as a .json file via the share sheet (Telegram etc.), or downloads it.
+// Returns "shared" | "downloaded" | "cancelled".
+async function shareBackup(data) {
+  const { savedAt: _s, ...clean } = data;
+  const txt = JSON.stringify({ ...clean, exportedAt: new Date().toISOString() });
+  const name = `kach-backup-${isoDay(Date.now())}.json`;
+  const file = new File([txt], name, { type: "application/json" });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Кач: резервная копия" });
+      return "shared";
+    }
+  } catch (e) {
+    if (e && e.name === "AbortError") return "cancelled";
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  return "downloaded";
+}
+const BACKUP_EVERY = 7 * 864e5;
+const backupDue = (data) =>
+  (data.workouts.length + ((data.stretch && data.stretch.sessions.length) || 0) > 0) &&
+  Date.now() - (data.settings.lastBackupAt || 0) > BACKUP_EVERY;
+
+function StorageStatus() {
+  const [st, setSt] = useState(null);
+  const refresh = async () => {
+    const out = { persisted: null, usage: null, quota: null };
+    try { if (navigator.storage && navigator.storage.persisted) out.persisted = await navigator.storage.persisted(); } catch (e) {}
+    try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); out.usage = e.usage; out.quota = e.quota; } } catch (e) {}
+    setSt(out);
+  };
+  useEffect(() => { refresh(); }, []);
+  const ask = async () => { try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {} refresh(); };
+  if (!st) return null;
+  const mb = (b) => (b == null ? "?" : b < 1048576 ? `${Math.max(1, Math.round(b / 1024))} КБ` : `${(b / 1048576).toFixed(1)} МБ`);
+  return (
+    <div className="mb-3 rounded-xl bg-neutral-900 p-4">
+      <div className="flex items-center justify-between">
+        <div className="font-semibold">Хранилище</div>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${st.persisted ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-400"}`}>
+          {st.persisted ? "защищено" : st.persisted === false ? "не защищено" : "неизвестно"}
+        </span>
+      </div>
+      <div className="mt-1 text-xs text-neutral-400">Занято {mb(st.usage)}{st.quota ? ` из ${mb(st.quota)}` : ""}</div>
+      {!st.persisted && (
+        <>
+          <p className="mt-2 text-xs text-neutral-500">
+            «Защищено» — браузер обещает не удалять данные приложения сам. Даёт он это не всегда; чаще — приложению с экрана «Домой».
+          </p>
+          <button onClick={ask} className="mt-2 w-full rounded-lg bg-neutral-800 py-2.5 text-sm">Попросить защиту</button>
+        </>
+      )}
+    </div>
+  );
+}
+
 // Wipes only the cached app files (service worker + Cache Storage), never localStorage,
 // so workouts and settings survive. Then reloads from the network.
 async function hardRefresh() {
@@ -2626,30 +2685,16 @@ function SettingsTab({ data, up, replace, saved, back, setMode }) {
   const doExport = async () => {
     const txt = JSON.stringify({ ...data, exportedAt: new Date().toISOString() });
     setExp(txt);
-    try { await navigator.clipboard.writeText(txt); setMsg("Скопировано в буфер обмена"); }
+    try { await navigator.clipboard.writeText(txt); setMsg("Скопировано в буфер обмена"); up((d) => { d.settings.lastBackupAt = Date.now(); }); }
     catch (e) { setMsg("Скопируй текст из поля вручную"); }
   };
   const [pending, setPending] = useState(null); // backup read from a file, waiting for confirmation
   const fileRef = useRef(null);
   const shareFile = async () => {
-    const txt = JSON.stringify({ ...data, exportedAt: new Date().toISOString() });
-    const name = `kach-backup-${isoDay(Date.now())}.json`;
-    const file = new File([txt], name, { type: "application/json" });
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Кач: резервная копия" });
-        setMsg("Файл отправлен");
-        return;
-      }
-    } catch (e) {
-      if (e && e.name === "AbortError") return;
-    }
-    // no share sheet: just download it
-    const url = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-    setMsg("Файл сохранён в загрузки");
+    const r = await shareBackup(data);
+    if (r === "cancelled") return;
+    up((d) => { d.settings.lastBackupAt = Date.now(); });
+    setMsg(r === "shared" ? "Файл отправлен" : "Файл сохранён в загрузки");
   };
   const pickFile = async (ev) => {
     const f = ev.target.files && ev.target.files[0];
@@ -2737,7 +2782,11 @@ function SettingsTab({ data, up, replace, saved, back, setMode }) {
 
       {data.settings.mode !== "stretch" && <ColumnsSettings data={data} up={up} />}
 
+      <StorageStatus />
       <h2 className="mb-2 font-semibold">Резервная копия</h2>
+      <p className="mb-2 text-xs text-neutral-500">
+        {data.settings.lastBackupAt ? `Последняя копия: ${fmtDate(data.settings.lastBackupAt)}` : "Копий ещё не было"}
+      </p>
       <button onClick={shareFile} className="mb-2 w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Отправить копию файлом</button>
       <button onClick={() => fileRef.current && fileRef.current.click()} className="mb-2 w-full rounded-xl bg-neutral-900 py-3 active:bg-neutral-800">
         Загрузить копию из файла
@@ -2823,7 +2872,7 @@ export default function App() {
     persisted.current = d;
     setSaved((x) => ({ ...x, state: "saving" }));
     try {
-      const r = await storage.set(KEY, JSON.stringify(d), false);
+      const r = await storage.set(KEY, JSON.stringify({ ...d, savedAt: Date.now() }), false);
       if (!r) throw new Error("хранилище не подтвердило запись");
       setSaved({ state: "ok", at: Date.now(), msg: "" });
     } catch (e) {
@@ -2855,7 +2904,7 @@ export default function App() {
       const d = dataRef.current;
       if (!d || d === persisted.current) return;
       persist(d);
-      try { storage.set(KEY + "-backup", JSON.stringify(d), false); } catch (e) {}
+      try { storage.set(KEY + "-backup", JSON.stringify({ ...d, savedAt: Date.now() }), false); } catch (e) {}
     };
     const onVis = () => { if (document.visibilityState === "hidden") flush(); };
     document.addEventListener("visibilitychange", onVis);
@@ -2952,11 +3001,29 @@ export default function App() {
   else if (tab === "settings") content = <SettingsTab data={data} up={up} saved={saved} setMode={switchMode} replace={(d) => { setData(d); setStack([]); }} />;
   else if (tab === "measures") content = <MeasuresTab {...common} openSettings={() => open({ type: "settings" })} />;
 
+  const showBackupNag = tab === "workout" && !view && !data.active && backupDue(data);
+  const nagShare = async () => {
+    const r = await shareBackup(data);
+    if (r !== "cancelled") up((d) => { d.settings.lastBackupAt = Date.now(); });
+  };
   return (
     <div className={`min-h-screen bg-black text-sm text-neutral-100 ${stretchMode ? "mode-stretch" : ""}`}>
       {saved.state === "error" && (
         <div className="fixed inset-x-0 top-0 z-50 bg-red-600 px-4 py-2 text-center text-xs text-white">
           Изменения не сохраняются. Сделай копию в настройках.
+        </div>
+      )}
+      {showBackupNag && (
+        <div className="mx-auto max-w-md px-4 pt-3">
+          <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 p-3">
+            <div className="min-w-0 flex-1 text-xs text-neutral-300">
+              {data.settings.lastBackupAt
+                ? `Копии не было ${Math.floor((Date.now() - data.settings.lastBackupAt) / 864e5)} дн.`
+                : "Ещё не было ни одной копии данных."} Отправь файл себе в Telegram.
+            </div>
+            <button onClick={nagShare} className="shrink-0 rounded-lg bg-amber-400 px-3 py-2 text-xs font-semibold text-black">Отправить</button>
+            <button onClick={() => up((d) => { d.settings.lastBackupAt = Date.now() - BACKUP_EVERY + 864e5; })} className="shrink-0 p-1 text-neutral-500" aria-label="Напомнить завтра"><X size={16} /></button>
+          </div>
         </div>
       )}
       <div className="mx-auto max-w-md pb-20">{content}</div>
