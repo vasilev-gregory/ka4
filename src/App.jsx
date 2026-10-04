@@ -2116,6 +2116,7 @@ export default function App() {
   dataRef.current = data;
 
   const [saved, setSaved] = useState({ state: "idle", at: 0, msg: "" });
+  const persisted = useRef(null); // the data object last read from / written to storage
   const [loadKey, setLoadKey] = useState(0);
 
   // Load. get() throws both for a missing key and for a real failure, so when it throws
@@ -2127,7 +2128,7 @@ export default function App() {
       for (const k of [KEY, KEY + "-backup"]) {
         try {
           const r = await storage.get(k, false);
-          if (r && r.value) { setData(migrate(JSON.parse(r.value))); return; }
+          if (r && r.value) { const d0 = migrate(JSON.parse(r.value)); persisted.current = d0; setData(d0); return; }
         } catch (e) { errs.push(`${k}: ${e && e.message ? e.message : e}`); }
       }
       try {
@@ -2142,7 +2143,10 @@ export default function App() {
   }, [loadKey]);
 
   const persist = async (d) => {
-    if (!d) return;
+    // only write what this instance actually changed: a stale second tab/window must never
+    // overwrite newer data with what it loaded long ago
+    if (!d || d === persisted.current) return;
+    persisted.current = d;
     setSaved((x) => ({ ...x, state: "saving" }));
     try {
       const r = await storage.set(KEY, JSON.stringify(d), false);
@@ -2160,12 +2164,22 @@ export default function App() {
     saveT.current = setTimeout(() => persist(data), 150);
   }, [data]);
 
+  // another tab / window of the app saved: take its data instead of keeping a stale copy
+  useEffect(() => {
+    const h = (e) => {
+      if (e.key !== KEY || !e.newValue) return;
+      try { const d = migrate(JSON.parse(e.newValue)); persisted.current = d; setData(d); } catch (err) {}
+    };
+    window.addEventListener("storage", h);
+    return () => window.removeEventListener("storage", h);
+  }, []);
+
   // flush pending changes when the app is hidden or closed
   useEffect(() => {
     const flush = () => {
       clearTimeout(saveT.current);
       const d = dataRef.current;
-      if (!d) return;
+      if (!d || d === persisted.current) return;
       persist(d);
       try { storage.set(KEY + "-backup", JSON.stringify(d), false); } catch (e) {}
     };
