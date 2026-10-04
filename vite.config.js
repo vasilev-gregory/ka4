@@ -2,6 +2,14 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+// emits dist/version.json so the app can ask the server which version is current
+const versionFile = () => ({
+  name: "version-file",
+  generateBundle() {
+    this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify({ commit: (process.env.GITHUB_SHA || "local").slice(0, 7), built: new Date().toISOString() }) });
+  },
+});
+
 export default defineConfig({
   base: "/ka4/",
   define: {
@@ -10,6 +18,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    versionFile(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["apple-touch-icon.png"],

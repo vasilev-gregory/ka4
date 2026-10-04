@@ -1618,6 +1618,53 @@ function MeasureEditor({ data, up, id, back }) {
 }
 
 // ---------- settings ----------
+// Wipes only the cached app files (service worker + Cache Storage), never localStorage,
+// so workouts and settings survive. Then reloads from the network.
+async function hardRefresh() {
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
+    }
+    if (window.caches) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch (e) {}
+  window.location.reload();
+}
+
+function UpdateButton() {
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const check = async () => {
+    setBusy(true);
+    setMsg("Проверяю…");
+    try {
+      const res = await fetch(`${import.meta.env.BASE_URL}version.json?t=${Date.now()}`, { cache: "no-store" });
+      const v = await res.json();
+      if (v.commit === __COMMIT__) { setMsg(`У тебя последняя версия (${__COMMIT__})`); setBusy(false); return; }
+      setMsg(`Есть новая версия ${v.commit}, обновляю…`);
+    } catch (e) {
+      setMsg("Не получилось проверить, обновляю принудительно…");
+    }
+    setTimeout(hardRefresh, 600);
+  };
+  return (
+    <div className="mb-6">
+      <button disabled={busy} onClick={check} className="w-full rounded-xl bg-neutral-900 py-3 font-semibold active:bg-neutral-800 disabled:opacity-60">
+        Обновить приложение
+      </button>
+      {msg && (
+        <p className="mt-2 text-xs text-neutral-400">
+          {msg}
+          {msg.startsWith("У тебя") && <button onClick={hardRefresh} className="ml-2 underline">всё равно перезагрузить</button>}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function ColumnsSettings({ data, up }) {
   const cfg = columnConfig(data.settings);
   const sort = useSortable((from, to) => up((d) => { const c = columnConfig(d.settings); moveItem(c, from, to); d.settings.columns = c; }));
@@ -1672,6 +1719,7 @@ function SettingsTab({ data, up, replace, saved, back }) {
       <p className="-mt-3 mb-4 text-xs text-neutral-400">
         Версия {__COMMIT__} от {new Date(__BUILD_TIME__).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
       </p>
+      <UpdateButton />
       <p className={`-mt-2 mb-4 text-xs ${saved.state === "error" ? "text-red-400" : "text-neutral-500"}`}>
         {saved.state === "error" ? `Не сохраняется: ${saved.msg}`
           : saved.at ? `Сохранено в ${new Date(saved.at).toLocaleTimeString("ru-RU")}` : "Изменений пока не было"}
