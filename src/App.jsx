@@ -487,11 +487,11 @@ function Header({ title, back, right }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       {back && (
-        <button onClick={back} className="-ml-2 p-2 text-neutral-400" aria-label="Назад">
+        <button onClick={back} className="-ml-2 shrink-0 p-2 text-neutral-400" aria-label="Назад">
           <ChevronLeft size={24} />
         </button>
       )}
-      <h1 className="flex-1 text-xl font-bold tracking-tight">{title}</h1>
+      <h1 className="min-w-0 flex-1 text-xl font-bold leading-tight tracking-tight">{title}</h1>
       {right}
     </div>
   );
@@ -1345,8 +1345,8 @@ function ExerciseDetail({ data, up, exMap, id, back, open }) {
   return (
     <div className="p-4 pb-28">
       <Header title={ex.name} back={back}
-        right={<button onClick={() => setEdit(!edit)} className="p-2 text-neutral-400" aria-label="Изменить"><Pencil size={20} />
-      {ex.ru && <p className="-mt-3 mb-4 text-neutral-400">{ex.ru}</p>}</button>} />
+        right={<button onClick={() => setEdit(!edit)} className="shrink-0 self-start p-2 text-neutral-400" aria-label="Изменить"><Pencil size={20} /></button>} />
+      {ex.ru && <p className="-mt-3 mb-4 text-neutral-400">{ex.ru}</p>}
 
       {edit && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-3">
