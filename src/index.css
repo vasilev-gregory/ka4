@@ -7,3 +7,6 @@ body { padding-top: env(safe-area-inset-top); }
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 .above-nav { bottom: calc(4rem + env(safe-area-inset-bottom)); }
 input { font-size: 16px; } /* no auto-zoom on iOS */
+
+/* solid strip under the iOS status bar so scrolled content doesn't show through */
+body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: #000; z-index: 60; }

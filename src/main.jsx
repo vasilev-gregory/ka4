@@ -18,4 +18,11 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+// iOS resumes a home-screen app without reloading it, so it never re-checks for a new
+// version on its own. Check every time the app comes back to the foreground.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {});
+});
+
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
