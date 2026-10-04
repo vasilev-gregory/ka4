@@ -171,6 +171,7 @@ function migrate(d) {
   if (!d.stretch) d.stretch = seedStretch();
   ["exercises", "programs", "sessions"].forEach((k) => { if (!Array.isArray(d.stretch[k])) d.stretch[k] = []; });
   if (!d.stretch.defaults) d.stretch.defaults = { ...ST_DEFAULTS };
+  d.stretch.exercises.forEach((e) => { if (e.area === undefined && ST_AREA_DEFAULTS[e.id]) e.area = ST_AREA_DEFAULTS[e.id]; });
   if (d.settings && d.settings.restMode === "stopwatch" && d.settings.countdown === undefined) d.settings.countdown = false;
   d.exercises.forEach((e) => {
     if (e.bw === undefined && BW_DEFAULTS[e.id]) e.bw = BW_DEFAULTS[e.id];
@@ -1867,6 +1868,37 @@ function WorkoutDetail({ data, up, exMap, id, back, open }) {
         ))}
       </div>
       {(() => {
+        // what this workout added to the week, per muscle group it trained
+        const ws0 = weekStartOf(w.startedAt);
+        const an = weekAnalysis(data.workouts, exMap, ws0);
+        const groups = [...new Set(w.exercises.map((e) => exMap[e.exerciseId]?.group).filter(Boolean))].filter((g) => an.groups[g]);
+        if (!groups.length) return null;
+        return (
+          <div className="-mt-3 mb-5 rounded-xl bg-neutral-900 p-3">
+            <div className="mb-2 font-semibold">Неделя по группам</div>
+            <div className="space-y-1.5">
+              {groups.map((g) => {
+                const sets = an.groups[g].sets, freq = an.groups[g].days.size;
+                const [label, cls] = growthStatus(sets, freq);
+                const hint = sets < 4 ? `ещё ${4 - sets} подх. до роста`
+                  : sets < 10 ? `ещё ${10 - sets} подх. до оптимума`
+                  : sets > 20 ? "больше уже мешает восстановлению"
+                  : freq < 2 ? "объём есть, нужна ещё одна тренировка группы на неделе"
+                  : "неделя закрыта";
+                return (
+                  <div key={g} className="flex items-center gap-2 text-xs">
+                    <span className="w-20 shrink-0 text-neutral-300">{g}</span>
+                    <span className="w-14 shrink-0 tabular-nums text-neutral-400">{sets} п · {freq}×</span>
+                    <span className="min-w-0 flex-1 text-neutral-400">{hint}</span>
+                    <span className={`w-20 shrink-0 rounded-md py-0.5 text-center text-[11px] ${cls}`}>{label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+      {(() => {
         const rs = restStats(w);
         if (!rs.nSets && !rs.nEx) return null;
         return (
@@ -2025,6 +2057,11 @@ function MeasureEditor({ data, up, id, back }) {
 // ---------- stretching mode ----------
 // Fully separate from strength: own exercises, programs and history. Time-based player.
 const ST_FIELDS = [["prep", "вступление"], ["work", "работа"], ["sw", "смена стороны"], ["rest", "отдых"]];
+const ST_AREAS = ["сгибатели бедра", "квадрицепс", "задняя поверхность бедра", "ягодицы", "приводящие", "икры", "широчайшие", "грудь", "плечи", "спина", "шея"];
+const ST_AREA_DEFAULTS = { "st-hip-flexor-forward": "сгибатели бедра", "st-hip-flexor-tall": "сгибатели бедра", "st-figure-four": "ягодицы", "st-elephant-walk": "задняя поверхность бедра", "st-lat": "широчайшие" };
+// Thomas et al. 2018 (Int J Sports Med): ≥5 min of static stretching per muscle group per week for ROM gains,
+// more frequent (≈5 days/week) is better. Later meta-regressions: returns flatten around ~10 min/week per group.
+const ST_WEEK_MIN = 5 * 60, ST_WEEK_MAX = 10 * 60;
 const ST_DEFAULTS = { prep: 10, work: 30, sw: 5, rest: 15, rounds: 1, roundRest: 60, mode: "circuit" };
 const ST_SEED = [
   ["st-hip-flexor-forward", "Hip flexor stretch, lean forward", "Сгибатели бедра: корпус вперёд", true],
@@ -2036,7 +2073,7 @@ const ST_SEED = [
 ];
 function seedStretch() {
   return {
-    exercises: ST_SEED.map(([id, name, ru, sides]) => ({ id, name, ru, sides })),
+    exercises: ST_SEED.map(([id, name, ru, sides]) => ({ id, name, ru, sides, ...(ST_AREA_DEFAULTS[id] ? { area: ST_AREA_DEFAULTS[id] } : {}) })),
     programs: [],
     sessions: [],
     defaults: { ...ST_DEFAULTS },
@@ -2074,6 +2111,65 @@ function buildTimeline(p, exMap) {
   return cleaned;
 }
 const PHASE = { prep: "Вступление", work: "Работа", switch: "Смена стороны", rest: "Отдых", roundRest: "Отдых между кругами" };
+
+// seconds of hold per area in a week, counted per side (left side or one-sided holds only)
+function stretchWeek(data, ws) {
+  const we = ws + 7 * DAY + 3600e3;
+  const exMap = stExMap(data);
+  const areas = {};
+  const days = new Set();
+  data.stretch.sessions.filter((s) => s.startedAt >= ws && s.startedAt < we).forEach((s) => {
+    days.add(new Date(s.startedAt).toDateString());
+    Object.entries(s.work || {}).forEach(([exId, sec]) => {
+      const area = (exMap[exId] && exMap[exId].area) || "без группы";
+      areas[area] = (areas[area] || 0) + sec;
+    });
+  });
+  return { areas, days: days.size };
+}
+function stretchVerdict(sec) {
+  if (sec >= ST_WEEK_MAX) return ["максимум", "bg-teal-400 text-black", "дальше прирост почти не растёт"];
+  if (sec >= ST_WEEK_MIN) return ["есть эффект", "bg-teal-900 text-teal-200", `до максимума эффекта ещё ${fmtDur((ST_WEEK_MAX - sec) * 1000)}`];
+  return ["мало", "bg-neutral-800 text-neutral-400", `до минимума ещё ${fmtDur((ST_WEEK_MIN - sec) * 1000)}`];
+}
+function StretchWeekPanel({ data, ws, only }) {
+  const { areas, days } = stretchWeek(data, ws);
+  const keys = (only || Object.keys(areas)).filter((k) => k in areas || (only && only.includes(k)));
+  if (!keys.length) return null;
+  return (
+    <div className="rounded-xl bg-neutral-900 p-3">
+      <div className="mb-2 flex items-baseline justify-between">
+        <div className="font-semibold">Неделя</div>
+        <div className="text-xs text-neutral-400">дней с растяжкой: {days} из 5</div>
+      </div>
+      <div className="space-y-2">
+        {keys.map((k) => {
+          const sec = areas[k] || 0;
+          const [label, cls, hint] = stretchVerdict(sec);
+          return (
+            <div key={k}>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="w-28 shrink-0 text-neutral-300">{k}</span>
+                <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-neutral-800">
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-teal-400" style={{ width: `${Math.min(100, (sec / ST_WEEK_MAX) * 100)}%` }} />
+                  <div className="absolute inset-y-0 w-px bg-neutral-400" style={{ left: "50%" }} />
+                </div>
+                <span className="w-10 shrink-0 text-right tabular-nums text-neutral-400">{fmtDur(sec * 1000)}</span>
+                <span className={`w-20 shrink-0 rounded-md py-0.5 text-center text-[11px] ${cls}`}>{label}</span>
+              </div>
+              <div className="mt-0.5 pl-28 text-[11px] text-neutral-500">{hint}</div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-[11px] leading-snug text-neutral-500">
+        Считается время удержания на одну сторону. По обзору Thomas et al. (2018) для прироста гибкости нужно не меньше 5 минут
+        в неделю на группу мышц (черта на шкале), и чем чаще в неделю, тем лучше — ориентир 5 дней. Более свежие сводные данные
+        показывают, что после ~10 минут в неделю прирост почти не растёт.
+      </p>
+    </div>
+  );
+}
 
 function StretchHome({ data, up, open }) {
   const sx = data.stretch;
@@ -2229,7 +2325,7 @@ function StretchEditor({ data, up, id, back, open }) {
                 <button onClick={() => setOpenItem(isOpen ? null : i)} className="ml-1 min-w-0 flex-1 py-1 text-left">
                   <div className="truncate">{ex ? ex.ru || ex.name : "Удалённая растяжка"}</div>
                   <div className={`truncate text-xs ${it.over && Object.keys(it.over).length ? "text-teal-300" : "text-neutral-500"}`}>
-                    {t.work} с{ex && ex.sides ? " × 2 стороны" : ""}, отдых {t.rest} с
+                    {ex && ex.area ? `${ex.area} · ` : ""}{t.work} с{ex && ex.sides ? " × 2 стороны" : ""}, отдых {t.rest} с
                   </div>
                 </button>
                 <button onClick={() => mutP((pp) => { pp.items.splice(i, 1); })} className="p-1 text-neutral-500" aria-label="Убрать"><X size={18} /></button>
@@ -2248,6 +2344,13 @@ function StretchEditor({ data, up, id, back, open }) {
                       </div>
                     );
                   })}
+                  <div className="mt-1 text-xs text-neutral-400">Группа мышц</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ST_AREAS.map((ar) => (
+                      <button key={ar} onClick={() => up((d) => { const e = d.stretch.exercises.find((x) => x.id === ex.id); if (e) e.area = ar; })}
+                        className={`rounded-full px-2.5 py-1 text-[11px] ${ex.area === ar ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{ar}</button>
+                    ))}
+                  </div>
                   <button onClick={() => up((d) => { const e = d.stretch.exercises.find((x) => x.id === ex.id); if (e) e.sides = !e.sides; })}
                     className={`mt-1 rounded-full px-3 py-1 text-xs ${ex.sides ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
                     на обе стороны: {ex.sides ? "да" : "нет"}
@@ -2289,6 +2392,16 @@ function StretchPlayer({ data, up, id, back }) {
   const left = st.pausedLeft != null ? st.pausedLeft : st.end - now;
   const ticked = useRef(new Set());
   const saved = useRef(false);
+  const workDone = useRef({}); // exerciseId -> seconds held (per side)
+  const phaseStart = useRef(Date.now());
+  const pausedMs = useRef(0);
+  // credit the time actually spent in the current work phase before leaving it
+  const creditPhase = () => {
+    const ph0 = tl[st.idx];
+    if (!ph0 || ph0.k !== "work" || ph0.side === "правая сторона") return;
+    const spent = Math.min(ph0.dur, Math.max(0, (Date.now() - phaseStart.current - pausedMs.current) / 1000));
+    workDone.current[ph0.ex.id] = (workDone.current[ph0.ex.id] || 0) + Math.round(spent);
+  };
 
   // keep the screen on while the player is open
   useEffect(() => {
@@ -2309,10 +2422,14 @@ function StretchPlayer({ data, up, id, back }) {
     saved.current = true;
     const elapsed = Date.now() - st.startedAt;
     if (!complete && elapsed < 60e3) return;
-    up((d) => { d.stretch.sessions.push({ id: uid(), programId: id, name: p ? p.name : "Растяжка", startedAt: st.startedAt, finishedAt: Date.now(), complete }); });
+    const work = { ...workDone.current };
+    up((d) => { d.stretch.sessions.push({ id: uid(), programId: id, name: p ? p.name : "Растяжка", startedAt: st.startedAt, finishedAt: Date.now(), complete, work }); });
   };
   const go = (i) => {
     if (i < 0) i = 0;
+    creditPhase();
+    phaseStart.current = Date.now();
+    pausedMs.current = 0;
     if (i >= tl.length) { save(true); setSt((s) => ({ ...s, done: true })); if (sound) beep(); return; }
     setSt((s) => ({ ...s, idx: i, end: Date.now() + tl[i].dur * 1000, pausedLeft: null }));
     phaseSound(tl[i]);
@@ -2326,8 +2443,12 @@ function StretchPlayer({ data, up, id, back }) {
     ticked.current.add(k);
     tick();
   }, [secLeft, st.idx]);
-  const togglePause = () => setSt((s) => (s.pausedLeft != null ? { ...s, end: Date.now() + s.pausedLeft, pausedLeft: null } : { ...s, pausedLeft: Math.max(0, s.end - Date.now()) }));
-  const close = () => { if (!st.done) save(false); back(); };
+  const pauseAt = useRef(0);
+  const togglePause = () => {
+    if (st.pausedLeft != null) pausedMs.current += Date.now() - pauseAt.current; else pauseAt.current = Date.now();
+    setSt((s) => (s.pausedLeft != null ? { ...s, end: Date.now() + s.pausedLeft, pausedLeft: null } : { ...s, pausedLeft: Math.max(0, s.end - Date.now()) }));
+  };
+  const close = () => { if (!st.done) { creditPhase(); save(false); } back(); };
 
   const ph = tl[st.idx];
   const next = ph ? tl.slice(st.idx + 1).find((x) => x.ex && x.ex !== ph.ex) : null; // next different stretch
@@ -2345,10 +2466,14 @@ function StretchPlayer({ data, up, id, back }) {
       </div>
 
       {st.done ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
+        <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto p-6 text-center">
           <div className="text-3xl font-bold text-teal-300">Готово</div>
           <div className="text-neutral-400">{fmtDur(Date.now() - st.startedAt)}</div>
-          <button onClick={back} className="mt-4 rounded-xl bg-teal-400 px-8 py-3 font-semibold text-black">Закрыть</button>
+          <div className="w-full max-w-md text-left">
+            <StretchWeekPanel data={data} ws={weekStartOf(Date.now())}
+              only={[...new Set(tl.filter((x) => x.ex).map((x) => (x.ex.area || "без группы")))]} />
+          </div>
+          <button onClick={back} className="mt-2 rounded-xl bg-teal-400 px-8 py-3 font-semibold text-black">Закрыть</button>
         </div>
       ) : (
         <>
@@ -2381,9 +2506,21 @@ function StretchPlayer({ data, up, id, back }) {
 
 function StretchHistory({ data, up }) {
   const list = data.stretch.sessions.slice().reverse();
+  const [ws, setWs] = useState(() => weekStartOf(Date.now()));
   return (
     <div className="p-4">
       <Header title="История растяжки" />
+      <div className="mb-2 flex items-center justify-between">
+        <button onClick={() => setWs(weekStartOf(ws - 3 * DAY))} className="p-2 text-neutral-400"><ChevronLeft size={20} /></button>
+        <div className="text-sm">
+          {new Date(ws).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} – {new Date(ws + 6 * DAY + 3600e3).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+        </div>
+        <button onClick={() => setWs(weekStartOf(ws + 8 * DAY))} className="rotate-180 p-2 text-neutral-400"><ChevronLeft size={20} /></button>
+      </div>
+      <div className="mb-5">
+        <StretchWeekPanel data={data} ws={ws} />
+        {!Object.keys(stretchWeek(data, ws).areas).length && <p className="text-xs text-neutral-500">На этой неделе растяжки не было.</p>}
+      </div>
       {list.length === 0 && <p className="text-neutral-400">Здесь появятся пройденные растяжки.</p>}
       <div className="space-y-2">
         {list.map((s) => (
@@ -2567,6 +2704,7 @@ function SettingsTab({ data, up, replace, saved, back, setMode }) {
         {saved.state === "error" ? `Не сохраняется: ${saved.msg}`
           : saved.at ? `Сохранено в ${new Date(saved.at).toLocaleTimeString("ru-RU")}` : "Изменений пока не было"}
       </p>
+      {data.settings.mode !== "stretch" && (<>
       <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-neutral-900 p-4">
         <div><div className="font-semibold">Вес тела</div><div className="text-xs text-neutral-400">Если нет замеров. Нужен для подтягиваний, брусьев, отжиманий</div></div>
         <input value={data.settings.bodyWeight || ""} inputMode="decimal" placeholder="кг"
@@ -2588,15 +2726,16 @@ function SettingsTab({ data, up, replace, saved, back, setMode }) {
         <Stepper value={data.settings.restSec} step={15} min={15} fmt={(v) => fmtDur(v * 1000)}
           onChange={(v) => up((d) => { d.settings.restSec = v; })} />
       </div>
+      </>)}
       <button onClick={() => { unlockAudio(); up((d) => { d.settings.sound = d.settings.sound === false; }); if (data.settings.sound === false) beep(); }}
-        className="-mt-4 mb-6 flex w-full items-center justify-between rounded-xl bg-neutral-900 p-4 text-left">
-        <div><div className="font-semibold">Звук таймера</div><div className="text-xs text-neutral-400">Щелчки 3-2-1 и сигнал в конце отдыха</div></div>
+        className={`${data.settings.mode === "stretch" ? "" : "-mt-4"} mb-6 flex w-full items-center justify-between rounded-xl bg-neutral-900 p-4 text-left`}>
+        <div><div className="font-semibold">Звук таймера</div><div className="text-xs text-neutral-400">Щелчки 3-2-1 и сигналы{data.settings.mode === "stretch" ? " в плеере растяжки" : " в конце отдыха"}</div></div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.settings.sound === false ? "bg-neutral-800 text-neutral-400" : "bg-amber-400 text-black"}`}>
           {data.settings.sound === false ? "выкл" : "вкл"}
         </span>
       </button>
 
-      <ColumnsSettings data={data} up={up} />
+      {data.settings.mode !== "stretch" && <ColumnsSettings data={data} up={up} />}
 
       <h2 className="mb-2 font-semibold">Резервная копия</h2>
       <button onClick={shareFile} className="mb-2 w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Отправить копию файлом</button>
