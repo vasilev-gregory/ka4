@@ -38,10 +38,8 @@ export default defineConfig({
         background_color: "#000000",
         theme_color: "#000000",
         icons: [
-          { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-          { src: "apple-touch-icon.png", sizes: "180x180", type: "image/png", purpose: "any" },
-          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "https://vasilev-gregory.github.io/ka4/icon-192.png?v=35", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "https://vasilev-gregory.github.io/ka4/icon-512.png?v=35", sizes: "512x512", type: "image/png", purpose: "any" },
         ],
       },
       workbox: { globPatterns: ["**/*.{js,css,html,png,svg}"], maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
