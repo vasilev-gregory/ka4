@@ -716,7 +716,7 @@ function WorkoutTab({ data, up, exMap, open }) {
     const last = data.workouts[data.workouts.length - 1];
     return (
       <div className="p-4">
-        <Header title="Тренировка" right={<button onClick={() => open({ type: "settings" })} className="p-2 text-neutral-500" aria-label="Настройки"><Settings size={20} /></button>} />
+        <Header title="Тренировка" />
         {last && <p className="text-xs text-neutral-400 mb-3">Прошлая: {last.name}, {fmtDate(last.startedAt)}</p>}
         {data.pendingProgramUpdate && data.programs.some((x) => x.id === data.pendingProgramUpdate.programId) && (
           <div className="mb-3 rounded-xl bg-neutral-900 p-4">
@@ -750,9 +750,18 @@ function WorkoutTab({ data, up, exMap, open }) {
               </button>
             </div>
           ))}
-          <button onClick={() => startWorkout(up, null)} className="w-full rounded-xl border border-dashed border-neutral-700 p-4 text-neutral-300">
-            Начать без программы
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => {
+              const id = uid();
+              up((d) => { d.programs.push({ id, name: "Новая программа", items: [] }); });
+              open({ type: "program", id });
+            }} className="flex-1 rounded-xl border border-dashed border-neutral-700 p-4 text-neutral-300">
+              + Новая программа
+            </button>
+            <button onClick={() => startWorkout(up, null)} className="flex-1 rounded-xl border border-dashed border-neutral-700 p-4 text-neutral-300">
+              Без программы
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1483,7 +1492,7 @@ function MeasuresTab({ data, open, openSettings }) {
 
   return (
     <div className="p-4 pb-28">
-      <Header title="Замеры" right={<button onClick={openSettings} className="p-2 text-neutral-500" aria-label="Настройки"><Settings size={20} /></button>} />
+      <Header title="Замеры" />
       <button onClick={() => open({ type: "measure" })} className="mb-4 w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Новый замер</button>
 
       {list.length === 0 && <p className="text-neutral-400">Здесь будут вес и объёмы. Запиши первый замер, даже если это только вес.</p>}
@@ -1648,9 +1657,9 @@ function SettingsTab({ data, up, replace, saved, back }) {
 const TABS = [
   ["workout", "Тренировка", Dumbbell],
   ["history", "История", History],
-  ["programs", "Программы", ListChecks],
   ["exercises", "Упражнения", Library],
   ["measures", "Замеры", Ruler],
+  ["settings", "Настройки", Settings],
 ];
 
 export default function App() {
@@ -1778,7 +1787,7 @@ export default function App() {
   else if (view?.type === "program") content = <ProgramEditor {...common} id={view.id} goWorkout={() => { setStack([]); setTab("workout"); }} />;
   else if (tab === "workout") content = <WorkoutTab {...common} />;
   else if (tab === "history") content = <HistoryTab {...common} />;
-  else if (tab === "programs") content = <ProgramsTab {...common} />;
+  else if (tab === "settings") content = <SettingsTab data={data} up={up} saved={saved} replace={(d) => { setData(d); setStack([]); }} />;
   else if (tab === "exercises") content = (
     <div className="p-4 pb-28"><Header title="Упражнения" /><ExerciseList data={data} up={up} onSelect={(e) => open({ type: "exercise", id: e.id })} /></div>
   );
