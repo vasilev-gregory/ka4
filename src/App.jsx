@@ -115,7 +115,7 @@ function buildSets(d, exId, n) {
   const count = n || Math.max(prev.length, 3);
   return Array.from({ length: count }, (_, i) => {
     const s = prev[i] || prev[prev.length - 1];
-    return { w: s ? s.w : "", r: s ? s.r : "", done: false };
+    return { w: s ? s.w : "", r: s ? s.r : "", p: s && s.p ? s.p : "", done: false };
   });
 }
 
@@ -180,7 +180,7 @@ const fmtDate = (ts) => new Date(ts).toLocaleDateString("ru-RU", { weekday: "sho
 const fmtShort = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "numeric" });
 function fmtSets(sets, kind) {
   return sets
-    .map((s) => (kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}`))
+    .map((s) => (kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`))
     .join(", ");
 }
 
@@ -586,7 +586,7 @@ function WorkoutTab({ data, up, exMap, open }) {
   };
   const addSet = (ei) => up((d) => {
     const ss = d.active.exercises[ei].sets, l = ss[ss.length - 1];
-    ss.push({ w: l ? l.w : "", r: l ? l.r : "", done: false });
+    ss.push({ w: l ? l.w : "", r: l ? l.r : "", p: l && l.p ? l.p : "", done: false });
   });
   const delSet = (ei, si) => up((d) => { d.active.exercises[ei].sets.splice(si, 1); });
   const delEx = (ei) => up((d) => { d.active.exercises.splice(ei, 1); });
@@ -671,6 +671,7 @@ function WorkoutTab({ data, up, exMap, open }) {
             <div className="flex items-center gap-2 px-1 text-xs text-neutral-500">
               <span className="w-5" /><span className="flex-1 text-center">кг</span>
               <span className="flex-1 text-center">{ex.kind === "time" ? "сек" : "повт."}</span>
+              <span className="w-11 text-center">{ex.kind === "time" ? "" : "частич."}</span>
               <span className="w-11" /><span className="w-6" />
             </div>
             {e.sets.map((s, si) => (
@@ -680,6 +681,11 @@ function WorkoutTab({ data, up, exMap, open }) {
                   className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
                 <input value={s.r} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
                   className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
+                {ex.kind === "time" ? <span className="w-11" /> : (
+                  <input value={s.p || ""} inputMode="numeric" placeholder="+" aria-label="Частичные повторы"
+                    onChange={(ev) => setSet(ei, si, { p: ev.target.value })}
+                    className={`w-11 rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                )}
                 <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
                   className={`flex h-11 w-11 items-center justify-center rounded-lg ${s.done ? "bg-amber-400 text-neutral-900" : "bg-neutral-800 text-neutral-400"}`}>
                   <Check size={22} />
