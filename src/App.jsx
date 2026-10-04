@@ -1283,11 +1283,133 @@ function ExerciseDetail({ data, up, exMap, id, back, open }) {
 }
 
 // ---------- history ----------
+// ---------- weekly analysis ----------
+// Rough evidence-based targets per muscle group per week (Schoenfeld et al. meta-analyses, RP volume landmarks):
+// hard sets = working sets taken close to failure (RIR 0-3); 10+ sets and 2+ sessions a week is the sweet spot,
+// ~4-9 sets still grows, under 4 is roughly maintenance. Drop sets / ladders count as one set.
+const DAY = 864e5;
+function weekStartOf(ts) {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d.getTime();
+}
+function weekAnalysis(workouts, exMap, ws) {
+  const we = ws + 7 * DAY + 3600e3; // DST slack
+  const groups = {};
+  const days = new Set();
+  workouts.filter((w) => w.startedAt >= ws && w.startedAt < we).forEach((w) => {
+    const day = new Date(w.startedAt).toDateString();
+    w.exercises.forEach((e) => {
+      const g = exMap[e.exerciseId]?.group;
+      if (!g) return;
+      let n = 0;
+      e.sets.forEach((s, i) => {
+        if (!s.done || s.t === "w") return;
+        if (s.rir != null && s.rir >= 4) return; // too far from failure to count as a hard set
+        const cont = s.g && i > 0 && e.sets[i - 1].g === s.g && e.sets[i - 1].done;
+        if (!cont) n++;
+      });
+      if (!n) return;
+      days.add(day);
+      const p = groups[g] || (groups[g] = { sets: 0, days: new Set() });
+      p.sets += n;
+      p.days.add(day);
+    });
+  });
+  return { days: days.size, groups };
+}
+function growthStatus(sets, freq) {
+  if (sets < 4) return ["мало", "bg-neutral-800 text-neutral-400"];
+  if (sets > 20) return ["очень много", "bg-red-950 text-red-300"];
+  if (sets >= 10 && freq >= 2) return ["оптимум", "bg-amber-400 text-black"];
+  return ["рост", "bg-amber-950 text-amber-300"];
+}
+
+function WeekCalendar({ workouts, exMap }) {
+  const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).getTime(); });
+  const [selWeek, setSelWeek] = useState(() => weekStartOf(Date.now()));
+  const m = new Date(month);
+  const trained = new Set(workouts.map((w) => new Date(w.startedAt).toDateString()));
+  const first = weekStartOf(month);
+  const nextMonth = new Date(m.getFullYear(), m.getMonth() + 1, 1).getTime();
+  const weeks = [];
+  for (let ws = first; ws < nextMonth; ws = weekStartOf(ws + 8 * DAY)) weeks.push(ws);
+  const shift = (k) => setMonth(new Date(m.getFullYear(), m.getMonth() + k, 1).getTime());
+  const an = weekAnalysis(workouts, exMap, selWeek);
+  const today = new Date().toDateString();
+  const rows = GROUPS.map((g) => [g, an.groups[g]]);
+
+  return (
+    <div className="mb-5">
+      <div className="mb-2 flex items-center justify-between">
+        <button onClick={() => shift(-1)} className="p-2 text-neutral-400"><ChevronLeft size={20} /></button>
+        <div className="font-semibold capitalize">{m.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}</div>
+        <button onClick={() => shift(1)} className="rotate-180 p-2 text-neutral-400"><ChevronLeft size={20} /></button>
+      </div>
+      <div className="mb-1 grid grid-cols-7 text-center text-[11px] text-neutral-500">
+        {["пн", "вт", "ср", "чт", "пт", "сб", "вс"].map((d) => <div key={d}>{d}</div>)}
+      </div>
+      {weeks.map((ws) => (
+        <button key={ws} onClick={() => setSelWeek(ws)}
+          className={`grid w-full grid-cols-7 rounded-lg py-0.5 text-center ${ws === selWeek ? "bg-neutral-800" : ""}`}>
+          {Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(ws + i * DAY + 3600e3);
+            const inMonth = d.getMonth() === m.getMonth();
+            const on = trained.has(d.toDateString());
+            return (
+              <div key={i} className="flex justify-center py-0.5">
+                <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs tabular-nums
+                  ${on ? "bg-amber-400 font-semibold text-black" : inMonth ? "text-neutral-300" : "text-neutral-700"}
+                  ${d.toDateString() === today && !on ? "ring-1 ring-amber-400" : ""}`}>
+                  {d.getDate()}
+                </span>
+              </div>
+            );
+          })}
+        </button>
+      ))}
+
+      <div className="mt-4 rounded-xl bg-neutral-900 p-3">
+        <div className="mb-2 flex items-baseline justify-between">
+          <div className="font-semibold">
+            {new Date(selWeek).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} – {new Date(selWeek + 6 * DAY + 3600e3).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+          </div>
+          <div className="text-xs text-neutral-400">тренировок: {an.days}</div>
+        </div>
+        <div className="space-y-1.5">
+          {rows.map(([g, p]) => {
+            const sets = p ? p.sets : 0, freq = p ? p.days.size : 0;
+            const [label, cls] = growthStatus(sets, freq);
+            return (
+              <div key={g} className="flex items-center gap-2 text-xs">
+                <span className="w-20 shrink-0 text-neutral-300">{g}</span>
+                <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-neutral-800">
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-amber-400" style={{ width: `${Math.min(100, (sets / 20) * 100)}%` }} />
+                  <div className="absolute inset-y-0 w-px bg-neutral-500" style={{ left: "50%" }} />
+                </div>
+                <span className="w-16 shrink-0 text-right tabular-nums text-neutral-400">{sets} п · {freq}×</span>
+                <span className={`w-20 shrink-0 rounded-md py-0.5 text-center text-[11px] ${cls}`}>{label}</span>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-3 text-[11px] leading-snug text-neutral-500">
+          Считаются тяжёлые подходы (RIR 0–3, без разминок), дроп-сет — один подход; каждое упражнение идёт в свою основную группу.
+          Ориентир по исследованиям: 10+ подходов в неделю и 2+ тренировки на группу — оптимум (черта на шкале — 10),
+          4–9 тоже дают рост, меньше 4 — скорее поддержка.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function HistoryTab({ data, exMap, open }) {
   const list = data.workouts.slice().reverse();
   return (
     <div className="p-4">
       <Header title="История" />
+      <WeekCalendar workouts={data.active ? [...data.workouts, data.active] : data.workouts} exMap={exMap} />
       {list.length === 0 && <p className="text-neutral-400">Здесь появятся завершённые тренировки.</p>}
       <div className="space-y-2">
         {list.map((w) => {
