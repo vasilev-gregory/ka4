@@ -155,6 +155,8 @@ function finalizeActive(d, updateProgram) {
   return w.id;
 }
 
+const PARTIAL_WEIGHT = 0.3;
+
 function stats(w, exMap) {
   let vol = 0, sets = 0;
   w.exercises.forEach((e) => {
@@ -162,7 +164,8 @@ function stats(w, exMap) {
     e.sets.forEach((s) => {
       if (!s.done) return;
       sets++;
-      if (kind !== "time") vol += num(s.w) * num(s.r);
+      // partial reps count as 30% of a full rep
+      if (kind !== "time") vol += num(s.w) * (num(s.r) + PARTIAL_WEIGHT * num(s.p));
     });
   });
   const { main, extra, count } = durations(w);
