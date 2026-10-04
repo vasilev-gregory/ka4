@@ -628,9 +628,23 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
     const hay = `${e.name} ${e.ru || ""}`.toLowerCase();
     return words.every((w) => hay.includes(w));
   });
-  const byGroup = allGroups
-    .map((g) => [g, filtered.filter((e) => e.group === g).sort((x, y) => x.name.localeCompare(y.name))])
-    .filter(([, l]) => l.length);
+  // "yours" first: exercises you've done (most often first) or have in a program
+  const usage = useMemo(() => {
+    const u = {};
+    data.workouts.forEach((w) => w.exercises.forEach((e) => {
+      const x = u[e.exerciseId] || (u[e.exerciseId] = { n: 0, last: 0 });
+      x.n += 1; x.last = Math.max(x.last, w.startedAt);
+    }));
+    data.programs.forEach((p) => p.items.forEach((it) => { if (!u[it.exerciseId]) u[it.exerciseId] = { n: 0.5, last: 0 }; }));
+    return u;
+  }, [data.workouts, data.programs]);
+  const mine = filtered.filter((e) => usage[e.id])
+    .sort((x, y) => usage[y.id].n - usage[x.id].n || usage[y.id].last - usage[x.id].last || x.name.localeCompare(y.name));
+  const rest = filtered.filter((e) => !usage[e.id]);
+  const byGroup = [
+    ...(mine.length ? [["твои", mine]] : []),
+    ...allGroups.map((g) => [g, rest.filter((e) => e.group === g).sort((x, y) => x.name.localeCompare(y.name))]).filter(([, l]) => l.length),
+  ];
   const exact = data.exercises.some((e) => e.name.toLowerCase() === ql || (e.ru || "").toLowerCase() === ql);
 
   const chip = (active) => `shrink-0 rounded-full px-3 py-1 text-xs ${active ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`;
@@ -693,7 +707,9 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
 
       {byGroup.map(([g, list]) => (
         <div key={g} className="mt-4">
-          <div className="mb-1 px-1 text-xs text-neutral-500">{g}</div>
+          <div className={`mb-1 px-1 text-xs ${g === "твои" ? "font-semibold text-amber-400" : "text-neutral-500"}`}>
+            {g === "твои" ? "Твои упражнения" : g}
+          </div>
           <div className="divide-y divide-neutral-800 rounded-xl bg-neutral-900">
             {list.map((e) => (
               <button key={e.id} onClick={() => onSelect(e)} className="flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800">
@@ -702,6 +718,7 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
                   <span className="block">{e.name}</span>
                   {e.ru && <span className="block text-xs text-neutral-500">{e.ru}</span>}
                 </span>
+                {g === "твои" && <span className="ml-2 text-[11px] text-neutral-500">{e.group}</span>}
                 {e.kind === "time" && <span className="ml-2 text-xs text-neutral-500">на время</span>}
               </button>
             ))}
