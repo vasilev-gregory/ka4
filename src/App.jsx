@@ -157,7 +157,8 @@ function buildSets(d, exId, n) {
   const count = n || Math.max(prev.length, 3);
   return Array.from({ length: count }, (_, i) => {
     const s = prev[i] || prev[prev.length - 1];
-    return { w: s ? s.w : "", r: s ? s.r : "", p: s && s.p ? s.p : "", done: false };
+    // values from last time are hints (shown gray), not entered values
+    return { w: "", r: "", p: "", hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "", done: false };
   });
 }
 
@@ -191,7 +192,9 @@ function finalizeActive(d, updateProgram) {
   w.finishedAt = w.segments[w.segments.length - 1].end;
   delete w.restEndsAt;
   delete w.paused;
-  w.exercises = w.exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.done) })).filter((e) => e.sets.length);
+  w.exercises = w.exercises
+    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, done }) => ({ w: sw, r, p: p || "", done })) }))
+    .filter((e) => e.sets.length);
   if (w.exercises.length) d.workouts.push(w);
   d.active = null;
   return w.id;
@@ -344,11 +347,37 @@ function ExImg({ ex, size = 40 }) {
 let actx = null;
 function unlockAudio() {
   try {
+    // iOS 17+: play even when the silent switch is on
+    if (navigator.audioSession) navigator.audioSession.type = "playback";
     if (!actx) { const C = window.AudioContext || window.webkitAudioContext; actx = new C(); }
     if (actx.state === "suspended") actx.resume();
   } catch (e) {}
 }
+function tone(freq, at, len, vol = 0.35) {
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.frequency.value = freq;
+  o.connect(g); g.connect(actx.destination);
+  const s = actx.currentTime + at;
+  g.gain.setValueAtTime(0.0001, s);
+  g.gain.exponentialRampToValueAtTime(vol, s + 0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001, s + len);
+  o.start(s); o.stop(s + len + 0.05);
+}
+// short tick for the 3-2-1 countdown
+function tick() {
+  if (!actx) return;
+  try { if (actx.state === "suspended") actx.resume(); tone(660, 0, 0.09, 0.3); } catch (e) {}
+}
+// soft blip when rest starts
+function blip() {
+  if (!actx) return;
+  try { if (actx.state === "suspended") actx.resume(); tone(520, 0, 0.07, 0.15); } catch (e) {}
+}
 function beep() {
+  if (!actx) return;
+  try { if (actx.state === "suspended") actx.resume(); tone(988, 0, 0.18); tone(988, 0.22, 0.18); tone(1319, 0.44, 0.45); } catch (e) {}
+}
+function beepOld() {
   if (!actx) return;
   try {
     [0, 0.35, 0.7].forEach((t) => {
@@ -660,13 +689,19 @@ function WorkoutTab({ data, up, exMap, open }) {
     up((d) => {
       const s = d.active.exercises[ei].sets[si];
       s.done = !s.done;
+      if (s.done) {
+        // confirming a set without typing means "same as last time"
+        if (s.w === "" && s.hw) s.w = s.hw;
+        if (s.r === "" && s.hr) s.r = s.hr;
+        if (!s.p && s.hp) s.p = s.hp;
+      }
       if (s.done && d.active.paused) { closeSegment(d.active); d.active.segments.push({ start: Date.now() }); d.active.paused = false; }
       if (s.done) d.active.restEndsAt = Date.now() + d.settings.restSec * 1000;
     });
   };
   const addSet = (ei) => up((d) => {
     const ss = d.active.exercises[ei].sets, l = ss[ss.length - 1];
-    ss.push({ w: l ? l.w : "", r: l ? l.r : "", p: l && l.p ? l.p : "", done: false });
+    ss.push({ w: "", r: "", p: "", hw: l ? l.w || l.hw || "" : "", hr: l ? l.r || l.hr || "" : "", hp: l ? l.p || l.hp || "" : "", done: false });
   });
   const delSet = (ei, si) => up((d) => { d.active.exercises[ei].sets.splice(si, 1); });
   const delEx = (ei) => up((d) => { d.active.exercises.splice(ei, 1); });
@@ -757,12 +792,12 @@ function WorkoutTab({ data, up, exMap, open }) {
             {e.sets.map((s, si) => (
               <div key={si} className="mt-1.5 flex items-center gap-2 px-1">
                 <span className={`w-5 text-xs ${s.done ? "text-amber-400" : "text-neutral-500"}`}>{si + 1}</span>
-                <input value={s.w} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
-                  className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
-                <input value={s.r} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
-                  className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
+                <input value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
+                  className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
+                <input value={s.r} placeholder={s.hr || ""} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
+                  className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
                 {ex.kind === "time" ? <span className="w-11" /> : (
-                  <input value={s.p || ""} inputMode="numeric" placeholder="+" aria-label="Частичные повторы"
+                  <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
                     onChange={(ev) => setSet(ei, si, { p: ev.target.value })}
                     className={`w-11 rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
                 )}
@@ -822,17 +857,25 @@ function WorkoutTab({ data, up, exMap, open }) {
   );
 }
 
-function RestBar({ endsAt, total, up }) {
-  const now = useNow(250, true);
+function RestBar({ endsAt, total, up, sound }) {
+  const now = useNow(200, true);
   const left = endsAt - now;
   const done = left <= 0;
   const fired = useRef(null);
+  const ticked = useRef(new Set());
+  useEffect(() => { if (sound && endsAt - Date.now() > total * 1000 - 1500) blip(); }, []);
+  const secLeft = Math.ceil(left / 1000);
+  useEffect(() => {
+    if (!sound || done || secLeft > 3 || ticked.current.has(secLeft)) return;
+    ticked.current.add(secLeft);
+    tick();
+  }, [secLeft, done]);
   useEffect(() => {
     if (!done) return;
     if (fired.current !== endsAt) {
       fired.current = endsAt;
       if (Date.now() - endsAt < 5000) {
-        beep();
+        if (sound) beep();
         try { navigator.vibrate && navigator.vibrate([300, 150, 300]); } catch (e) {}
       }
     }
@@ -1265,6 +1308,13 @@ function SettingsTab({ data, up, replace, saved, back }) {
         <Stepper value={data.settings.restSec} step={15} min={15} fmt={(v) => fmtDur(v * 1000)}
           onChange={(v) => up((d) => { d.settings.restSec = v; })} />
       </div>
+      <button onClick={() => { unlockAudio(); up((d) => { d.settings.sound = d.settings.sound === false; }); if (data.settings.sound === false) beep(); }}
+        className="-mt-4 mb-6 flex w-full items-center justify-between rounded-xl bg-neutral-900 p-4 text-left">
+        <div><div className="font-semibold">Звук таймера</div><div className="text-xs text-neutral-400">Щелчки 3-2-1 и сигнал в конце отдыха</div></div>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.settings.sound === false ? "bg-neutral-800 text-neutral-400" : "bg-amber-400 text-black"}`}>
+          {data.settings.sound === false ? "выкл" : "вкл"}
+        </span>
+      </button>
 
       <h2 className="mb-2 font-semibold">Резервная копия</h2>
       <button onClick={doExport} className="w-full rounded-xl bg-neutral-900 py-3 active:bg-neutral-800">Скопировать все данные</button>
@@ -1367,6 +1417,12 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const h = () => unlockAudio();
+    window.addEventListener("pointerdown", h, { passive: true });
+    return () => window.removeEventListener("pointerdown", h);
+  }, []);
+
   const autoClosed = useRef(false);
   useEffect(() => {
     if (!data || autoClosed.current) return;
@@ -1429,7 +1485,7 @@ export default function App() {
       )}
       <div className="mx-auto max-w-md pb-20">{content}</div>
 
-      {data.active?.restEndsAt && <RestBar key={data.active.restEndsAt} endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} />}
+      {data.active?.restEndsAt && <RestBar key={data.active.restEndsAt} endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={data.settings.sound !== false} />}
 
       <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800 bg-black">
         <div className="mx-auto flex max-w-md">
