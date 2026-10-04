@@ -167,6 +167,7 @@ function migrate(d) {
     else if (!e.ru) e.ru = se.ru;
   });
   if (!Array.isArray(d.measurements)) d.measurements = [];
+  if (d.settings && d.settings.restMode === "stopwatch" && d.settings.countdown === undefined) d.settings.countdown = false;
   d.exercises.forEach((e) => {
     if (e.bw === undefined && BW_DEFAULTS[e.id]) e.bw = BW_DEFAULTS[e.id];
     if (e.assist === undefined && ASSIST_DEFAULTS[e.id]) e.assist = true;
@@ -896,6 +897,17 @@ function WorkoutTab({ data, up, exMap, open }) {
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge
   const cols = setColumns(data.settings);
   const rests = a ? restBefore(a) : {};
+  let liveKey = null; // where the running "rest so far" is shown
+  if (a && !a.paused && a.lastSetAt) {
+    let li = -1, ls = -1;
+    a.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { if (s.done && s.at === a.lastSetAt) { li = ei; ls = si; } }));
+    if (li >= 0) {
+      outer: for (let ei = li; ei < a.exercises.length; ei++) {
+        const ss = a.exercises[ei].sets;
+        for (let si = ei === li ? ls + 1 : 0; si < ss.length; si++) if (!ss[si].done) { liveKey = `${ei}:${si}`; break outer; }
+      }
+    }
+  }
   // hold a column title (кг, повт., …) and slide it left/right to reorder columns for all exercises
   const [colDrag, setColDrag] = useState(null); // {ei, key, dx, to}
   const hdrRefs = useRef({});
@@ -1039,7 +1051,7 @@ function WorkoutTab({ data, up, exMap, open }) {
         // no rest in the middle of a drop set / ladder
         const nx = d.active.exercises[ei].sets[si + 1];
         const midGroup = s.g && nx && nx.g === s.g && !nx.done;
-        const countdown = d.settings.restMode !== "stopwatch";
+        const countdown = d.settings.countdown !== false;
         d.active.restEndsAt = midGroup || !countdown ? null : Date.now() + d.settings.restSec * 1000;
       } else {
         delete s.at;
@@ -1225,9 +1237,10 @@ function WorkoutTab({ data, up, exMap, open }) {
                 const cell = (c) => {
                   if (c === "rest") {
                     const v = rests[`${ei}:${si}`];
+                    const live = liveKey === `${ei}:${si}`;
                     return (
-                      <span key={c} className="w-9 shrink-0 text-center text-[11px] tabular-nums text-neutral-500">
-                        {v === "drop" ? "↳" : v ? fmtDur(v) : ""}
+                      <span key={c} className={`w-9 shrink-0 text-center text-[11px] tabular-nums ${live ? "font-semibold text-amber-400" : "text-neutral-500"}`}>
+                        {live ? fmtDur(now - a.lastSetAt) : v === "drop" ? "↳" : v ? fmtDur(v) : ""}
                       </span>
                     );
                   }
@@ -2062,21 +2075,17 @@ function SettingsTab({ data, up, replace, saved, back }) {
           onChange={(e) => up((d) => { d.settings.bodyWeight = e.target.value; })}
           className="w-20 rounded-lg bg-black px-2 py-2 text-right tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
       </div>
-      <div className="mb-3 rounded-xl bg-neutral-900 p-4">
-        <div className="mb-2 font-semibold">Таймер после подхода</div>
-        <div className="flex gap-1.5">
-          {[["countdown", "обратный отсчёт"], ["stopwatch", "секундомер"]].map(([k, l]) => (
-            <button key={k} onClick={() => up((d) => { d.settings.restMode = k; if (d.active) d.active.restEndsAt = null; })}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${(data.settings.restMode || "countdown") === k ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
-          ))}
+      <button onClick={() => up((d) => { d.settings.countdown = d.settings.countdown === false; if (d.active && d.settings.countdown === false) d.active.restEndsAt = null; })}
+        className="mb-3 flex w-full items-center justify-between rounded-xl bg-neutral-900 p-4 text-left">
+        <div>
+          <div className="font-semibold">Обратный отсчёт после подхода</div>
+          <div className="text-xs text-neutral-400">Секундомер отдыха живёт в колонке «отдых», включается вместе с ней</div>
         </div>
-        <p className="mt-2 text-xs text-neutral-500">
-          {data.settings.restMode === "stopwatch"
-            ? "После подхода просто видно, сколько прошло с последней галочки. Без сигналов."
-            : "Отсчитывает заданное время и сигналит в конце."}
-        </p>
-      </div>
-      <div className={`mb-6 flex items-center justify-between rounded-xl bg-neutral-900 p-4 ${data.settings.restMode === "stopwatch" ? "opacity-40" : ""}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.settings.countdown === false ? "bg-neutral-800 text-neutral-400" : "bg-amber-400 text-black"}`}>
+          {data.settings.countdown === false ? "выкл" : "вкл"}
+        </span>
+      </button>
+      <div className={`mb-6 flex items-center justify-between rounded-xl bg-neutral-900 p-4 ${data.settings.countdown === false ? "opacity-40" : ""}`}>
         <div><div className="font-semibold">Отдых между подходами</div><div className="text-xs text-neutral-400">Для обратного отсчёта</div></div>
         <Stepper value={data.settings.restSec} step={15} min={15} fmt={(v) => fmtDur(v * 1000)}
           onChange={(v) => up((d) => { d.settings.restSec = v; })} />
@@ -2291,9 +2300,6 @@ export default function App() {
       )}
       <div className="mx-auto max-w-md pb-20">{content}</div>
 
-      {data.active && !data.active.paused && data.settings.restMode === "stopwatch" && data.active.lastSetAt && (
-        <SinceBar since={data.active.lastSetAt} />
-      )}
       {data.active?.restEndsAt && <RestBar key={data.active.restEndsAt} endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={data.settings.sound !== false} />}
 
       <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800 bg-black">
