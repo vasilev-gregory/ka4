@@ -142,6 +142,24 @@ function migrate(d) {
     else if (!e.ru) e.ru = se.ru;
   });
   if (!Array.isArray(d.measurements)) d.measurements = [];
+  // flatten nested drop sets from an earlier version into linear grouped sets
+  const flat = (sets) => {
+    const out = [];
+    sets.forEach((st) => {
+      if (st.drops && st.drops.length) {
+        const g = uid();
+        const { drops, ...base } = st;
+        out.push({ ...base, g });
+        drops.forEach((dr) => out.push({ w: dr.w, r: dr.r, p: "", done: base.done, g, ...(dr.hw != null ? { hw: dr.hw, hr: dr.hr } : {}) }));
+      } else {
+        if (st.drops) delete st.drops;
+        out.push(st);
+      }
+    });
+    return out;
+  };
+  d.workouts.forEach((w) => w.exercises.forEach((e) => { e.sets = flat(e.sets); }));
+  if (d.active) d.active.exercises.forEach((e) => { e.sets = flat(e.sets); });
   d.version = 3;
   return d;
 }
@@ -164,7 +182,7 @@ function buildSets(d, exId, n) {
     // values from last time are hints (shown gray), not entered values
     return {
       w: "", r: "", p: "", t: s && s.t === "w" ? "w" : "",
-      ...(s && s.drops && s.drops.length ? { drops: s.drops.map((dr) => ({ w: "", r: "", hw: dr.w, hr: dr.r })) } : {}), hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "", done: false };
+      ...(prev[i] && prev[i].g ? { g: prev[i].g } : {}), hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "", done: false };
   });
 }
 
@@ -199,10 +217,8 @@ function finalizeActive(d, updateProgram) {
   delete w.restEndsAt;
   delete w.paused;
   w.exercises = w.exercises
-    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, drops, done }) => ({
-      w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}),
-      ...(drops && drops.length ? { drops: drops.filter((dr) => num(dr.r) > 0).map((dr) => ({ w: dr.w, r: dr.r })) } : {}),
-      done,
+    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, g, done }) => ({
+      w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}), ...(g ? { g } : {}), done,
     })) }))
     .filter((e) => e.sets.length);
   if (w.exercises.length) d.workouts.push(w);
@@ -216,9 +232,10 @@ function stats(w, exMap) {
   let vol = 0, sets = 0;
   w.exercises.forEach((e) => {
     const kind = exMap[e.exerciseId]?.kind;
-    e.sets.forEach((s) => {
+    e.sets.forEach((s, i) => {
       if (!s.done || s.t === "w") return; // warm-ups don't count
-      sets++;
+      const cont = s.g && i > 0 && e.sets[i - 1].g === s.g && e.sets[i - 1].done;
+      if (!cont) sets++; // a drop set / ladder is one set
       // partial reps count as 30% of a full rep
       if (kind !== "time") vol += num(s.w) * (num(s.r) + PARTIAL_WEIGHT * num(s.p));
       if (kind !== "time") (s.drops || []).forEach((dr) => { vol += num(dr.w) * num(dr.r); });
@@ -241,15 +258,31 @@ const fmtShort = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeri
 const RIR = [[4, "4+", "легко"], [3, "3", "норм"], [2, "2", "норм"], [1, "1", "тяжело"], [0, "0", "отказ"]];
 const rirLabel = (s) => (s.t === "w" ? "разм." : s.rir === 0 ? "отказ" : s.rir != null ? `RIR ${s.rir === 4 ? "4+" : s.rir}` : "");
 
+// Sets merged into one (drop set, ladder) share a group id `g` and sit next to each other.
+function setLabels(sets) {
+  let n = 0, sub = 0;
+  return sets.map((s, i) => {
+    const cont = s.g && i > 0 && sets[i - 1].g === s.g;
+    if (cont) sub++; else { n++; sub = 0; }
+    const grouped = s.g && (cont || (i < sets.length - 1 && sets[i + 1].g === s.g));
+    return grouped ? `${n}${"abcdefghij"[sub] || "+"}` : String(n);
+  });
+}
+function normalizeGroups(sets) {
+  const cnt = {};
+  sets.forEach((s) => { if (s.g) cnt[s.g] = (cnt[s.g] || 0) + 1; });
+  sets.forEach((s) => { if (s.g && cnt[s.g] < 2) delete s.g; });
+}
+
 function fmtSets(sets, kind) {
-  return sets
+  const parts = sets
     .map((s) => {
       let base = kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`;
       (s.drops || []).forEach((dr) => { base += ` → ${num(dr.w)}×${num(dr.r)}`; });
       if (s.t === "w") return `разм. ${base}`;
       return s.rir === 0 ? `${base} отказ` : s.rir != null ? `${base} RIR${s.rir === 4 ? "4+" : s.rir}` : base;
-    })
-    .join(", ");
+    });
+  return parts.map((p, i) => (i === 0 ? "" : sets[i].g && sets[i - 1].g === sets[i].g ? " → " : ", ") + p).join("");
 }
 
 function useNow(ms, on = true) {
@@ -668,8 +701,9 @@ function WorkoutTab({ data, up, exMap, open }) {
   const a = data.active;
   const [picker, setPicker] = useState(false);
   const [askUpdate, setAskUpdate] = useState(false);
-  const [tagFor, setTagFor] = useState(null);
-  const [lastDone, setLastDone] = useState(null); // set just confirmed -> ask RIR inline
+  const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge
+  const pressT = useRef(null);
+  const longFired = useRef(false);
   const focusVal = useRef(null);
   const now = useNow(1000, !!a && !a.paused);
   const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
@@ -724,8 +758,6 @@ function WorkoutTab({ data, up, exMap, open }) {
   const setSet = (ei, si, patch) => up((d) => { Object.assign(d.active.exercises[ei].sets[si], patch); });
   const toggle = (ei, si) => {
     unlockAudio();
-    const was = a.exercises[ei]?.sets[si]?.done;
-    setLastDone(was ? null : { ei, si });
     up((d) => {
       const s = d.active.exercises[ei].sets[si];
       s.done = !s.done;
@@ -735,21 +767,68 @@ function WorkoutTab({ data, up, exMap, open }) {
         if (s.r === "" && s.hr) s.r = s.hr;
         if (!s.p && s.hp) s.p = s.hp;
         if (num(s.p) > 0 && s.t !== "w") s.rir = 0; // partials mean the set went to failure
-        (s.drops || []).forEach((dr) => { if (dr.w === "" && dr.hw) dr.w = dr.hw; if (dr.r === "" && dr.hr) dr.r = dr.hr; });
       }
       if (s.done && d.active.paused) { closeSegment(d.active); d.active.segments.push({ start: Date.now() }); d.active.paused = false; }
-      if (s.done) d.active.restEndsAt = Date.now() + d.settings.restSec * 1000;
+      if (s.done) {
+        // no rest in the middle of a drop set / ladder
+        const nx = d.active.exercises[ei].sets[si + 1];
+        const midGroup = s.g && nx && nx.g === s.g && !nx.done;
+        d.active.restEndsAt = midGroup ? null : Date.now() + d.settings.restSec * 1000;
+      }
     });
   };
   const addSet = (ei) => up((d) => {
     const ss = d.active.exercises[ei].sets, l = ss[ss.length - 1];
     ss.push({ w: "", r: "", p: "", hw: l ? l.w || l.hw || "" : "", hr: l ? l.r || l.hr || "" : "", hp: l ? l.p || l.hp || "" : "", done: false });
   });
-  const delSet = (ei, si) => up((d) => { d.active.exercises[ei].sets.splice(si, 1); });
-  // drop sets / ladders: extra steps inside one set, no rest between them
-  const addDrop = (ei, si) => up((d) => { const s = d.active.exercises[ei].sets[si]; if (!s.drops) s.drops = []; s.drops.push({ w: "", r: "" }); });
-  const setDrop = (ei, si, di, patch) => up((d) => { Object.assign(d.active.exercises[ei].sets[si].drops[di], patch); });
-  const delDrop = (ei, si, di) => up((d) => { d.active.exercises[ei].sets[si].drops.splice(di, 1); });
+  const delSet = (ei, si) => { setSel(null); up((d) => { const ss = d.active.exercises[ei].sets; ss.splice(si, 1); normalizeGroups(ss); }); };
+  const mergeSel = () => {
+    const { ei, set } = sel;
+    const idx = [...set].sort((x, y) => x - y);
+    up((d) => {
+      const ex0 = d.active.exercises[ei];
+      const ss = ex0.sets;
+      const g = uid();
+      const picked = idx.map((i) => ss[i]);
+      picked.forEach((st) => { st.g = g; });
+      const rest = ss.filter((_, i) => !set.has(i));
+      const at = ss.slice(0, idx[0]).filter((_, i) => !set.has(i)).length;
+      rest.splice(at, 0, ...picked);
+      normalizeGroups(rest);
+      ex0.sets = rest;
+    });
+    setSel(null);
+  };
+  const unmergeSel = () => {
+    const { ei, set } = sel;
+    up((d) => { const ss = d.active.exercises[ei].sets; set.forEach((i) => { if (ss[i]) delete ss[i].g; }); normalizeGroups(ss); });
+    setSel(null);
+  };
+  // number cell: tap = warm-up on/off (or select while selecting), long press = start selecting
+  const pressProps = (ei, si) => ({
+    onPointerDown: () => {
+      longFired.current = false;
+      clearTimeout(pressT.current);
+      pressT.current = setTimeout(() => {
+        longFired.current = true;
+        try { navigator.vibrate && navigator.vibrate(20); } catch (e) {}
+        setSel({ ei, set: new Set([si]) });
+      }, 450);
+    },
+    onPointerUp: () => clearTimeout(pressT.current),
+    onPointerLeave: () => clearTimeout(pressT.current),
+    onPointerCancel: () => clearTimeout(pressT.current),
+    onContextMenu: (ev) => ev.preventDefault(),
+    onClick: () => {
+      if (longFired.current) { longFired.current = false; return; }
+      if (sel && sel.ei === ei) {
+        setSel((prev) => { const n = new Set(prev.set); if (n.has(si)) n.delete(si); else n.add(si); return n.size ? { ei, set: n } : null; });
+      } else {
+        const cur = a.exercises[ei].sets[si];
+        setSet(ei, si, cur.t === "w" ? { t: "" } : { t: "w", rir: null });
+      }
+    },
+  });
   // merge the next set into this one as extra steps (one set, no rest in between)
   const mergeNext = (ei, si) => up((d) => {
     const ss = d.active.exercises[ei].sets, s = ss[si], n = ss[si + 1];
@@ -851,68 +930,66 @@ function WorkoutTab({ data, up, exMap, open }) {
               </ConfirmButton>
             </div>
             {!sort.dragging && (<>
-            <div className="flex items-center gap-2 px-1 text-xs text-neutral-500">
+            <div className="flex items-center gap-1.5 px-1 text-[11px] text-neutral-500">
               <span className="w-8" /><span className="flex-1 text-center">кг</span>
               <span className="flex-1 text-center">{ex.kind === "time" ? "сек" : "повт."}</span>
-              <span className="w-11 text-center">{ex.kind === "time" ? "" : "частич."}</span>
-              <span className="w-11" /><span className="w-6" />
+              <span className="w-10 text-center">{ex.kind === "time" ? "" : "частич."}</span>
+              <span className="w-10 text-center">RIR</span>
+              <span className="w-10" /><span className="w-5" />
             </div>
-            {e.sets.map((s, si) => (
-              <div key={si} className={(s.drops || []).length ? "mt-1.5 rounded-xl border border-neutral-700 pb-1.5" : ""}>
-              <div className="mt-1.5 flex items-center gap-2 px-1">
-                <button onClick={() => setTagFor({ ei, si })} aria-label="Тип подхода"
-                  className="flex h-11 w-8 shrink-0 flex-col items-center justify-center rounded-lg bg-black leading-none active:bg-neutral-800">
-                  <span className={`text-sm font-semibold ${s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}`}>{s.t === "w" ? "Р" : si + 1}</span>
-                  {rirLabel(s) && <span className={`mt-1 text-[9px] ${s.rir === 0 ? "text-red-400" : "text-neutral-400"}`}>{rirLabel(s)}</span>}
-                </button>
-                <input value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
-                  className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
-                <input value={s.r} placeholder={s.hr || ""} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
-                  onFocus={() => { focusVal.current = s.r; }} onBlur={() => commitOnBlur(ei, si, "r")}
-                  className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
-                {ex.kind === "time" ? <span className="w-11" /> : (
-                  <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
-                    onFocus={() => { focusVal.current = s.p || ""; }} onBlur={() => commitOnBlur(ei, si, "p")}
-                    onChange={(ev) => setSet(ei, si, { p: ev.target.value, ...(num(ev.target.value) > 0 && s.t !== "w" ? { rir: 0 } : {}) })}
-                    className={`w-11 rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
-                )}
-                <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
-                  className={`flex h-11 w-11 items-center justify-center rounded-lg ${s.done ? "bg-amber-400 text-neutral-900" : "bg-neutral-800 text-neutral-400"}`}>
-                  <Check size={22} />
-                </button>
-                <button onClick={() => delSet(ei, si)} className="w-6 text-neutral-600" aria-label="Удалить подход"><X size={16} /></button>
-              </div>
-              {lastDone && lastDone.ei === ei && lastDone.si === si && s.done && s.t !== "w" && s.rir == null && (
-                <div className="mt-1.5 flex items-center gap-1 pl-11">
-                  <span className="mr-1 text-[11px] text-neutral-500">В запасе:</span>
-                  {RIR.map(([v, label]) => (
-                    <button key={v} onClick={() => { setSet(ei, si, { rir: v }); setLastDone(null); }}
-                      className={`rounded-md px-2.5 py-1.5 text-xs font-semibold ${v === 0 ? "bg-red-950 text-red-300" : "bg-neutral-800 text-neutral-200"}`}>
-                      {v === 0 ? "отказ" : label}
+            {(() => {
+              const labels = setLabels(e.sets);
+              return e.sets.map((s, si) => {
+                const inSel = sel && sel.ei === ei && sel.set.has(si);
+                const cont = s.g && si > 0 && e.sets[si - 1].g === s.g;
+                const box = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400";
+                const rirShown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
+                return (
+                  <div key={si}
+                    className={`flex items-center gap-1.5 rounded-lg px-1 ${cont ? "mt-0.5" : "mt-1.5"} ${s.g ? "border-l-2 border-amber-400" : "border-l-2 border-transparent"} ${inSel ? "bg-neutral-700" : ""}`}>
+                    <button {...pressProps(ei, si)} aria-label="Подход: тап — разминка, удержание — выбрать"
+                      style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
+                      className={`flex h-11 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${inSel ? "bg-amber-400 text-black" : "bg-black"}`}>
+                      <span className={inSel ? "" : s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}>{s.t === "w" ? "Р" : labels[si]}</span>
                     </button>
-                  ))}
-                </div>
-              )}
-              {(s.drops || []).map((dr, di) => (
-                <div key={di} className="mt-1 flex items-center gap-2 px-1">
-                  <span className={`w-8 shrink-0 text-center text-sm ${s.done ? "text-amber-400" : "text-neutral-600"}`}>↳</span>
-                  <input value={dr.w} placeholder={dr.hw || ""} inputMode="decimal" onChange={(ev) => setDrop(ei, si, di, { w: ev.target.value })}
-                    className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
-                  <input value={dr.r} placeholder={dr.hr || ""} inputMode="numeric" onChange={(ev) => setDrop(ei, si, di, { r: ev.target.value })}
-                    className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
-                  <span className="w-11" />
-                  <span className="w-11" />
-                  <button onClick={() => delDrop(ei, si, di)} className="w-6 text-neutral-600" aria-label="Убрать ступень"><X size={16} /></button>
-                </div>
-              ))}
-              {(s.drops || []).length > 0 && (
-                <button onClick={() => addDrop(ei, si)} className="ml-11 mt-1 py-1 text-xs text-neutral-500">+ ещё ступень</button>
-              )}
+                    <input value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
+                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
+                    <input value={s.r} placeholder={s.hr || ""} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
+                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
+                    {ex.kind === "time" ? <span className="w-10" /> : (
+                      <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
+                        onChange={(ev) => setSet(ei, si, { p: ev.target.value, ...(num(ev.target.value) > 0 && s.t !== "w" ? { rir: 0 } : {}) })}
+                        className={`w-10 ${box} ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                    )}
+                    <input value={rirShown} inputMode="numeric" placeholder="–" aria-label="RIR, повторов в запасе" disabled={s.t === "w"}
+                      onChange={(ev) => {
+                        const raw = ev.target.value;
+                        if (raw.length < rirShown.length) return setSet(ei, si, { rir: null });
+                        const dg = raw.replace(/\D/g, "").slice(-1);
+                        setSet(ei, si, { rir: dg === "" ? null : Math.min(4, parseInt(dg, 10)) });
+                      }}
+                      className={`w-10 ${box} disabled:opacity-30 ${s.rir === 0 ? "text-red-400" : s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                    <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
+                      className={`flex h-11 w-10 shrink-0 items-center justify-center rounded-lg ${s.done ? "bg-amber-400 text-neutral-900" : "bg-neutral-800 text-neutral-400"}`}>
+                      <Check size={20} />
+                    </button>
+                    <button onClick={() => delSet(ei, si)} className="w-5 shrink-0 text-neutral-600" aria-label="Удалить подход"><X size={16} /></button>
+                  </div>
+                );
+              });
+            })()}
+            {sel && sel.ei === ei ? (
+              <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-neutral-800 p-2 text-xs">
+                <span className="flex-1 text-neutral-300">Выбрано: {sel.set.size}</span>
+                <button disabled={sel.set.size < 2} onClick={mergeSel} className="rounded-md bg-amber-400 px-3 py-2 font-semibold text-black disabled:opacity-40">Объединить</button>
+                <button onClick={unmergeSel} className="rounded-md bg-neutral-700 px-3 py-2">Разъединить</button>
+                <button onClick={() => setSel(null)} className="px-2 py-2 text-neutral-400">Отмена</button>
               </div>
-            ))}
-            <button onClick={() => addSet(ei)} className="mt-2 w-full rounded-lg py-2 text-xs text-neutral-400 active:bg-neutral-800">
-              Добавить подход
-            </button>
+            ) : (
+              <button onClick={() => addSet(ei)} className="mt-2 w-full rounded-lg py-2 text-xs text-neutral-400 active:bg-neutral-800">
+                Добавить подход
+              </button>
+            )}
             </>)}
           </div>
         );
@@ -939,51 +1016,6 @@ function WorkoutTab({ data, up, exMap, open }) {
           </>
         )}
       </div>
-
-      {tagFor && a.exercises[tagFor.ei]?.sets[tagFor.si] && (() => {
-        const st0 = a.exercises[tagFor.ei].sets[tagFor.si];
-        const set = (patch) => { setSet(tagFor.ei, tagFor.si, patch); setTagFor(null); };
-        return (
-          <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3" onClick={() => setTagFor(null)}>
-            <div className="safe-bottom mx-auto w-full max-w-md rounded-2xl bg-neutral-900 p-4" onClick={(e) => e.stopPropagation()}>
-              <div className="mb-3 text-base font-semibold">
-                {exMap[a.exercises[tagFor.ei].exerciseId]?.name}, подход {tagFor.si + 1}
-              </div>
-              <button onClick={() => set({ t: st0.t === "w" ? "" : "w", rir: null })}
-                className={`mb-4 w-full rounded-xl py-3 ${st0.t === "w" ? "bg-sky-400 font-semibold text-black" : "bg-neutral-800"}`}>
-                Разминочный подход
-              </button>
-              <div className="mb-1 text-xs text-neutral-400">Связка без отдыха (дроп-сет, лесенка, добивка)</div>
-              <div className="mb-4 grid grid-cols-2 gap-1.5">
-                <button onClick={() => { addDrop(tagFor.ei, tagFor.si); setTagFor(null); }} className="rounded-xl bg-neutral-800 py-3 text-sm">
-                  + новая ступень
-                </button>
-                {a.exercises[tagFor.ei].sets[tagFor.si + 1] ? (
-                  <button onClick={() => { mergeNext(tagFor.ei, tagFor.si); setTagFor(null); }} className="rounded-xl bg-neutral-800 py-3 text-sm">
-                    объединить с {tagFor.si + 2}-м
-                  </button>
-                ) : <span />}
-                {(st0.drops || []).length > 0 && (
-                  <button onClick={() => { splitSet(tagFor.ei, tagFor.si); setTagFor(null); }} className="col-span-2 rounded-xl bg-neutral-800 py-3 text-sm">
-                    разъединить на отдельные подходы
-                  </button>
-                )}
-              </div>
-              <div className="mb-2 text-xs text-neutral-400">Сколько повторов ещё мог сделать (RIR)</div>
-              <div className="grid grid-cols-5 gap-1.5">
-                {RIR.map(([v, label, sub]) => (
-                  <button key={v} onClick={() => set({ rir: st0.rir === v ? null : v, t: "" })}
-                    className={`rounded-xl py-2.5 ${st0.rir === v ? (v === 0 ? "bg-red-500 text-white" : "bg-amber-400 text-black") : "bg-neutral-800"}`}>
-                    <div className="text-base font-bold">{label}</div>
-                    <div className="text-[10px] opacity-70">{sub}</div>
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => set({ t: "", rir: null })} className="mt-3 w-full py-2 text-xs text-neutral-500">Сбросить</button>
-            </div>
-          </div>
-        );
-      })()}
 
       {askUpdate && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3" onClick={() => setAskUpdate(false)}>
