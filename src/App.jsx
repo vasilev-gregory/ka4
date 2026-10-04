@@ -2577,7 +2577,15 @@ function StorageStatus() {
     setSt(out);
   };
   useEffect(() => { refresh(); }, []);
-  const ask = async () => { try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {} refresh(); };
+  const [asked, setAsked] = useState(false);
+  const ask = async () => {
+    let ok = false;
+    try { if (navigator.storage && navigator.storage.persist) ok = await navigator.storage.persist(); } catch (e) {}
+    setAsked(true);
+    await refresh();
+    window.dispatchEvent(new Event("kach-persist-changed"));
+    return ok;
+  };
   if (!st) return null;
   const mb = (b) => (b == null ? "?" : b < 1048576 ? `${Math.max(1, Math.round(b / 1024))} КБ` : `${(b / 1048576).toFixed(1)} МБ`);
   return (
@@ -2592,9 +2600,16 @@ function StorageStatus() {
       {!st.persisted && (
         <>
           <p className="mt-2 text-xs text-neutral-500">
-            «Защищено» — браузер обещает не удалять данные приложения сам. Даёт он это не всегда; чаще — приложению с экрана «Домой».
+            «Защищено» — браузер обещает не удалять данные приложения сам. Пока защиты нет, раз в неделю приходит напоминание о бэкапе.
           </p>
-          <button onClick={ask} className="mt-2 w-full rounded-lg bg-neutral-800 py-2.5 text-sm">Попросить защиту</button>
+          <button onClick={ask} className="mt-2 w-full rounded-lg bg-amber-400 py-2.5 text-sm font-semibold text-black">Запросить защиту хранилища</button>
+          {asked && !st.persisted && (
+            <p className="mt-2 text-xs text-neutral-400">
+              {navigator.storage && navigator.storage.persist
+                ? "Браузер отказал. Обычно помогает: открывать приложение с иконки на экране «Домой» и пользоваться им регулярно, потом запросить ещё раз."
+                : "Этот браузер не умеет защищать хранилище. Остаются бэкапы файлом."}
+            </p>
+          )}
         </>
       )}
     </div>
@@ -2922,6 +2937,14 @@ export default function App() {
     return () => window.removeEventListener("pointerdown", h);
   }, []);
 
+  // with protected (persistent) storage the weekly backup reminder is not shown
+  const [persistedOk, setPersistedOk] = useState(null);
+  useEffect(() => {
+    const check = () => { try { navigator.storage.persisted().then((v) => setPersistedOk(!!v)).catch(() => setPersistedOk(false)); } catch (e) { setPersistedOk(false); } };
+    check();
+    window.addEventListener("kach-persist-changed", check);
+    return () => window.removeEventListener("kach-persist-changed", check);
+  }, []);
   const navSw = useRef(null);
   const navJust = useRef(false);
   const [modeToast, setModeToast] = useState(false);
@@ -3001,7 +3024,7 @@ export default function App() {
   else if (tab === "settings") content = <SettingsTab data={data} up={up} saved={saved} setMode={switchMode} replace={(d) => { setData(d); setStack([]); }} />;
   else if (tab === "measures") content = <MeasuresTab {...common} openSettings={() => open({ type: "settings" })} />;
 
-  const showBackupNag = tab === "workout" && !view && !data.active && backupDue(data);
+  const showBackupNag = tab === "workout" && !view && !data.active && persistedOk === false && backupDue(data);
   const nagShare = async () => {
     const r = await shareBackup(data);
     if (r !== "cancelled") up((d) => { d.settings.lastBackupAt = Date.now(); });
