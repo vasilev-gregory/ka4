@@ -236,12 +236,13 @@ function Header({ title, back, right }) {
   );
 }
 
-function Stepper({ value, onChange, step = 1, min = 1, fmt = (v) => v }) {
+function Stepper({ value, onChange, step = 1, min = 1, fmt = (v) => v, compact }) {
+  const btn = compact ? "p-1.5 text-neutral-300" : "p-2 text-neutral-300";
   return (
     <div className="flex items-center rounded-lg bg-neutral-800">
-      <button className="p-2 text-neutral-300" onClick={() => onChange(Math.max(min, value - step))}><Minus size={16} /></button>
-      <span className="w-12 text-center tabular-nums">{fmt(value)}</span>
-      <button className="p-2 text-neutral-300" onClick={() => onChange(value + step)}><Plus size={16} /></button>
+      <button className={btn} onClick={() => onChange(Math.max(min, value - step))}><Minus size={compact ? 14 : 16} /></button>
+      <span className={`${compact ? "w-6" : "w-12"} text-center tabular-nums`}>{fmt(value)}</span>
+      <button className={btn} onClick={() => onChange(value + step)}><Plus size={compact ? 14 : 16} /></button>
     </div>
   );
 }
@@ -661,20 +662,22 @@ function ProgramsTab({ data, up, exMap, open }) {
 }
 
 function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
+  const saved = data.programs.find((x) => x.id === id);
+  const [draft, setDraft] = useState(() => (saved ? structuredClone(saved) : null));
   const [picker, setPicker] = useState(false);
-  const sort = useSortable((from, to) => up((d) => { const pp = d.programs.find((x) => x.id === id); if (pp) moveItem(pp.items, from, to); }));
-  const p = data.programs.find((x) => x.id === id);
-  if (!p) return <div className="p-4"><Header title="Программа удалена" back={back} /></div>;
-  const mut = (fn) => up((d) => { const pp = d.programs.find((x) => x.id === id); if (pp) fn(pp); });
-  const move = (i, dir) => mut((pp) => {
-    const j = i + dir;
-    if (j < 0 || j >= pp.items.length) return;
-    [pp.items[i], pp.items[j]] = [pp.items[j], pp.items[i]];
-  });
+  const [leaveAsk, setLeaveAsk] = useState(false);
+  const mut = (fn) => setDraft((d) => { const c = structuredClone(d); fn(c); return c; });
+  const sort = useSortable((from, to) => mut((pp) => { moveItem(pp.items, from, to); }));
+  if (!saved || !draft) return <div className="p-4"><Header title="Программа удалена" back={back} /></div>;
+
+  const p = draft;
+  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
+  const save = () => up((d) => { const i = d.programs.findIndex((x) => x.id === id); if (i >= 0) d.programs[i] = structuredClone(draft); });
+  const tryBack = () => (dirty ? setLeaveAsk(true) : back());
 
   return (
-    <div className="p-4 pb-28">
-      <Header title="Программа" back={back} />
+    <div className="p-4 pb-44">
+      <Header title="Программа" back={tryBack} />
       <input value={p.name} onChange={(e) => mut((pp) => { pp.name = e.target.value; })}
         className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-none focus:ring-2 focus:ring-amber-400" />
       <div className="space-y-2">
@@ -689,9 +692,9 @@ function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
               <div className="truncate">{exMap[it.exerciseId]?.name || "Удалённое упражнение"}</div>
               {exMap[it.exerciseId]?.ru && <div className="truncate text-xs text-neutral-500">{exMap[it.exerciseId].ru}</div>}
             </div>
-            <Stepper value={it.sets} onChange={(v) => mut((pp) => { pp.items[i].sets = v; })} />
-            <button onClick={() => setPicker({ replace: i })} className="p-1.5 text-neutral-500" aria-label="Заменить"><RefreshCw size={16} /></button>
-            <button onClick={() => mut((pp) => { pp.items.splice(i, 1); })} className="p-1.5 text-neutral-500"><X size={18} /></button>
+            <Stepper compact value={it.sets} onChange={(v) => mut((pp) => { pp.items[i].sets = v; })} />
+            <button onClick={() => setPicker({ replace: i })} className="p-1 text-neutral-500" aria-label="Заменить"><RefreshCw size={16} /></button>
+            <button onClick={() => mut((pp) => { pp.items.splice(i, 1); })} className="p-1 text-neutral-500" aria-label="Убрать"><X size={18} /></button>
           </div>
         ))}
       </div>
@@ -702,14 +705,32 @@ function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
 
       <button
         disabled={!!data.active}
-        onClick={() => { startWorkout(up, p); goWorkout(); }}
-        className="mt-6 w-full rounded-xl bg-amber-400 py-3 font-semibold text-neutral-900 disabled:opacity-40">
-        {data.active ? "Уже идёт тренировка" : "Начать тренировку"}
+        onClick={() => { if (dirty) save(); startWorkout(up, draft); goWorkout(); }}
+        className="mt-6 w-full rounded-xl bg-neutral-800 py-3 font-semibold disabled:opacity-40">
+        {data.active ? "Уже идёт тренировка" : dirty ? "Сохранить и начать тренировку" : "Начать тренировку"}
       </button>
       <ConfirmButton onConfirm={() => { up((d) => { d.programs = d.programs.filter((x) => x.id !== id); }); back(); }}
         confirmText="Удалить программу?" className="mt-3 w-full py-3 text-neutral-500" armedClassName="mt-3 w-full rounded-xl bg-red-600 py-3 text-white">
         Удалить программу
       </ConfirmButton>
+
+      {(dirty || leaveAsk) && (
+        <div className="above-nav fixed inset-x-0 z-40 px-3">
+          <div className="mx-auto max-w-md rounded-2xl bg-neutral-900 p-3 shadow-lg">
+            {leaveAsk && <p className="mb-2 text-xs text-neutral-300">Есть несохранённые изменения</p>}
+            <div className="flex gap-2">
+              <button onClick={() => { setDraft(structuredClone(saved)); setLeaveAsk(false); if (leaveAsk) back(); }}
+                className="rounded-xl bg-neutral-800 px-4 py-3 text-neutral-300">
+                {leaveAsk ? "Не сохранять" : "Отменить"}
+              </button>
+              <button onClick={() => { save(); if (leaveAsk) back(); setLeaveAsk(false); }}
+                className="flex-1 rounded-xl bg-amber-400 py-3 font-semibold text-black">
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {picker && (
         <Picker data={data} up={up} onClose={() => setPicker(false)}
