@@ -665,6 +665,7 @@ function WorkoutTab({ data, up, exMap, open }) {
   const [picker, setPicker] = useState(false);
   const [askUpdate, setAskUpdate] = useState(false);
   const [tagFor, setTagFor] = useState(null);
+  const [lastDone, setLastDone] = useState(null); // set just confirmed -> ask RIR inline
   const now = useNow(1000, !!a && !a.paused);
   const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
 
@@ -718,6 +719,8 @@ function WorkoutTab({ data, up, exMap, open }) {
   const setSet = (ei, si, patch) => up((d) => { Object.assign(d.active.exercises[ei].sets[si], patch); });
   const toggle = (ei, si) => {
     unlockAudio();
+    const was = a.exercises[ei]?.sets[si]?.done;
+    setLastDone(was ? null : { ei, si });
     up((d) => {
       const s = d.active.exercises[ei].sets[si];
       s.done = !s.done;
@@ -726,6 +729,7 @@ function WorkoutTab({ data, up, exMap, open }) {
         if (s.w === "" && s.hw) s.w = s.hw;
         if (s.r === "" && s.hr) s.r = s.hr;
         if (!s.p && s.hp) s.p = s.hp;
+        if (num(s.p) > 0 && s.t !== "w") s.rir = 0; // partials mean the set went to failure
         (s.drops || []).forEach((dr) => { if (dr.w === "" && dr.hw) dr.w = dr.hw; if (dr.r === "" && dr.hr) dr.r = dr.hr; });
       }
       if (s.done && d.active.paused) { closeSegment(d.active); d.active.segments.push({ start: Date.now() }); d.active.paused = false; }
@@ -830,7 +834,7 @@ function WorkoutTab({ data, up, exMap, open }) {
               <div key={si}>
               <div className="mt-1.5 flex items-center gap-2 px-1">
                 <button onClick={() => setTagFor({ ei, si })} aria-label="Тип подхода"
-                  className="flex h-11 w-8 shrink-0 flex-col items-center justify-center rounded-lg leading-none active:bg-neutral-800">
+                  className="flex h-11 w-8 shrink-0 flex-col items-center justify-center rounded-lg bg-black leading-none active:bg-neutral-800">
                   <span className={`text-sm font-semibold ${s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}`}>{s.t === "w" ? "Р" : si + 1}</span>
                   {rirLabel(s) && <span className={`mt-1 text-[9px] ${s.rir === 0 ? "text-red-400" : "text-neutral-400"}`}>{rirLabel(s)}</span>}
                 </button>
@@ -840,7 +844,7 @@ function WorkoutTab({ data, up, exMap, open }) {
                   className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
                 {ex.kind === "time" ? <span className="w-11" /> : (
                   <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
-                    onChange={(ev) => setSet(ei, si, { p: ev.target.value })}
+                    onChange={(ev) => setSet(ei, si, { p: ev.target.value, ...(num(ev.target.value) > 0 && s.t !== "w" ? { rir: 0 } : {}) })}
                     className={`w-11 rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
                 )}
                 <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
@@ -849,6 +853,17 @@ function WorkoutTab({ data, up, exMap, open }) {
                 </button>
                 <button onClick={() => delSet(ei, si)} className="w-6 text-neutral-600" aria-label="Удалить подход"><X size={16} /></button>
               </div>
+              {lastDone && lastDone.ei === ei && lastDone.si === si && s.done && s.t !== "w" && s.rir == null && (
+                <div className="mt-1.5 flex items-center gap-1 pl-11">
+                  <span className="mr-1 text-[11px] text-neutral-500">В запасе:</span>
+                  {RIR.map(([v, label]) => (
+                    <button key={v} onClick={() => { setSet(ei, si, { rir: v }); setLastDone(null); }}
+                      className={`rounded-md px-2.5 py-1.5 text-xs font-semibold ${v === 0 ? "bg-red-950 text-red-300" : "bg-neutral-800 text-neutral-200"}`}>
+                      {v === 0 ? "отказ" : label}
+                    </button>
+                  ))}
+                </div>
+              )}
               {(s.drops || []).map((dr, di) => (
                 <div key={di} className="mt-1 flex items-center gap-2 px-1">
                   <span className={`w-8 shrink-0 text-center text-sm ${s.done ? "text-amber-400" : "text-neutral-600"}`}>↳</span>
