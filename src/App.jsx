@@ -897,6 +897,11 @@ function WorkoutTab({ data, up, exMap, open }) {
   const [picker, setPicker] = useState(false);
   const [askUpdate, setAskUpdate] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge
+  const [swipe, setSwipe] = useState(null); // {key, dx}
+  const sw = useRef(null);
+  const justSwiped = useRef(false);
+  const [undo, setUndo] = useState(null); // {ei, si, set}
+  useEffect(() => { if (!undo) return; const t = setTimeout(() => setUndo(null), 5000); return () => clearTimeout(t); }, [undo]);
   const cols = setColumns(data.settings);
   const restOn = restShown(data.settings);
   const rests = a && restOn ? restBefore(a) : {};
@@ -1082,6 +1087,56 @@ function WorkoutTab({ data, up, exMap, open }) {
       ex0.sets = rest;
     });
     setSel(null);
+  };
+  // swipe a set row: left = delete (with undo), right = done / undone
+  const swipeProps = (ei, si) => {
+    const key = `${ei}:${si}`;
+    return {
+      onPointerDown: (e) => { if (sel) return; sw.current = { key, x: e.clientX, y: e.clientY, active: false, dx: 0 }; },
+      onPointerMove: (e) => {
+        const st = sw.current;
+        if (!st || st.key !== key) return;
+        const dx = e.clientX - st.x, dy = e.clientY - st.y;
+        if (!st.active) {
+          if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            st.active = true;
+            clearTimeout(pressT.current);
+            try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+            if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+          } else {
+            if (Math.abs(dy) > 12) sw.current = null;
+            return;
+          }
+        }
+        st.dx = Math.max(-150, Math.min(150, dx));
+        setSwipe({ key, dx: st.dx });
+      },
+      onPointerUp: () => finishSwipe(ei, si),
+      onPointerCancel: () => { sw.current = null; setSwipe(null); },
+      onClickCapture: (e) => { if (justSwiped.current) { e.stopPropagation(); e.preventDefault(); } },
+    };
+  };
+  const finishSwipe = (ei, si) => {
+    const st = sw.current;
+    sw.current = null;
+    setSwipe(null);
+    if (!st || !st.active) return;
+    justSwiped.current = true;
+    setTimeout(() => { justSwiped.current = false; }, 80);
+    if (st.dx < -80) {
+      const removed = a.exercises[ei]?.sets[si];
+      if (!removed) return;
+      setUndo({ ei, si, set: structuredClone(removed) });
+      up((d) => { const ss = d.active.exercises[ei].sets; ss.splice(si, 1); normalizeGroups(ss); });
+    } else if (st.dx > 80) {
+      toggle(ei, si);
+    }
+  };
+  const undoDelete = () => {
+    const u = undo;
+    setUndo(null);
+    if (!u) return;
+    up((d) => { const ex0 = d.active && d.active.exercises[u.ei]; if (ex0) ex0.sets.splice(Math.min(u.si, ex0.sets.length), 0, u.set); });
   };
   const delSel = () => {
     const { ei, set } = sel;
@@ -1272,8 +1327,15 @@ function WorkoutTab({ data, up, exMap, open }) {
                   );
                 };
                 return (
-                  <div key={si}
-                    className={`flex items-center gap-1 rounded-lg px-1 ${cont ? "mt-0.5" : "mt-1.5"} ${s.g ? "border-l-2 border-amber-400" : "border-l-2 border-transparent"} ${inSel ? "bg-neutral-700" : ""}`}>
+                  <div key={si} className={`relative overflow-hidden rounded-lg ${cont ? "mt-0.5" : "mt-1.5"}`}>
+                  {swipe && swipe.key === `${ei}:${si}` && (
+                    <div className={`absolute inset-0 flex items-center px-4 text-xs font-semibold ${swipe.dx > 0 ? "justify-start bg-amber-400 text-black" : "justify-end bg-red-600 text-white"}`}>
+                      {swipe.dx > 0 ? (s.done ? "Снять отметку" : "Сделано") : "Удалить"}
+                    </div>
+                  )}
+                  <div {...swipeProps(ei, si)}
+                    style={{ touchAction: "pan-y", transform: swipe && swipe.key === `${ei}:${si}` ? `translateX(${swipe.dx}px)` : undefined, transition: swipe && swipe.key === `${ei}:${si}` ? "none" : "transform 150ms" }}
+                    className={`relative flex items-center gap-1 rounded-lg px-1 ${s.g ? "border-l-2 border-amber-400" : "border-l-2 border-transparent"} ${inSel ? "bg-neutral-700" : "bg-neutral-900"}`}>
                     <button {...pressProps(ei, si)} aria-label="Подход: тап — разминка, удержание — выбрать"
                       style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
                       className={`flex h-11 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${inSel ? "bg-amber-400 text-black" : "bg-black"}`}>
@@ -1298,6 +1360,7 @@ function WorkoutTab({ data, up, exMap, open }) {
                         </button>
                       );
                     })()}
+                  </div>
                   </div>
                 );
               });
@@ -1351,6 +1414,15 @@ function WorkoutTab({ data, up, exMap, open }) {
             </p>
             <button onClick={() => doFinish(true)} className="mb-2 w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Обновить программу</button>
             <button onClick={() => doFinish(false)} className="w-full rounded-xl bg-neutral-800 py-3 text-neutral-300">Оставить программу как была</button>
+          </div>
+        </div>
+      )}
+
+      {undo && (
+        <div className="fixed inset-x-0 top-0 z-50 px-3" style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}>
+          <div className="mx-auto flex max-w-md items-center gap-3 rounded-xl bg-neutral-100 px-4 py-3 text-sm text-black shadow-lg">
+            <span className="flex-1">Подход удалён</span>
+            <button onClick={undoDelete} className="font-semibold text-amber-700">Вернуть</button>
           </div>
         </div>
       )}
