@@ -97,6 +97,42 @@ function buildSets(d, exId, n) {
   });
 }
 
+// A workout can be paused and continued later the same day (gym, then sets at home).
+// Each continuation is a segment; the longest one is the "main" session.
+function segmentsOf(w) {
+  return w.segments && w.segments.length ? w.segments : [{ start: w.startedAt, end: w.finishedAt }];
+}
+function durations(w, now = Date.now()) {
+  const segs = segmentsOf(w).map((s) => Math.max(0, (s.end || now) - s.start));
+  const main = Math.max(0, ...segs);
+  const total = segs.reduce((x, y) => x + y, 0);
+  return { main, extra: total - main, count: segs.length };
+}
+const fmtWDur = (st) => fmtDur(st.dur) + (st.extra >= 60000 ? ` +${fmtDur(st.extra)}` : "");
+
+function closeSegment(w, t = Date.now()) {
+  w.segments = segmentsOf(w).map((s) => ({ ...s }));
+  const last = w.segments[w.segments.length - 1];
+  if (!last.end) last.end = t;
+}
+
+function finalizeActive(d, updateProgram) {
+  const w = d.active;
+  if (!w) return null;
+  if (updateProgram) {
+    const p = d.programs.find((x) => x.id === w.programId);
+    if (p) p.items = w.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
+  }
+  closeSegment(w);
+  w.finishedAt = w.segments[w.segments.length - 1].end;
+  delete w.restEndsAt;
+  delete w.paused;
+  w.exercises = w.exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.done) })).filter((e) => e.sets.length);
+  if (w.exercises.length) d.workouts.push(w);
+  d.active = null;
+  return w.id;
+}
+
 function stats(w, exMap) {
   let vol = 0, sets = 0;
   w.exercises.forEach((e) => {
@@ -107,7 +143,8 @@ function stats(w, exMap) {
       if (kind !== "time") vol += num(s.w) * num(s.r);
     });
   });
-  return { vol, sets, dur: (w.finishedAt || Date.now()) - w.startedAt };
+  const { main, extra, count } = durations(w);
+  return { vol, sets, dur: main, extra, segments: count };
 }
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -432,6 +469,8 @@ function startWorkout(up, p) {
       programId: p?.id || null,
       name: p?.name || "Свободная тренировка",
       startedAt: Date.now(),
+      segments: [{ start: Date.now() }],
+      paused: false,
       restEndsAt: null,
       exercises: (p?.items || []).map((it) => ({ exerciseId: it.exerciseId, sets: buildSets(d, it.exerciseId, it.sets) })),
     };
@@ -442,7 +481,7 @@ function WorkoutTab({ data, up, exMap, open }) {
   const a = data.active;
   const [picker, setPicker] = useState(false);
   const [askUpdate, setAskUpdate] = useState(false);
-  const now = useNow(1000, !!a);
+  const now = useNow(1000, !!a && !a.paused);
   const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
 
   if (!a) {
@@ -451,6 +490,23 @@ function WorkoutTab({ data, up, exMap, open }) {
       <div className="p-4">
         <Header title="Тренировка" />
         {last && <p className="text-xs text-neutral-400 mb-3">Прошлая: {last.name}, {fmtDate(last.startedAt)}</p>}
+        {data.pendingProgramUpdate && data.programs.some((x) => x.id === data.pendingProgramUpdate.programId) && (
+          <div className="mb-3 rounded-xl bg-neutral-900 p-4">
+            <div className="font-semibold">Вчерашняя тренировка завершена</div>
+            <p className="mb-3 text-xs text-neutral-400">
+              Она отличалась от «{data.programs.find((x) => x.id === data.pendingProgramUpdate.programId).name}». Записать изменения в программу?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => up((d) => { delete d.pendingProgramUpdate; })} className="rounded-xl bg-neutral-800 px-4 py-2.5 text-neutral-300">Нет</button>
+              <button onClick={() => up((d) => {
+                const pu = d.pendingProgramUpdate;
+                const pp = pu && d.programs.find((x) => x.id === pu.programId);
+                if (pp) pp.items = pu.items;
+                delete d.pendingProgramUpdate;
+              })} className="flex-1 rounded-xl bg-amber-400 py-2.5 font-semibold text-black">Обновить программу</button>
+            </div>
+          </div>
+        )}
         <div className="space-y-2">
           {data.programs.map((p) => (
             <div key={p.id} className="flex items-stretch gap-2 rounded-xl bg-neutral-900 p-2 pl-4">
@@ -481,6 +537,7 @@ function WorkoutTab({ data, up, exMap, open }) {
     up((d) => {
       const s = d.active.exercises[ei].sets[si];
       s.done = !s.done;
+      if (s.done && d.active.paused) { closeSegment(d.active); d.active.segments.push({ start: Date.now() }); d.active.paused = false; }
       if (s.done) d.active.restEndsAt = Date.now() + d.settings.restSec * 1000;
     });
   };
@@ -513,33 +570,38 @@ function WorkoutTab({ data, up, exMap, open }) {
   const doFinish = (updateProgram) => {
     setAskUpdate(false);
     const id = a.id;
-    up((d) => {
-      if (updateProgram) {
-        const p = d.programs.find((x) => x.id === d.active.programId);
-        if (p) p.items = d.active.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
-      }
-      const w = d.active;
-      w.finishedAt = Date.now();
-      delete w.restEndsAt;
-      w.exercises = w.exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.done) })).filter((e) => e.sets.length);
-      if (w.exercises.length) d.workouts.push(w);
-      d.active = null;
-    });
+    up((d) => { finalizeActive(d, updateProgram); });
     if (hasDone) open({ type: "workout", id });
   };
+  const pause = () => up((d) => { closeSegment(d.active); d.active.paused = true; d.active.restEndsAt = null; });
+  const resume = () => up((d) => { closeSegment(d.active); d.active.segments.push({ start: Date.now() }); d.active.paused = false; });
+  const segs = segmentsOf(a);
+  const cur = segs[segs.length - 1];
+  const dur = durations(a, now);
 
   return (
     <div className="p-4 pb-44">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs text-neutral-400">Идёт тренировка</p>
+          <p className="text-xs text-neutral-400">{a.paused ? "На паузе" : segs.length > 1 ? `Продолжение, отрезок ${segs.length}` : "Идёт тренировка"}</p>
           <h1 className="text-lg font-bold">{a.name}</h1>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold tabular-nums text-amber-400">{fmtDur(now - a.startedAt)}</div>
-          <div className="text-xs text-neutral-400 tabular-nums">{st.sets} подх., {fmtKg(st.vol)}</div>
+          <div className={`text-2xl font-bold tabular-nums ${a.paused ? "text-neutral-500" : "text-amber-400"}`}>
+            {a.paused ? fmtDur(dur.main) : fmtDur(now - cur.start)}
+          </div>
+          <div className="text-xs text-neutral-400 tabular-nums">
+            {st.sets} подх., {fmtKg(st.vol)}
+            {segs.length > 1 && <span className="block">основная {fmtDur(dur.main)}{dur.extra >= 60000 ? `, +${fmtDur(dur.extra)}` : ""}</span>}
+          </div>
         </div>
       </div>
+
+      {a.paused && (
+        <button onClick={resume} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 py-3 font-semibold text-black">
+          <Play size={18} /> Продолжить тренировку
+        </button>
+      )}
 
       {a.exercises.map((e, ei) => {
         const ex = exMap[e.exerciseId] || { name: "Удалённое упражнение", kind: "reps" };
@@ -599,7 +661,17 @@ function WorkoutTab({ data, up, exMap, open }) {
           className="rounded-xl bg-neutral-900 px-4 py-3 text-neutral-400" armedClassName="rounded-xl bg-red-600 px-4 py-3 text-white">
           Отменить
         </ConfirmButton>
-        <button onClick={finish} className="flex-1 rounded-xl bg-amber-400 py-3 font-semibold text-neutral-900">Завершить</button>
+        {a.paused ? (
+          <>
+            <button onClick={resume} className="flex-1 rounded-xl bg-amber-400 py-3 font-semibold text-black">Продолжить</button>
+            <button onClick={finish} className="rounded-xl bg-neutral-800 px-4 py-3">Завершить</button>
+          </>
+        ) : (
+          <>
+            <button onClick={pause} className="rounded-xl bg-neutral-800 px-4 py-3">Пауза</button>
+            <button onClick={finish} className="flex-1 rounded-xl bg-amber-400 py-3 font-semibold text-black">Завершить</button>
+          </>
+        )}
       </div>
 
       {askUpdate && (
@@ -866,7 +938,7 @@ function HistoryTab({ data, exMap, open }) {
             <button key={w.id} onClick={() => open({ type: "workout", id: w.id })} className="w-full rounded-xl bg-neutral-900 p-4 text-left active:bg-neutral-800">
               <div className="text-xs text-neutral-400">{fmtDate(w.startedAt)}</div>
               <div className="font-semibold">{w.name}</div>
-              <div className="mt-1 text-xs text-neutral-400 tabular-nums">{fmtDur(st.dur)}, {fmtKg(st.vol)}, {st.sets} подх.</div>
+              <div className="mt-1 text-xs text-neutral-400 tabular-nums">{fmtWDur(st)}, {fmtKg(st.vol)}, {st.sets} подх.</div>
             </button>
           );
         })}
@@ -884,7 +956,7 @@ function WorkoutDetail({ data, up, exMap, id, back, open }) {
       <Header title={w.name} back={back} />
       <p className="-mt-3 mb-4 text-neutral-400">{fmtDate(w.startedAt)}</p>
       <div className="mb-5 grid grid-cols-3 gap-2">
-        {[[fmtDur(st.dur), "время"], [fmtKg(st.vol), "объём"], [st.sets, "подходов"]].map(([v, l]) => (
+        {[[fmtDur(st.dur), st.extra >= 60000 ? `время, +${fmtDur(st.extra)} позже` : "время"], [fmtKg(st.vol), "объём"], [st.sets, "подходов"]].map(([v, l]) => (
           <div key={l} className="rounded-xl bg-neutral-900 p-3">
             <div className="text-lg font-bold tabular-nums">{v}</div>
             <div className="text-xs text-neutral-400">{l}</div>
@@ -1045,6 +1117,26 @@ export default function App() {
       flush();
     };
   }, []);
+
+  const autoClosed = useRef(false);
+  useEffect(() => {
+    if (!data || autoClosed.current) return;
+    autoClosed.current = true;
+    const a = data.active;
+    if (!a || !a.paused) return;
+    const segs = segmentsOf(a);
+    const lastEnd = segs[segs.length - 1].end || a.startedAt;
+    if (new Date(lastEnd).toDateString() === new Date().toDateString()) return;
+    setData((d0) => {
+      const d = structuredClone(d0);
+      const w = d.active;
+      const p = w.programId && d.programs.find((x) => x.id === w.programId);
+      const items = w.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
+      if (p && JSON.stringify(p.items) !== JSON.stringify(items)) d.pendingProgramUpdate = { programId: p.id, items };
+      finalizeActive(d, false);
+      return d;
+    });
+  }, [data]);
 
   const up = (fn) => setData((d) => { const c = structuredClone(d); fn(c); return c; });
   const exMap = useMemo(() => (data ? Object.fromEntries(data.exercises.map((e) => [e.id, e])) : {}), [data?.exercises]);
