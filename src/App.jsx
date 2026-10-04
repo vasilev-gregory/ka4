@@ -158,7 +158,9 @@ function buildSets(d, exId, n) {
   return Array.from({ length: count }, (_, i) => {
     const s = prev[i] || prev[prev.length - 1];
     // values from last time are hints (shown gray), not entered values
-    return { w: "", r: "", p: "", t: s && s.t === "w" ? "w" : "", hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "", done: false };
+    return {
+      w: "", r: "", p: "", t: s && s.t === "w" ? "w" : "",
+      ...(s && s.drops && s.drops.length ? { drops: s.drops.map((dr) => ({ w: "", r: "", hw: dr.w, hr: dr.r })) } : {}), hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "", done: false };
   });
 }
 
@@ -193,7 +195,11 @@ function finalizeActive(d, updateProgram) {
   delete w.restEndsAt;
   delete w.paused;
   w.exercises = w.exercises
-    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, done }) => ({ w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}), done })) }))
+    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, drops, done }) => ({
+      w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}),
+      ...(drops && drops.length ? { drops: drops.filter((dr) => num(dr.r) > 0).map((dr) => ({ w: dr.w, r: dr.r })) } : {}),
+      done,
+    })) }))
     .filter((e) => e.sets.length);
   if (w.exercises.length) d.workouts.push(w);
   d.active = null;
@@ -211,6 +217,7 @@ function stats(w, exMap) {
       sets++;
       // partial reps count as 30% of a full rep
       if (kind !== "time") vol += num(s.w) * (num(s.r) + PARTIAL_WEIGHT * num(s.p));
+      if (kind !== "time") (s.drops || []).forEach((dr) => { vol += num(dr.w) * num(dr.r); });
     });
   });
   const { main, extra, count } = durations(w);
@@ -233,7 +240,8 @@ const rirLabel = (s) => (s.t === "w" ? "разм." : s.rir === 0 ? "отказ" 
 function fmtSets(sets, kind) {
   return sets
     .map((s) => {
-      const base = kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`;
+      let base = kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`;
+      (s.drops || []).forEach((dr) => { base += ` → ${num(dr.w)}×${num(dr.r)}`; });
       if (s.t === "w") return `разм. ${base}`;
       return s.rir === 0 ? `${base} отказ` : s.rir != null ? `${base} RIR${s.rir === 4 ? "4+" : s.rir}` : base;
     })
@@ -703,6 +711,7 @@ function WorkoutTab({ data, up, exMap, open }) {
         if (s.w === "" && s.hw) s.w = s.hw;
         if (s.r === "" && s.hr) s.r = s.hr;
         if (!s.p && s.hp) s.p = s.hp;
+        (s.drops || []).forEach((dr) => { if (dr.w === "" && dr.hw) dr.w = dr.hw; if (dr.r === "" && dr.hr) dr.r = dr.hr; });
       }
       if (s.done && d.active.paused) { closeSegment(d.active); d.active.segments.push({ start: Date.now() }); d.active.paused = false; }
       if (s.done) d.active.restEndsAt = Date.now() + d.settings.restSec * 1000;
@@ -713,6 +722,10 @@ function WorkoutTab({ data, up, exMap, open }) {
     ss.push({ w: "", r: "", p: "", hw: l ? l.w || l.hw || "" : "", hr: l ? l.r || l.hr || "" : "", hp: l ? l.p || l.hp || "" : "", done: false });
   });
   const delSet = (ei, si) => up((d) => { d.active.exercises[ei].sets.splice(si, 1); });
+  // drop sets / ladders: extra steps inside one set, no rest between them
+  const addDrop = (ei, si) => up((d) => { const s = d.active.exercises[ei].sets[si]; if (!s.drops) s.drops = []; s.drops.push({ w: "", r: "" }); });
+  const setDrop = (ei, si, di, patch) => up((d) => { Object.assign(d.active.exercises[ei].sets[si].drops[di], patch); });
+  const delDrop = (ei, si, di) => up((d) => { d.active.exercises[ei].sets[si].drops.splice(di, 1); });
   const delEx = (ei) => up((d) => { d.active.exercises.splice(ei, 1); });
   const moveEx = (ei, dir) => up((d) => {
     const xs = d.active.exercises, j = ei + dir;
@@ -799,7 +812,8 @@ function WorkoutTab({ data, up, exMap, open }) {
               <span className="w-11" /><span className="w-6" />
             </div>
             {e.sets.map((s, si) => (
-              <div key={si} className="mt-1.5 flex items-center gap-2 px-1">
+              <div key={si}>
+              <div className="mt-1.5 flex items-center gap-2 px-1">
                 <button onClick={() => setTagFor({ ei, si })} aria-label="Тип подхода"
                   className="flex h-11 w-8 shrink-0 flex-col items-center justify-center rounded-lg leading-none active:bg-neutral-800">
                   <span className={`text-sm font-semibold ${s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}`}>{s.t === "w" ? "Р" : si + 1}</span>
@@ -819,6 +833,22 @@ function WorkoutTab({ data, up, exMap, open }) {
                   <Check size={22} />
                 </button>
                 <button onClick={() => delSet(ei, si)} className="w-6 text-neutral-600" aria-label="Удалить подход"><X size={16} /></button>
+              </div>
+              {(s.drops || []).map((dr, di) => (
+                <div key={di} className="mt-1 flex items-center gap-2 px-1">
+                  <span className={`w-8 shrink-0 text-center text-sm ${s.done ? "text-amber-400" : "text-neutral-600"}`}>↳</span>
+                  <input value={dr.w} placeholder={dr.hw || ""} inputMode="decimal" onChange={(ev) => setDrop(ei, si, di, { w: ev.target.value })}
+                    className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
+                  <input value={dr.r} placeholder={dr.hr || ""} inputMode="numeric" onChange={(ev) => setDrop(ei, si, di, { r: ev.target.value })}
+                    className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
+                  <span className="w-11" />
+                  <span className="w-11" />
+                  <button onClick={() => delDrop(ei, si, di)} className="w-6 text-neutral-600" aria-label="Убрать ступень"><X size={16} /></button>
+                </div>
+              ))}
+              {(s.drops || []).length > 0 && (
+                <button onClick={() => addDrop(ei, si)} className="ml-11 mt-1 py-1 text-xs text-neutral-500">+ ещё ступень</button>
+              )}
               </div>
             ))}
             <button onClick={() => addSet(ei)} className="mt-2 w-full rounded-lg py-2 text-xs text-neutral-400 active:bg-neutral-800">
@@ -863,6 +893,10 @@ function WorkoutTab({ data, up, exMap, open }) {
               <button onClick={() => set({ t: st0.t === "w" ? "" : "w", rir: null })}
                 className={`mb-4 w-full rounded-xl py-3 ${st0.t === "w" ? "bg-sky-400 font-semibold text-black" : "bg-neutral-800"}`}>
                 Разминочный подход
+              </button>
+              <button onClick={() => { addDrop(tagFor.ei, tagFor.si); setTagFor(null); }}
+                className="mb-4 w-full rounded-xl bg-neutral-800 py-3">
+                Добавить ступень <span className="text-xs text-neutral-400">(дроп-сет, лесенка, добивка)</span>
               </button>
               <div className="mb-2 text-xs text-neutral-400">Сколько повторов ещё мог сделать (RIR)</div>
               <div className="grid grid-cols-5 gap-1.5">
