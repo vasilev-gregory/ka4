@@ -958,6 +958,9 @@ function SettingsTab({ data, up, replace, saved }) {
         </ConfirmButton>
       )}
       {msg && <p className="mt-3 text-xs text-amber-400">{msg}</p>}
+      <p className="mt-8 text-xs text-neutral-600">
+        Версия от {new Date(__BUILD_TIME__).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+      </p>
     </div>
   );
 }
