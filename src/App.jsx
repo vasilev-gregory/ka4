@@ -167,6 +167,10 @@ function migrate(d) {
     else if (!e.ru) e.ru = se.ru;
   });
   if (!Array.isArray(d.measurements)) d.measurements = [];
+  d.exercises.forEach((e) => {
+    if (e.bw === undefined && BW_DEFAULTS[e.id]) e.bw = BW_DEFAULTS[e.id];
+    if (e.assist === undefined && ASSIST_DEFAULTS[e.id]) e.assist = true;
+  });
   // flatten nested drop sets from an earlier version into linear grouped sets
   const flat = (sets) => {
     const out = [];
@@ -253,16 +257,50 @@ function finalizeActive(d, updateProgram) {
 
 const PARTIAL_WEIGHT = 0.3;
 
+// ---------- bodyweight exercises ----------
+// For exercises where the body is the main load, working load = share of body weight + added weight.
+// Shares are rough biomechanics figures. "assist" = machine-assisted (gravitron): load = body weight − assistance.
+const BW_DEFAULTS = {
+  "pull-up": 1, "close-grip-chin-up": 1, "dips": 0.95, "triceps-dips": 0.95,
+  "bodyweight-squat": 0.85, "push-up": 0.65, "one-arm-push-up": 0.65, "inverted-row": 0.55,
+};
+const ASSIST_DEFAULTS = { "assisted-pull-up": true };
+// body weight source, refreshed by App on every render (measurements + settings fallback)
+let bodyCtx = { measurements: [], fallback: 0 };
+function bodyWeightAt(ts) {
+  const dayEnd = new Date(ts).setHours(23, 59, 59, 999);
+  let best = null;
+  for (const m of bodyCtx.measurements) {
+    const v = num(m.values && m.values.weight);
+    if (!v) continue;
+    if (m.date <= dayEnd && (!best || m.date > best.date)) best = m;
+  }
+  if (!best) { // nothing before that day: take the earliest measurement after it
+    for (const m of bodyCtx.measurements) {
+      const v = num(m.values && m.values.weight);
+      if (v && (!best || m.date < best.date)) best = m;
+    }
+  }
+  return best ? num(best.values.weight) : num(bodyCtx.fallback);
+}
+function setLoad(ex, s, bw) {
+  if (ex && ex.assist) return Math.max(0, bw - num(s.w));
+  if (ex && ex.bw) return ex.bw * bw + num(s.w);
+  return num(s.w);
+}
+
 function stats(w, exMap) {
   let vol = 0, sets = 0;
+  const bw = bodyWeightAt(w.startedAt);
   w.exercises.forEach((e) => {
-    const kind = exMap[e.exerciseId]?.kind;
+    const exd = exMap[e.exerciseId];
+    const kind = exd?.kind;
     e.sets.forEach((s, i) => {
       if (!s.done || s.t === "w") return; // warm-ups don't count
       const cont = s.g && i > 0 && e.sets[i - 1].g === s.g && e.sets[i - 1].done;
       if (!cont) sets++; // a drop set / ladder is one set
       // partial reps count as 30% of a full rep
-      if (kind !== "time") vol += num(s.w) * (num(s.r) + PARTIAL_WEIGHT * num(s.p));
+      if (kind !== "time") vol += setLoad(exd, s, bw) * (num(s.r) + PARTIAL_WEIGHT * num(s.p));
       if (kind !== "time") (s.drops || []).forEach((dr) => { vol += num(dr.w) * num(dr.r); });
     });
   });
@@ -1108,7 +1146,7 @@ function WorkoutTab({ data, up, exMap, open }) {
                 <span key={c} {...colHeaderProps(ei, c)}
                   className={`${c === "w" || c === "r" ? "flex-1" : "w-10"} rounded py-1 text-center ${
                     colDrag && colDrag.ei === ei ? (colDrag.key === c ? "bg-amber-400 text-black" : cols[colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
-                  {c === "w" ? "кг" : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR"}
+                  {c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг") : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR"}
                 </span>
               ))}
               <span className="w-10" /><span className="w-5" />
@@ -1395,12 +1433,14 @@ function ExerciseDetail({ data, up, exMap, id, back, open }) {
   if (!ex) return <div className="p-4"><Header title="Упражнение удалено" back={back} /></div>;
 
   const isTime = ex.kind === "time";
-  const metric = (sets) => {
+  const isBody = !!(ex.bw || ex.assist);
+  const metric = (sets, ts) => {
     const work = sets.filter((s) => s.t !== "w");
-    return Math.max(...(work.length ? work : sets).map((s) => (isTime ? num(s.r) : num(s.w))));
+    const bw = bodyWeightAt(ts);
+    return Math.round(Math.max(...(work.length ? work : sets).map((s) => (isTime ? num(s.r) : setLoad(ex, s, bw)))) * 10) / 10;
   };
-  const chart = sessions.slice().reverse().map((s) => ({ date: fmtShort(s.w.startedAt), v: metric(s.sets) }));
-  const best = sessions.length ? Math.max(...sessions.map((s) => metric(s.sets))) : 0;
+  const chart = sessions.slice().reverse().map((s) => ({ date: fmtShort(s.w.startedAt), v: metric(s.sets, s.w.startedAt) }));
+  const best = sessions.length ? Math.max(...sessions.map((s) => metric(s.sets, s.w.startedAt))) : 0;
   const mut = (fn) => up((d) => { const e = d.exercises.find((x) => x.id === id); if (e) fn(e); });
 
   return (
@@ -1427,13 +1467,26 @@ function ExerciseDetail({ data, up, exMap, id, back, open }) {
                 className={`rounded-full px-3 py-1 text-xs ${ex.kind === k ? "bg-neutral-100 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
             ))}
           </div>
+          <div className="mb-1.5 mt-3 text-xs text-neutral-400">Вес тела в нагрузке</div>
+          <div className="flex flex-wrap gap-1.5">
+            {[["нет", 0, false], ["100%", 1, false], ["95%", 0.95, false], ["85%", 0.85, false], ["65%", 0.65, false], ["55%", 0.55, false], ["гравитрон", 0, true]].map(([l, f, as]) => {
+              const on = as ? !!ex.assist : !ex.assist && (ex.bw || 0) === f;
+              return (
+                <button key={l} onClick={() => mut((x) => { x.assist = as; x.bw = as ? 0 : f; })}
+                  className={`rounded-full px-3 py-1 text-xs ${on ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-[11px] text-neutral-500">
+            Доля веса тела, которую реально поднимаешь. В «кг» тогда пишется дополнительный вес, а у гравитрона — помощь.
+          </p>
         </div>
       )}
 
       <div className="mb-4 flex items-center gap-6">
         <ExImg ex={ex} size={64} />
         <div><div className="text-2xl font-bold tabular-nums">{sessions.length}</div><div className="text-xs text-neutral-400">тренировок</div></div>
-        <div><div className="text-2xl font-bold tabular-nums text-amber-400">{best || "—"}</div><div className="text-xs text-neutral-400">{isTime ? "лучшее время, с" : "макс. вес, кг"}</div></div>
+        <div><div className="text-2xl font-bold tabular-nums text-amber-400">{best || "—"}</div><div className="text-xs text-neutral-400">{isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div></div>
       </div>
 
       {chart.length >= 2 && (
@@ -1873,6 +1926,12 @@ function SettingsTab({ data, up, replace, saved, back }) {
         {saved.state === "error" ? `Не сохраняется: ${saved.msg}`
           : saved.at ? `Сохранено в ${new Date(saved.at).toLocaleTimeString("ru-RU")}` : "Изменений пока не было"}
       </p>
+      <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-neutral-900 p-4">
+        <div><div className="font-semibold">Вес тела</div><div className="text-xs text-neutral-400">Если нет замеров. Нужен для подтягиваний, брусьев, отжиманий</div></div>
+        <input value={data.settings.bodyWeight || ""} inputMode="decimal" placeholder="кг"
+          onChange={(e) => up((d) => { d.settings.bodyWeight = e.target.value; })}
+          className="w-20 rounded-lg bg-black px-2 py-2 text-right tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
+      </div>
       <div className="mb-6 flex items-center justify-between rounded-xl bg-neutral-900 p-4">
         <div><div className="font-semibold">Отдых между подходами</div><div className="text-xs text-neutral-400">Для всех упражнений</div></div>
         <Stepper value={data.settings.restSec} step={15} min={15} fmt={(v) => fmtDur(v * 1000)}
@@ -2030,6 +2089,7 @@ export default function App() {
   if (!data) return <div className="flex min-h-screen items-center justify-center bg-black text-neutral-400">Загружаю…</div>;
 
   const view = stack[stack.length - 1];
+  bodyCtx = { measurements: data.measurements || [], fallback: data.settings.bodyWeight || 0 };
   const common = { data, up, exMap, open, back };
   let content;
   if (view?.type === "settings") content = <SettingsTab data={data} up={up} saved={saved} back={back} replace={(d) => { setData(d); setStack([]); }} />;
