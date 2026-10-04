@@ -158,7 +158,7 @@ function buildSets(d, exId, n) {
   return Array.from({ length: count }, (_, i) => {
     const s = prev[i] || prev[prev.length - 1];
     // values from last time are hints (shown gray), not entered values
-    return { w: "", r: "", p: "", hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "", done: false };
+    return { w: "", r: "", p: "", t: s && s.t === "w" ? "w" : "", hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "", done: false };
   });
 }
 
@@ -193,7 +193,7 @@ function finalizeActive(d, updateProgram) {
   delete w.restEndsAt;
   delete w.paused;
   w.exercises = w.exercises
-    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, done }) => ({ w: sw, r, p: p || "", done })) }))
+    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, done }) => ({ w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}), done })) }))
     .filter((e) => e.sets.length);
   if (w.exercises.length) d.workouts.push(w);
   d.active = null;
@@ -207,7 +207,7 @@ function stats(w, exMap) {
   w.exercises.forEach((e) => {
     const kind = exMap[e.exerciseId]?.kind;
     e.sets.forEach((s) => {
-      if (!s.done) return;
+      if (!s.done || s.t === "w") return; // warm-ups don't count
       sets++;
       // partial reps count as 30% of a full rep
       if (kind !== "time") vol += num(s.w) * (num(s.r) + PARTIAL_WEIGHT * num(s.p));
@@ -226,9 +226,17 @@ function fmtDur(ms) {
 const fmtKg = (v) => (v >= 1000 ? `${(v / 1000).toFixed(1).replace(".", ",")} т` : `${Math.round(v)} кг`);
 const fmtDate = (ts) => new Date(ts).toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" });
 const fmtShort = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "numeric" });
+// Effort per set, RP / Israetel style: reps in reserve. 4 means "4 or more".
+const RIR = [[4, "4+", "легко"], [3, "3", "норм"], [2, "2", "норм"], [1, "1", "тяжело"], [0, "0", "отказ"]];
+const rirLabel = (s) => (s.t === "w" ? "разм." : s.rir === 0 ? "отказ" : s.rir != null ? `RIR ${s.rir === 4 ? "4+" : s.rir}` : "");
+
 function fmtSets(sets, kind) {
   return sets
-    .map((s) => (kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`))
+    .map((s) => {
+      const base = kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`;
+      if (s.t === "w") return `разм. ${base}`;
+      return s.rir === 0 ? `${base} отказ` : s.rir != null ? `${base} RIR${s.rir === 4 ? "4+" : s.rir}` : base;
+    })
     .join(", ");
 }
 
@@ -633,6 +641,7 @@ function WorkoutTab({ data, up, exMap, open }) {
   const a = data.active;
   const [picker, setPicker] = useState(false);
   const [askUpdate, setAskUpdate] = useState(false);
+  const [tagFor, setTagFor] = useState(null);
   const now = useNow(1000, !!a && !a.paused);
   const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
 
@@ -784,14 +793,18 @@ function WorkoutTab({ data, up, exMap, open }) {
             </div>
             {!sort.dragging && (<>
             <div className="flex items-center gap-2 px-1 text-xs text-neutral-500">
-              <span className="w-5" /><span className="flex-1 text-center">кг</span>
+              <span className="w-8" /><span className="flex-1 text-center">кг</span>
               <span className="flex-1 text-center">{ex.kind === "time" ? "сек" : "повт."}</span>
               <span className="w-11 text-center">{ex.kind === "time" ? "" : "частич."}</span>
               <span className="w-11" /><span className="w-6" />
             </div>
             {e.sets.map((s, si) => (
               <div key={si} className="mt-1.5 flex items-center gap-2 px-1">
-                <span className={`w-5 text-xs ${s.done ? "text-amber-400" : "text-neutral-500"}`}>{si + 1}</span>
+                <button onClick={() => setTagFor({ ei, si })} aria-label="Тип подхода"
+                  className="flex h-11 w-8 shrink-0 flex-col items-center justify-center rounded-lg leading-none active:bg-neutral-800">
+                  <span className={`text-sm font-semibold ${s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}`}>{s.t === "w" ? "Р" : si + 1}</span>
+                  {rirLabel(s) && <span className={`mt-1 text-[9px] ${s.rir === 0 ? "text-red-400" : "text-neutral-400"}`}>{rirLabel(s)}</span>}
+                </button>
                 <input value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
                   className={`min-w-0 flex-1 rounded-lg bg-black px-2 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400 ${s.done ? "text-amber-300" : ""}`} />
                 <input value={s.r} placeholder={s.hr || ""} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
@@ -837,6 +850,35 @@ function WorkoutTab({ data, up, exMap, open }) {
           </>
         )}
       </div>
+
+      {tagFor && a.exercises[tagFor.ei]?.sets[tagFor.si] && (() => {
+        const st0 = a.exercises[tagFor.ei].sets[tagFor.si];
+        const set = (patch) => { setSet(tagFor.ei, tagFor.si, patch); setTagFor(null); };
+        return (
+          <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3" onClick={() => setTagFor(null)}>
+            <div className="safe-bottom mx-auto w-full max-w-md rounded-2xl bg-neutral-900 p-4" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-3 text-base font-semibold">
+                {exMap[a.exercises[tagFor.ei].exerciseId]?.name}, подход {tagFor.si + 1}
+              </div>
+              <button onClick={() => set({ t: st0.t === "w" ? "" : "w", rir: null })}
+                className={`mb-4 w-full rounded-xl py-3 ${st0.t === "w" ? "bg-sky-400 font-semibold text-black" : "bg-neutral-800"}`}>
+                Разминочный подход
+              </button>
+              <div className="mb-2 text-xs text-neutral-400">Сколько повторов ещё мог сделать (RIR)</div>
+              <div className="grid grid-cols-5 gap-1.5">
+                {RIR.map(([v, label, sub]) => (
+                  <button key={v} onClick={() => set({ rir: st0.rir === v ? null : v, t: "" })}
+                    className={`rounded-xl py-2.5 ${st0.rir === v ? (v === 0 ? "bg-red-500 text-white" : "bg-amber-400 text-black") : "bg-neutral-800"}`}>
+                    <div className="text-base font-bold">{label}</div>
+                    <div className="text-[10px] opacity-70">{sub}</div>
+                  </button>
+                ))}
+              </div>
+              <button onClick={() => set({ t: "", rir: null })} className="mt-3 w-full py-2 text-xs text-neutral-500">Сбросить</button>
+            </div>
+          </div>
+        );
+      })()}
 
       {askUpdate && (
         <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3" onClick={() => setAskUpdate(false)}>
@@ -1031,7 +1073,10 @@ function ExerciseDetail({ data, up, exMap, id, back, open }) {
   if (!ex) return <div className="p-4"><Header title="Упражнение удалено" back={back} /></div>;
 
   const isTime = ex.kind === "time";
-  const metric = (sets) => Math.max(...sets.map((s) => (isTime ? num(s.r) : num(s.w))));
+  const metric = (sets) => {
+    const work = sets.filter((s) => s.t !== "w");
+    return Math.max(...(work.length ? work : sets).map((s) => (isTime ? num(s.r) : num(s.w))));
+  };
   const chart = sessions.slice().reverse().map((s) => ({ date: fmtShort(s.w.startedAt), v: metric(s.sets) }));
   const best = sessions.length ? Math.max(...sessions.map((s) => metric(s.sets))) : 0;
   const mut = (fn) => up((d) => { const e = d.exercises.find((x) => x.id === id); if (e) fn(e); });
