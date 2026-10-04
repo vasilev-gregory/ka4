@@ -612,6 +612,7 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
     .filter(([, l]) => l.length);
   const exact = data.exercises.some((e) => e.name.toLowerCase() === ql || (e.ru || "").toLowerCase() === ql);
 
+  const chip = (active) => `shrink-0 rounded-full px-3 py-1 text-xs ${active ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`;
   const startCreate = (name) => { setNewName(name); setNewRu(""); if (filter) setGrp(filter); setCreating(true); };
   const create = () => {
     const name = newName.trim();
@@ -643,7 +644,6 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
       </div>
     </div>
   );
-  const chip = (active) => `shrink-0 rounded-full px-3 py-1 text-xs ${active ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`;
 
   return (
     <div>
