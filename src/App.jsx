@@ -529,6 +529,8 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState(""); // muscle group, "" = all
   const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newRu, setNewRu] = useState("");
   const [grp, setGrp] = useState("спина");
   const [kind, setKind] = useState("reps");
   const ql = q.trim().toLowerCase();
@@ -545,12 +547,37 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
     .filter(([, l]) => l.length);
   const exact = data.exercises.some((e) => e.name.toLowerCase() === ql || (e.ru || "").toLowerCase() === ql);
 
+  const startCreate = (name) => { setNewName(name); setNewRu(""); if (filter) setGrp(filter); setCreating(true); };
   const create = () => {
-    const ex = { id: uid(), name: q.trim(), group: grp, kind };
+    const name = newName.trim();
+    if (!name) return;
+    const ex = { id: uid(), name, ...(newRu.trim() ? { ru: newRu.trim() } : {}), group: grp, kind };
     up((d) => { d.exercises.push(ex); });
     setQ(""); setCreating(false);
     onSelect(ex);
   };
+  const createForm = (
+    <div className="mt-3 rounded-xl border border-dashed border-neutral-700 p-3">
+      <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Название"
+        className="mb-2 w-full rounded-lg bg-black px-3 py-2.5 outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
+      <input value={newRu} onChange={(e) => setNewRu(e.target.value)} placeholder="Второе название (необязательно)"
+        className="mb-3 w-full rounded-lg bg-black px-3 py-2.5 outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
+      <div className="mb-2 text-xs text-neutral-400">Группа мышц</div>
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {GROUPS.map((g) => <button key={g} onClick={() => setGrp(g)} className={chip(grp === g)}>{g}</button>)}
+      </div>
+      <div className="mb-3 flex gap-1.5">
+        {[["reps", "вес и повторы"], ["time", "вес и время"]].map(([k, l]) => (
+          <button key={k} onClick={() => setKind(k)}
+            className={`rounded-full px-3 py-1 text-xs ${kind === k ? "bg-neutral-100 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <button onClick={() => setCreating(false)} className="rounded-lg bg-neutral-800 px-4 py-2.5 text-neutral-300">Отмена</button>
+        <button onClick={create} disabled={!newName.trim()} className="flex-1 rounded-lg bg-amber-400 py-2.5 font-semibold text-black disabled:opacity-40">Создать</button>
+      </div>
+    </div>
+  );
   const chip = (active) => `shrink-0 rounded-full px-3 py-1 text-xs ${active ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`;
 
   return (
@@ -562,6 +589,12 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
           className="flex-1 bg-transparent py-3 outline-none placeholder-neutral-500" />
         {q && <button onClick={() => setQ("")} className="text-neutral-500"><X size={18} /></button>}
       </div>
+
+      {creating ? createForm : (
+        <button onClick={() => startCreate(q.trim())} className="mt-2 w-full rounded-xl border border-dashed border-neutral-700 py-2.5 text-sm text-neutral-300">
+          + Новое упражнение
+        </button>
+      )}
 
       <div className="-mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1">
         <button onClick={() => setFilter("")} className={chip(!filter)}>все</button>
@@ -591,25 +624,10 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
       ))}
 
       {ql && !exact && !creating && (
-        <button onClick={() => { setCreating(true); if (filter) setGrp(filter); }}
+        <button onClick={() => { startCreate(q.trim()); window.scrollTo({ top: 0, behavior: "smooth" }); }}
           className="mt-4 w-full rounded-xl border border-dashed border-neutral-700 py-3 text-neutral-300">
           + Создать «{q.trim()}»
         </button>
-      )}
-      {ql && !exact && creating && (
-        <div className="mt-4 rounded-xl border border-dashed border-neutral-700 p-3">
-          <div className="mb-2 text-xs text-neutral-300">Новое упражнение «{q.trim()}»: группа мышц</div>
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {GROUPS.map((g) => <button key={g} onClick={() => setGrp(g)} className={chip(grp === g)}>{g}</button>)}
-          </div>
-          <div className="mb-3 flex gap-1.5">
-            {[["reps", "вес и повторы"], ["time", "вес и время"]].map(([k, l]) => (
-              <button key={k} onClick={() => setKind(k)}
-                className={`rounded-full px-3 py-1 text-xs ${kind === k ? "bg-neutral-100 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
-            ))}
-          </div>
-          <button onClick={create} className="w-full rounded-lg bg-amber-400 py-2.5 font-semibold text-black">Создать</button>
-        </div>
       )}
     </div>
   );
