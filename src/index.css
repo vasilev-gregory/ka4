@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { background: #000; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
+body { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.above-nav { bottom: calc(4rem + env(safe-area-inset-bottom)); }
+input { font-size: 16px; } /* no auto-zoom on iOS */
