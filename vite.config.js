@@ -1,12 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
+import { execSync } from "node:child_process";
+
+let VERSION = "0";
+try { VERSION = execSync("git rev-list --count HEAD").toString().trim(); } catch (e) {}
 
 // emits dist/version.json so the app can ask the server which version is current
 const versionFile = () => ({
   name: "version-file",
   generateBundle() {
-    this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify({ commit: (process.env.GITHUB_SHA || "local").slice(0, 7), built: new Date().toISOString() }) });
+    this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify({ version: VERSION, commit: (process.env.GITHUB_SHA || "local").slice(0, 7), built: new Date().toISOString() }) });
   },
 });
 
@@ -15,6 +19,7 @@ export default defineConfig({
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     __COMMIT__: JSON.stringify((process.env.GITHUB_SHA || "local").slice(0, 7)),
+    __VERSION__: JSON.stringify(VERSION),
   },
   plugins: [
     react(),

@@ -743,6 +743,67 @@ function WorkoutTab({ data, up, exMap, open }) {
   const [askUpdate, setAskUpdate] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge
   const cols = setColumns(data.settings);
+  // hold a column title (кг, повт., …) and slide it left/right to reorder columns for all exercises
+  const [colDrag, setColDrag] = useState(null); // {ei, key, dx, to}
+  const hdrRefs = useRef({});
+  const colPress = useRef(null);
+  const reorderCols = (from, to) => up((d) => {
+    const full = columnConfig(d.settings);
+    const vis = setColumns(d.settings);
+    const nv = vis.slice();
+    const [k] = nv.splice(from, 1);
+    nv.splice(to, 0, k);
+    const visSet = new Set(vis);
+    let j = 0;
+    d.settings.columns = full.map((c) => {
+      if (!visSet.has(c.key)) return c;
+      const k2 = nv[j++];
+      return full.find((x) => x.key === k2);
+    });
+  });
+  const colHeaderProps = (ei, key) => ({
+    ref: (el) => { hdrRefs.current[`${ei}:${key}`] = el; },
+    style: {
+      touchAction: "none", WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none",
+      ...(colDrag && colDrag.ei === ei && colDrag.key === key ? { transform: `translateX(${colDrag.dx}px)`, position: "relative", zIndex: 20 } : {}),
+    },
+    onContextMenu: (e) => e.preventDefault(),
+    onPointerDown: (ev) => {
+      const x0 = ev.clientX;
+      const target = ev.currentTarget;
+      clearTimeout(colPress.current);
+      const cancel = () => clearTimeout(colPress.current);
+      target.addEventListener("pointerup", cancel, { once: true });
+      target.addEventListener("pointercancel", cancel, { once: true });
+      colPress.current = setTimeout(() => {
+        const rects = cols.map((c) => { const r = hdrRefs.current[`${ei}:${c}`].getBoundingClientRect(); return r.left + r.width / 2; });
+        const from = cols.indexOf(key);
+        let cur = { ei, key, dx: 0, to: from };
+        setColDrag(cur);
+        dragActive = true;
+        try { navigator.vibrate && navigator.vibrate(20); } catch (e) {}
+        const move = (e2) => {
+          const dx = e2.clientX - x0;
+          const x = rects[from] + dx;
+          let to = 0, best = Infinity;
+          rects.forEach((cx, j) => { if (Math.abs(x - cx) < best) { best = Math.abs(x - cx); to = j; } });
+          cur = { ...cur, dx, to };
+          setColDrag(cur);
+        };
+        const upH = () => {
+          window.removeEventListener("pointermove", move);
+          window.removeEventListener("pointerup", upH);
+          window.removeEventListener("pointercancel", upH);
+          dragActive = false;
+          setColDrag(null);
+          if (cur.to !== from) reorderCols(from, cur.to);
+        };
+        window.addEventListener("pointermove", move);
+        window.addEventListener("pointerup", upH);
+        window.addEventListener("pointercancel", upH);
+      }, 250);
+    },
+  });
   const pressT = useRef(null);
   const longFired = useRef(false);
   const focusVal = useRef(null);
@@ -983,7 +1044,9 @@ function WorkoutTab({ data, up, exMap, open }) {
             <div className="flex items-center gap-1.5 px-1 text-[11px] text-neutral-500">
               <span className="w-8" />
               {cols.map((c) => (
-                <span key={c} className={`${c === "w" || c === "r" ? "flex-1" : "w-10"} text-center`}>
+                <span key={c} {...colHeaderProps(ei, c)}
+                  className={`${c === "w" || c === "r" ? "flex-1" : "w-10"} rounded py-1 text-center ${
+                    colDrag && colDrag.ei === ei ? (colDrag.key === c ? "bg-amber-400 text-black" : cols[colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
                   {c === "w" ? "кг" : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR"}
                 </span>
               ))}
@@ -1668,8 +1731,8 @@ function UpdateButton() {
     try {
       const res = await fetch(`${import.meta.env.BASE_URL}version.json?t=${Date.now()}`, { cache: "no-store" });
       const v = await res.json();
-      if (v.commit === __COMMIT__) { setMsg(`У тебя последняя версия (${__COMMIT__})`); setBusy(false); return; }
-      setMsg(`Есть новая версия ${v.commit}, обновляю…`);
+      if (v.version === __VERSION__) { setMsg(`У тебя последняя версия, ${__VERSION__}`); setBusy(false); return; }
+      setMsg(`Есть версия ${v.version} (у тебя ${__VERSION__}), обновляю…`);
     } catch (e) {
       setMsg("Не получилось проверить, обновляю принудительно…");
     }
@@ -1742,7 +1805,7 @@ function SettingsTab({ data, up, replace, saved, back }) {
     <div className="p-4 pb-28">
       <Header title="Настройки" back={back} />
       <p className="-mt-3 mb-4 text-xs text-neutral-400">
-        Версия {__COMMIT__} от {new Date(__BUILD_TIME__).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+        Версия {__VERSION__} от {new Date(__BUILD_TIME__).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
       </p>
       <UpdateButton />
       <p className={`-mt-2 mb-4 text-xs ${saved.state === "error" ? "text-red-400" : "text-neutral-500"}`}>
