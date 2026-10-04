@@ -2953,7 +2953,7 @@ export default function App() {
   else if (tab === "measures") content = <MeasuresTab {...common} openSettings={() => open({ type: "settings" })} />;
 
   return (
-    <div className="min-h-screen bg-black text-sm text-neutral-100">
+    <div className={`min-h-screen bg-black text-sm text-neutral-100 ${stretchMode ? "mode-stretch" : ""}`}>
       {saved.state === "error" && (
         <div className="fixed inset-x-0 top-0 z-50 bg-red-600 px-4 py-2 text-center text-xs text-white">
           Изменения не сохраняются. Сделай копию в настройках.
