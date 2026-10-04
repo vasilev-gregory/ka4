@@ -441,6 +441,7 @@ function startWorkout(up, p) {
 function WorkoutTab({ data, up, exMap, open }) {
   const a = data.active;
   const [picker, setPicker] = useState(false);
+  const [askUpdate, setAskUpdate] = useState(false);
   const now = useNow(1000, !!a);
   const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
 
@@ -505,9 +506,18 @@ function WorkoutTab({ data, up, exMap, open }) {
     setPicker(false);
   };
   const hasDone = a.exercises.some((e) => e.sets.some((s) => s.done));
-  const finish = () => {
+  const program = a.programId ? data.programs.find((p) => p.id === a.programId) : null;
+  const newItems = a.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
+  const programChanged = !!program && JSON.stringify(program.items) !== JSON.stringify(newItems);
+  const finish = () => (programChanged ? setAskUpdate(true) : doFinish(false));
+  const doFinish = (updateProgram) => {
+    setAskUpdate(false);
     const id = a.id;
     up((d) => {
+      if (updateProgram) {
+        const p = d.programs.find((x) => x.id === d.active.programId);
+        if (p) p.items = d.active.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
+      }
       const w = d.active;
       w.finishedAt = Date.now();
       delete w.restEndsAt;
@@ -591,6 +601,19 @@ function WorkoutTab({ data, up, exMap, open }) {
         </ConfirmButton>
         <button onClick={finish} className="flex-1 rounded-xl bg-amber-400 py-3 font-semibold text-neutral-900">Завершить</button>
       </div>
+
+      {askUpdate && (
+        <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3" onClick={() => setAskUpdate(false)}>
+          <div className="safe-bottom mx-auto w-full max-w-md rounded-2xl bg-neutral-900 p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-1 text-base font-semibold">Обновить программу?</div>
+            <p className="mb-4 text-xs text-neutral-400">
+              Состав или подходы отличаются от «{program?.name}». Можно записать в программу то, как ты тренировался сегодня.
+            </p>
+            <button onClick={() => doFinish(true)} className="mb-2 w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Обновить программу</button>
+            <button onClick={() => doFinish(false)} className="w-full rounded-xl bg-neutral-800 py-3 text-neutral-300">Оставить программу как была</button>
+          </div>
+        </div>
+      )}
 
       {picker && <Picker data={data} up={up} onPick={addEx} onClose={() => setPicker(false)}
         title={picker.replace !== undefined ? "Заменить упражнение" : undefined} />}
