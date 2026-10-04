@@ -1907,6 +1907,39 @@ function SettingsTab({ data, up, replace, saved, back }) {
     try { await navigator.clipboard.writeText(txt); setMsg("Скопировано в буфер обмена"); }
     catch (e) { setMsg("Скопируй текст из поля вручную"); }
   };
+  const [pending, setPending] = useState(null); // backup read from a file, waiting for confirmation
+  const fileRef = useRef(null);
+  const shareFile = async () => {
+    const txt = JSON.stringify({ ...data, exportedAt: new Date().toISOString() });
+    const name = `kach-backup-${isoDay(Date.now())}.json`;
+    const file = new File([txt], name, { type: "application/json" });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Кач: резервная копия" });
+        setMsg("Файл отправлен");
+        return;
+      }
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+    }
+    // no share sheet: just download it
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setMsg("Файл сохранён в загрузки");
+  };
+  const pickFile = async (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    ev.target.value = "";
+    if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!Array.isArray(d.exercises) || !Array.isArray(d.programs) || !Array.isArray(d.workouts)) throw new Error();
+      setPending(d);
+      setMsg("");
+    } catch (e) { setMsg("Это не похоже на копию из приложения"); }
+  };
   const doImport = () => {
     try {
       const d = JSON.parse(imp);
@@ -1948,6 +1981,25 @@ function SettingsTab({ data, up, replace, saved, back }) {
       <ColumnsSettings data={data} up={up} />
 
       <h2 className="mb-2 font-semibold">Резервная копия</h2>
+      <button onClick={shareFile} className="mb-2 w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Отправить копию файлом</button>
+      <button onClick={() => fileRef.current && fileRef.current.click()} className="mb-2 w-full rounded-xl bg-neutral-900 py-3 active:bg-neutral-800">
+        Загрузить копию из файла
+      </button>
+      <input ref={fileRef} type="file" accept=".json,application/json" onChange={pickFile} className="hidden" />
+      {pending && (
+        <div className="mb-3 rounded-xl bg-neutral-900 p-3 text-xs">
+          <p className="mb-2 text-neutral-300">
+            В файле: тренировок {pending.workouts.length}, программ {pending.programs.length}
+            {pending.exportedAt ? `, сохранено ${fmtDate(Date.parse(pending.exportedAt))}` : ""}. Текущие данные будут заменены.
+          </p>
+          <div className="flex gap-2">
+            <button onClick={() => setPending(null)} className="rounded-lg bg-neutral-800 px-4 py-2.5 text-neutral-300">Отмена</button>
+            <button onClick={() => { replace(migrate({ settings: { restSec: 120 }, active: null, ...pending })); setPending(null); setMsg("Данные загружены"); }}
+              className="flex-1 rounded-lg bg-red-600 py-2.5 font-semibold text-white">Заменить</button>
+          </div>
+        </div>
+      )}
+      <p className="mb-2 mt-4 text-xs text-neutral-500">Или текстом:</p>
       <button onClick={doExport} className="w-full rounded-xl bg-neutral-900 py-3 active:bg-neutral-800">Скопировать все данные</button>
       {exp && <textarea readOnly value={exp} onFocus={(e) => e.target.select()} className="mt-2 h-24 w-full rounded-xl bg-neutral-900 p-3 text-xs text-neutral-400" />}
 
