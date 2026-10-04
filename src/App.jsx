@@ -355,8 +355,8 @@ function ExImg({ ex, size = 40 }) {
 let actx = null;
 function unlockAudio() {
   try {
-    // iOS 17+: play even when the silent switch is on
-    if (navigator.audioSession) navigator.audioSession.type = "playback";
+    // iOS: "ambient" mixes with music instead of stopping it (but respects the silent switch)
+    if (navigator.audioSession) navigator.audioSession.type = "ambient";
     if (!actx) { const C = window.AudioContext || window.webkitAudioContext; actx = new C(); }
     if (actx.state === "suspended") actx.resume();
   } catch (e) {}
