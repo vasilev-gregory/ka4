@@ -614,6 +614,17 @@ function Picker({ data, up, onPick, onClose, title = "Добавить упра�
 // ---------- drag to reorder (hold the grip and pull) ----------
 function moveItem(xs, from, to) { const [x] = xs.splice(from, 1); xs.splice(to, 0, x); }
 
+// iOS WebKit can start a page scroll on a drag handle and then cancel our pointer stream.
+// Block scrolling from handles (and everywhere while a drag is active) with non-passive listeners.
+let dragActive = false;
+if (typeof document !== "undefined" && !window.__dragGuard) {
+  window.__dragGuard = true;
+  document.addEventListener("touchstart", (e) => {
+    if (e.target && e.target.closest && e.target.closest("[data-drag-handle]")) e.preventDefault();
+  }, { passive: false });
+  document.addEventListener("touchmove", (e) => { if (dragActive) e.preventDefault(); }, { passive: false });
+}
+
 function useSortable(onMove) {
   const [drag, setDrag] = useState(null); // {from, to, dy}
   const refs = useRef([]);
@@ -660,8 +671,16 @@ function useSortable(onMove) {
 
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
+  const winHandlers = useRef(null);
   const end = () => {
     cancelAnimationFrame(raf.current);
+    dragActive = false;
+    if (winHandlers.current) {
+      window.removeEventListener("pointermove", winHandlers.current.move);
+      window.removeEventListener("pointerup", winHandlers.current.up);
+      window.removeEventListener("pointercancel", winHandlers.current.up);
+      winHandlers.current = null;
+    }
     const s = st.current;
     st.current = null;
     setDrag(null);
@@ -669,17 +688,23 @@ function useSortable(onMove) {
   };
 
   const handleProps = (i, count) => ({
-    style: { touchAction: "none" },
+    "data-drag-handle": "",
+    style: { touchAction: "none", WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none" },
     onPointerDown: (ev) => {
       ev.preventDefault();
       try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
       st.current = { from: i, to: i, y: ev.clientY, count, rects: null, dy: 0 };
+      dragActive = true;
+      // listen on window too, in case pointer capture doesn't hold on this browser
+      const move = (e2) => { if (st.current) { st.current.y = e2.clientY; update(); } };
+      const upH = () => end();
+      winHandlers.current = { move, up: upH };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", upH);
+      window.addEventListener("pointercancel", upH);
       setDrag({ from: i, to: i, dy: 0 });
       try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
     },
-    onPointerMove: (ev) => { if (st.current) { st.current.y = ev.clientY; update(); } },
-    onPointerUp: end,
-    onPointerCancel: end,
   });
 
   const itemStyle = (i) => {
