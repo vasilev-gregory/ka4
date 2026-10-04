@@ -1,3 +1,5 @@
+# Clicks through every main screen in a mobile-sized headless browser and fails loudly on JS errors.
+# Run: npm run build && (npx vite preview --port 4173 &) && python3 scripts/smoke.py
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
     b=p.chromium.launch()
@@ -8,11 +10,8 @@ with sync_playwright() as p:
     def chk(name):
         t=pg.inner_text("body").strip()
         print(name, "OK" if len(t)>20 else "BLANK", errs[-1:] if errs else "")
-    for tab in ["История","Упражнения","Замеры","Настройки","Тренировка"]:
+    for tab in ["История","Замеры","Настройки","Тренировка"]:
         pg.get_by_role("button", name=tab).last.tap(); pg.wait_for_timeout(400); chk("tab "+tab)
-    pg.get_by_role("button", name="Упражнения").last.tap(); pg.wait_for_timeout(300)
-    pg.get_by_text("Pull up").first.tap(); pg.wait_for_timeout(400); chk("exercise detail")
-    pg.get_by_role("button", name="Изменить").tap(); pg.wait_for_timeout(300); chk("exercise edit")
     pg.get_by_role("button", name="Замеры").last.tap(); pg.wait_for_timeout(300)
     pg.get_by_text("Новый замер").tap(); pg.wait_for_timeout(300); chk("measure editor")
     pg.get_by_role("button", name="Тренировка").last.tap(); pg.wait_for_timeout(300)
@@ -20,10 +19,27 @@ with sync_playwright() as p:
     pg.get_by_role("button", name="Подход сделан").first.tap(); pg.wait_for_timeout(300); chk("set done")
     pg.get_by_text("Добавить упражнение").first.tap(); pg.wait_for_timeout(400); chk("picker in workout")
     pg.get_by_text("Pull up").first.tap(); pg.wait_for_timeout(400); chk("added")
+    pg.get_by_text("Squat").first.tap(); pg.wait_for_timeout(400); chk("exercise detail")
+    pg.get_by_role("button", name="Изменить").tap(); pg.wait_for_timeout(300); chk("exercise edit")
+    pg.get_by_role("button", name="Назад").tap(); pg.wait_for_timeout(300)
     pg.get_by_role("button", name="Пауза").tap(); pg.wait_for_timeout(300); chk("pause")
     pg.get_by_role("button", name="Завершить").tap(); pg.wait_for_timeout(500); chk("finish")
     btn=pg.get_by_text("Оставить программу как была")
     if btn.count(): btn.tap(); pg.wait_for_timeout(500); chk("finished")
     pg.get_by_role("button", name="История").last.tap(); pg.wait_for_timeout(400); chk("history after")
+    # stretching mode
+    pg.get_by_role("button", name="Настройки").last.tap(); pg.wait_for_timeout(300)
+    pg.get_by_role("button", name="Растяжка", exact=True).tap(); pg.wait_for_timeout(900)
+    pg.get_by_role("button", name="Тренировка").last.tap(); pg.wait_for_timeout(300); chk("stretch home")
+    pg.get_by_text("+ Новая программа растяжки").tap(); pg.wait_for_timeout(300); chk("stretch editor")
+    for name in ["Четвёрка","Пицца"]:
+        pg.get_by_text("Добавить растяжку").tap(); pg.wait_for_timeout(300)
+        pg.get_by_text(name).first.tap(); pg.wait_for_timeout(300)
+    pg.get_by_text("Четвёрка").first.tap(); pg.wait_for_timeout(300); chk("item overrides")
+    pg.get_by_role("button", name="Начать").last.tap(); pg.wait_for_timeout(1500); chk("player")
+    pg.get_by_role("button", name="Пропустить").tap(); pg.wait_for_timeout(300)
+    pg.get_by_role("button", name="Пауза").tap(); pg.wait_for_timeout(300); chk("player paused")
+    pg.get_by_role("button", name="Закрыть").first.tap(); pg.wait_for_timeout(300)
+    pg.get_by_role("button", name="История").last.tap(); pg.wait_for_timeout(300); chk("stretch history")
     print("errors:", errs)
     b.close()
