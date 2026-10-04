@@ -246,8 +246,8 @@ function finalizeActive(d, updateProgram) {
   delete w.restEndsAt;
   delete w.paused;
   w.exercises = w.exercises
-    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, g, done }) => ({
-      w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}), ...(g ? { g } : {}), done,
+    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, g, at, done }) => ({
+      w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}), ...(g ? { g } : {}), ...(at ? { at } : {}), done,
     })) }))
     .filter((e) => e.sets.length);
   if (w.exercises.length) d.workouts.push(w);
@@ -256,6 +256,27 @@ function finalizeActive(d, updateProgram) {
 }
 
 const PARTIAL_WEIGHT = 0.3;
+
+// ---------- rest times ----------
+// Gaps between consecutive confirmed sets. Steps of a drop set don't count, nor gaps across a pause
+// or longer than 15 min (that's not rest, that's a break).
+function restStats(w) {
+  const evs = [];
+  w.exercises.forEach((e, ei) => e.sets.forEach((s) => { if (s.done && s.at) evs.push({ at: s.at, ei, g: s.g }); }));
+  evs.sort((a, b) => a.at - b.at);
+  const pauses = segmentsOf(w).map((sg) => sg.end).filter(Boolean);
+  const between = { sets: [], ex: [] };
+  for (let i = 1; i < evs.length; i++) {
+    const a = evs[i - 1], b = evs[i];
+    const gap = b.at - a.at;
+    if (gap <= 0 || gap > 15 * 60e3) continue;
+    if (pauses.some((t) => t > a.at && t < b.at)) continue;
+    if (a.ei === b.ei && a.g && a.g === b.g) continue;
+    (a.ei === b.ei ? between.sets : between.ex).push(gap);
+  }
+  const avg = (xs) => (xs.length ? xs.reduce((x, y) => x + y, 0) / xs.length : 0);
+  return { sets: avg(between.sets), ex: avg(between.ex), nSets: between.sets.length, nEx: between.ex.length };
+}
 
 // ---------- bodyweight exercises ----------
 // For exercises where the body is the main load, working load = share of body weight + added weight.
@@ -980,10 +1001,15 @@ function WorkoutTab({ data, up, exMap, open }) {
       }
       if (s.done && d.active.paused) { closeSegment(d.active); d.active.segments.push({ start: Date.now() }); d.active.paused = false; }
       if (s.done) {
+        s.at = Date.now(); // for rest-time stats
+        d.active.lastSetAt = s.at;
         // no rest in the middle of a drop set / ladder
         const nx = d.active.exercises[ei].sets[si + 1];
         const midGroup = s.g && nx && nx.g === s.g && !nx.done;
-        d.active.restEndsAt = midGroup ? null : Date.now() + d.settings.restSec * 1000;
+        const countdown = d.settings.restMode !== "stopwatch";
+        d.active.restEndsAt = midGroup || !countdown ? null : Date.now() + d.settings.restSec * 1000;
+      } else {
+        delete s.at;
       }
     });
   };
@@ -1255,6 +1281,17 @@ function WorkoutTab({ data, up, exMap, open }) {
 
       {picker && <Picker data={data} up={up} onPick={addEx} onClose={() => setPicker(false)}
         title={picker.replace !== undefined ? "Заменить упражнение" : undefined} />}
+    </div>
+  );
+}
+
+function SinceBar({ since }) {
+  const now = useNow(1000, true);
+  return (
+    <div className="above-nav pointer-events-none fixed inset-x-0 z-40 flex justify-center px-3">
+      <div className="rounded-full bg-neutral-100 px-4 py-2 text-sm font-semibold tabular-nums text-black shadow-lg">
+        Отдых {fmtDur(now - since)}
+      </div>
     </div>
   );
 }
@@ -1677,6 +1714,20 @@ function WorkoutDetail({ data, up, exMap, id, back, open }) {
           </div>
         ))}
       </div>
+      {(() => {
+        const rs = restStats(w);
+        if (!rs.nSets && !rs.nEx) return null;
+        return (
+          <div className="-mt-3 mb-5 grid grid-cols-2 gap-2">
+            {[[rs.nSets ? fmtDur(rs.sets) : "—", "средний отдых между подходами"], [rs.nEx ? fmtDur(rs.ex) : "—", "между упражнениями"]].map(([v, l]) => (
+              <div key={l} className="rounded-xl bg-neutral-900 p-3">
+                <div className="text-lg font-bold tabular-nums">{v}</div>
+                <div className="text-xs text-neutral-400">{l}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
       <div className="space-y-2">
         {w.exercises.map((e, i) => {
           const ex = exMap[e.exerciseId] || { name: "Удалённое упражнение", kind: "reps" };
@@ -1965,8 +2016,22 @@ function SettingsTab({ data, up, replace, saved, back }) {
           onChange={(e) => up((d) => { d.settings.bodyWeight = e.target.value; })}
           className="w-20 rounded-lg bg-black px-2 py-2 text-right tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
       </div>
-      <div className="mb-6 flex items-center justify-between rounded-xl bg-neutral-900 p-4">
-        <div><div className="font-semibold">Отдых между подходами</div><div className="text-xs text-neutral-400">Для всех упражнений</div></div>
+      <div className="mb-3 rounded-xl bg-neutral-900 p-4">
+        <div className="mb-2 font-semibold">Таймер после подхода</div>
+        <div className="flex gap-1.5">
+          {[["countdown", "обратный отсчёт"], ["stopwatch", "секундомер"]].map(([k, l]) => (
+            <button key={k} onClick={() => up((d) => { d.settings.restMode = k; if (d.active) d.active.restEndsAt = null; })}
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${(data.settings.restMode || "countdown") === k ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-neutral-500">
+          {data.settings.restMode === "stopwatch"
+            ? "После подхода просто видно, сколько прошло с последней галочки. Без сигналов."
+            : "Отсчитывает заданное время и сигналит в конце."}
+        </p>
+      </div>
+      <div className={`mb-6 flex items-center justify-between rounded-xl bg-neutral-900 p-4 ${data.settings.restMode === "stopwatch" ? "opacity-40" : ""}`}>
+        <div><div className="font-semibold">Отдых между подходами</div><div className="text-xs text-neutral-400">Для обратного отсчёта</div></div>
         <Stepper value={data.settings.restSec} step={15} min={15} fmt={(v) => fmtDur(v * 1000)}
           onChange={(v) => up((d) => { d.settings.restSec = v; })} />
       </div>
@@ -2166,6 +2231,9 @@ export default function App() {
       )}
       <div className="mx-auto max-w-md pb-20">{content}</div>
 
+      {data.active && !data.active.paused && data.settings.restMode === "stopwatch" && data.active.lastSetAt && (
+        <SinceBar since={data.active.lastSetAt} />
+      )}
       {data.active?.restEndsAt && <RestBar key={data.active.restEndsAt} endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={data.settings.sound !== false} />}
 
       <nav className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800 bg-black">
