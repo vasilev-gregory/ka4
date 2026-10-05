@@ -14,8 +14,19 @@ export function startWorkout(d, program, now = Date.now()) {
     segments: [{ start: now }],
     paused: false,
     restEndsAt: null,
+    warmup: { doneAt: null }, // every workout opens with a warm-up block (no exercises in it yet)
     exercises: (program?.items || []).map((it) => ({ exerciseId: it.exerciseId, sets: buildSets(d, it.exerciseId, it.sets) })),
   };
+}
+
+// Warm-up done: the rest before the first set starts now (countdown if on, stopwatch on the first set).
+export function finishWarmup(d, now = Date.now()) {
+  const a = d.active;
+  if (!a.warmup || a.warmup.doneAt) return;
+  if (a.paused) resumeWorkout(d, now);
+  a.warmup.doneAt = now;
+  a.lastSetAt = now;
+  a.restEndsAt = d.settings.countdown !== false ? now + d.settings.restSec * 1000 : null;
 }
 
 export function pauseWorkout(d, now = Date.now()) {
@@ -55,6 +66,7 @@ export function toggleSet(d, ei, si, now = Date.now()) {
   if (!s.p && s.hp) s.p = s.hp;
   if (num(s.p) > 0 && s.t !== "w") s.rir = 0;
   if (a.paused) resumeWorkout(d, now);
+  if (a.warmup && !a.warmup.doneAt) a.warmup.doneAt = now; // went straight to the sets: warm-up is over
   s.at = now; // for rest-time stats
   a.lastSetAt = now;
   const next = a.exercises[ei].sets[si + 1];
@@ -119,6 +131,12 @@ export function replaceExercise(d, ei, ex) {
 
 export function removeExercise(d, ei) {
   d.active.exercises.splice(ei, 1);
+}
+
+// undo of removeExercise: back where it was (or at the end if the list got shorter)
+export function restoreExercise(d, ei, exercise) {
+  const list = d.active.exercises;
+  list.splice(Math.min(ei, list.length), 0, exercise);
 }
 
 // yesterday's auto-closed workout differed from its program: write the change, or drop the offer

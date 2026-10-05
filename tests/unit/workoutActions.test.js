@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../../src/model/state.js";
-import { liveRestKey } from "../../src/model/workout.js";
+import { liveRestKey, restBefore } from "../../src/model/workout.js";
 import * as A from "../../src/model/workoutActions.js";
 
 const T0 = 1_700_000_000_000;
@@ -99,4 +99,32 @@ test("yesterday's program update: apply or dismiss", () => {
   A.resolvePendingProgramUpdate(d, true);
   assert.deepEqual(p.items, [{ exerciseId: "squat", sets: 5 }]);
   assert.equal(d.pendingProgramUpdate, undefined);
+});
+
+test("a workout opens with a warm-up; finishing it starts the rest before the first set", () => {
+  const d = withWorkout([blank(), blank()]);
+  assert.deepEqual(d.active.warmup, { doneAt: null });
+  assert.equal(liveRestKey(d.active), null);
+  A.finishWarmup(d, T0 + 300_000);
+  assert.equal(d.active.warmup.doneAt, T0 + 300_000);
+  assert.equal(d.active.restEndsAt, T0 + 300_000 + 90_000);
+  assert.equal(liveRestKey(d.active), "0:0"); // stopwatch on the first set
+  A.toggleSet(d, 0, 0, T0 + 360_000);
+  assert.equal(restBefore(d.active)["0:0"], 60_000); // rest before the first set counts from the warm-up
+  assert.equal(liveRestKey(d.active), "0:1");
+});
+
+test("ticking a set before finishing the warm-up ends it", () => {
+  const d = withWorkout([blank()]);
+  A.toggleSet(d, 0, 0, T0 + 5000);
+  assert.equal(d.active.warmup.doneAt, T0 + 5000);
+});
+
+test("a removed exercise comes back where it was", () => {
+  const d = withWorkout([blank()]);
+  d.active.exercises.push({ exerciseId: "dips", sets: [] });
+  const [removed] = d.active.exercises.slice(0, 1);
+  A.removeExercise(d, 0);
+  A.restoreExercise(d, 0, removed);
+  assert.deepEqual(d.active.exercises.map((e) => e.exerciseId), ["squat", "dips"]);
 });

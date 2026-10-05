@@ -54,10 +54,12 @@
  * @property {number} [finishedAt]
  * @property {{ start: number, end?: number }[]} segments  continuations of the same day's workout (pause → continue)
  * @property {{ exerciseId: string, sets: WorkoutSet[] }[]} exercises
+ * @property {{ doneAt: number|null }} [warmup]  the warm-up block (workouts started before it existed have none)
  */
 
 /**
  * @typedef {Workout & { paused: boolean, restEndsAt: number|null, lastSetAt?: number }} ActiveWorkout
+ *   lastSetAt: start of the running rest (the last confirmed set, or the end of the warm-up)
  */
 
 /**

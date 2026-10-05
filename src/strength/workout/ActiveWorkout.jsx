@@ -15,6 +15,7 @@ import { useWakeLock } from "../../ui/useWakeLock.js";
 import { moveItem, useSortable } from "../../ui/sortable.js";
 import { Picker } from "../ExerciseList.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
+import { WarmupCard } from "./WarmupCard.jsx";
 import { WorkoutHelp } from "./WorkoutHelp.jsx";
 
 const UNKNOWN_EXERCISE = { name: "Удалённое упражнение", kind: "reps" };
@@ -33,6 +34,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const { drag: colDrag, headerProps } = useHoldReorder((from, to) => up((d) => A.moveColumn(d.settings, from, to)));
   const longPress = useLongPress();
   const { swipe, bind: swipeBind } = useSwipeRows({ disabled: !!sel, onStart: longPress.cancel });
+  const { swipe: exSwipe, bind: exSwipeBind } = useSwipeRows({ disabled: !!sel || sort.dragging });
 
   const cols = setColumns(data.settings);
   const restOn = restShown(data.settings);
@@ -60,7 +62,11 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   // actions of one exercise card
   const cardActions = (ei) => ({
     replace: () => setPicker({ replace: ei }),
-    remove: () => up((d) => A.removeExercise(d, ei)),
+    remove: () => {
+      const removed = structuredClone(a.exercises[ei]);
+      up((d) => A.removeExercise(d, ei));
+      undo.offer("Упражнение убрано", () => up((d) => A.restoreExercise(d, ei, removed)));
+    },
     addSet: () => up((d) => A.addSet(d, ei)),
     editSet: (si, patch) => up((d) => A.setSet(d, ei, si, patch)),
     toggleSet: (si) => { unlockAudio(); up((d) => A.toggleSet(d, ei, si)); },
@@ -114,6 +120,8 @@ export function ActiveWorkout({ data, up, exMap, open }) {
         </div>
       </div>
 
+      {a.warmup && <WarmupCard warmup={a.warmup} startedAt={a.startedAt} now={now} onDone={() => { unlockAudio(); up((d) => A.finishWarmup(d)); }} />}
+
       {a.paused && (
         <Button block onClick={() => up((d) => A.resumeWorkout(d))} className="mb-3 flex items-center justify-center gap-2">
           <Play size={18} /> Продолжить тренировку
@@ -125,7 +133,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           last={lastSession(data.workouts, e.exerciseId)}
           records={recordSets(e.sets, exMap[e.exerciseId], bwAt(a.startedAt), bestE1rm(data.workouts, e.exerciseId, exMap[e.exerciseId], bwAt))}
           cols={cols} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
-          g={{ swipe, swipeBind, headerProps, colDrag, numberProps: numberProps(ei) }}
+          g={{ swipe, swipeBind, exSwipe, exSwipeBind, headerProps, colDrag, numberProps: numberProps(ei) }}
           sel={sel} rests={rests} liveKey={liveKey} liveMs={now - a.lastSetAt} act={cardActions(ei)} open={open} />
       ))}
 

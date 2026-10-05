@@ -105,3 +105,31 @@ test("hints, last time's values, numbers only, records, undo of a swipe mark, pr
   await expect(page.getByText("рекорд", { exact: true })).toBeVisible();
   await expect(page.getByText(/^объём, [+−]\d+%$/)).toBeVisible();
 });
+
+test("warm-up first, then the rest before the first set; swipe an exercise away and back", async ({ page, context }) => {
+  await openApp(page);
+  await startWorkout(page);
+  await expect(page.getByText("Закончил разминку")).toBeVisible();
+  await page.getByText("Закончил разминку").click();
+  await expect(page.getByText("Закончил разминку")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Хватит" })).toBeVisible(); // rest countdown started
+  await expect.poll(async () => (await stored(page)).active?.warmup?.doneAt || 0).toBeGreaterThan(0);
+
+  const titles = () => page.locator("button.ml-2.min-w-0 > div.font-semibold");
+  const first = await titles().first().innerText();
+  const cdp = await context.newCDPSession(page);
+  const swipeTitle = async (dx) => {
+    const box = await titles().first().boundingBox();
+    const x = box.x + box.width / 2, y = box.y + box.height / 2;
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+    for (let k = 1; k <= 12; k++) { await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + (dx * k) / 12, y }] }); await page.waitForTimeout(15); }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  };
+  await swipeTitle(-140);
+  await expect(page.getByText("Упражнение убрано")).toBeVisible();
+  expect(await titles().first().innerText()).not.toBe(first);
+  await page.getByText("Вернуть").click();
+  await expect(titles().first()).toHaveText(first);
+  await swipeTitle(140);
+  await expect(page.getByText("Заменить упражнение")).toBeVisible();
+});
