@@ -11,16 +11,20 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
 
 /* Accent colour: amber in strength mode, teal in stretching mode. Use bg-accent-400 etc., never amber/teal directly. */
 @theme {
+  --color-accent-200: #fde68a;
   --color-accent-300: #fcd34d;
   --color-accent-400: #fbbf24;
   --color-accent-500: #f59e0b;
   --color-accent-700: #b45309;
+  --color-accent-900: #78350f;
   --color-accent-950: #451a03;
 }
 .mode-stretch {
+  --color-accent-200: #99f6e4;
   --color-accent-300: #5eead4;
   --color-accent-400: #2dd4bf;
   --color-accent-500: #14b8a6;
   --color-accent-700: #0f766e;
+  --color-accent-900: #134e4a;
   --color-accent-950: #042f2e;
 }

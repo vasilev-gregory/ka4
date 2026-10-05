@@ -1,5 +1,5 @@
 // Shared UI primitives and the app context hook.
-import { useState, useEffect, createContext, useContext, useRef } from "react";
+import { useState, useEffect, createContext, useContext, useRef, lazy, Suspense } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { IMGS } from "../model/images.js";
 
@@ -33,7 +33,7 @@ export function ExImg({ ex, size = 40 }) {
 
 // Pick a picture from the phone, crop it to a square and shrink it (~10 KB) so it can live
 // inside the saved data (and therefore in backups).
-export function PhotoPicker({ ex, onChange, accent = "bg-accent-400" }) {
+export function PhotoPicker({ ex, onChange }) {
   const ref = useRef(null);
   const pick = (e) => {
     const f = e.target.files && e.target.files[0];
@@ -54,7 +54,7 @@ export function PhotoPicker({ ex, onChange, accent = "bg-accent-400" }) {
   return (
     <div className="flex items-center gap-3">
       <ExImg ex={ex} size={48} />
-      <button onClick={() => ref.current && ref.current.click()} className={`rounded-lg px-3 py-2 text-xs font-semibold text-black ${accent}`}>
+      <button onClick={() => ref.current && ref.current.click()} className="rounded-lg bg-accent-400 px-3 py-2 text-xs font-semibold text-black">
         {ex && ex.photo ? "Другое фото" : "Добавить фото"}
       </button>
       {ex && ex.photo && <button onClick={() => onChange(null)} className="text-xs text-neutral-500">убрать</button>}
@@ -169,3 +169,7 @@ export const DeleteButton = ({ onConfirm, confirmText, children }) => (
     {children}
   </ConfirmButton>
 );
+
+const TrendChartLazy = lazy(() => import("./TrendChart.jsx"));
+// the chart, with an empty box of the same size while its code loads
+export const Trend = (props) => <Suspense fallback={null}><TrendChartLazy {...props} /></Suspense>;

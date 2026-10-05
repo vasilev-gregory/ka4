@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { X, Check, Search } from "lucide-react";
 import { uid } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
-import { ExImg, Header, useApp } from "../ui/kit.jsx";
+import { Button, ExImg, Header, useApp } from "../ui/kit.jsx";
 
 export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
   const { nm1, nm2 } = useApp();
@@ -128,10 +128,9 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
       ))}
 
       {ql && !exact && !creating && (
-        <button onClick={() => { startCreate(q.trim()); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-          className="mt-4 w-full rounded-xl border border-dashed border-neutral-700 py-3 text-neutral-300">
+        <Button variant="dashed" block onClick={() => { startCreate(q.trim()); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="mt-4">
           + Создать «{q.trim()}»
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -151,9 +150,7 @@ export function Picker({ data, up, onPick, onPickMany, onClose, title = "Доб�
       {multi && chosen.length > 0 && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 bg-black/90 px-4 pt-3">
           <div className="mx-auto max-w-md pb-3">
-            <button onClick={() => onPickMany(chosen)} className="w-full rounded-xl bg-accent-400 py-3 font-semibold text-black">
-              Добавить ({chosen.length})
-            </button>
+            <Button block onClick={() => onPickMany(chosen)}>Добавить ({chosen.length})</Button>
           </div>
         </div>
       )}

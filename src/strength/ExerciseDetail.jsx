@@ -1,11 +1,10 @@
 // One exercise: progress chart, history, editing (name, group, kind, bodyweight share).
 import { useState, useMemo } from "react";
 import { Pencil } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { fmtDate, fmtShort, num } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
 import { fmtSets, setLoad } from "../model/workout.js";
-import { ExImg, Header, PhotoPicker, useApp } from "../ui/kit.jsx";
+import { ExImg, Header, PhotoPicker, Trend, useApp } from "../ui/kit.jsx";
 
 export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const { bwAt, nm1, nm2 } = useApp();
@@ -86,15 +85,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
 
       {chart.length >= 2 && (
         <div className="mb-4 h-48 rounded-xl bg-neutral-900 p-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chart} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid stroke="#262626" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: "#a3a3a3", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#a3a3a3", fontSize: 11 }} axisLine={false} tickLine={false} domain={["auto", "auto"]} />
-              <Tooltip contentStyle={{ background: "#171717", border: "none", borderRadius: 8 }} labelStyle={{ color: "#a3a3a3" }} />
-              <Line type="monotone" dataKey="v" name={isTime ? "сек" : "кг"} stroke="var(--color-accent-400)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--color-accent-400)" }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <Trend points={chart} unit={isTime ? "сек" : "кг"} />
         </div>
       )}
 

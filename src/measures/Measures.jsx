@@ -1,9 +1,8 @@
 // Body measurements: summary cards with chart, entries list, editor.
 import { useState } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { fmtDate, fmtNum, fmtShort, isoDay, num, uid } from "../core/util.js";
 import { MEASURES } from "../model/catalog.js";
-import { ConfirmButton, Header } from "../ui/kit.jsx";
+import { Button, DeleteButton, Header, Trend } from "../ui/kit.jsx";
 
 export function MeasuresTab({ data, open, openSettings }) {
   const [sel, setSel] = useState("weight");
@@ -15,7 +14,7 @@ export function MeasuresTab({ data, open, openSettings }) {
   return (
     <div className="p-4 pb-28">
       <Header title="Замеры" />
-      <button onClick={() => open({ type: "measure" })} className="mb-4 w-full rounded-xl bg-accent-400 py-3 font-semibold text-black">Новый замер</button>
+      <Button block onClick={() => open({ type: "measure" })} className="mb-4">Новый замер</Button>
 
       {list.length === 0 && <p className="text-neutral-400">Здесь будут вес и объёмы. Запиши первый замер, даже если это только вес.</p>}
 
@@ -44,15 +43,7 @@ export function MeasuresTab({ data, open, openSettings }) {
             {selMeta[1]}: {fmtNum(selSeries[0].v)} → {fmtNum(selSeries[selSeries.length - 1].v)} {selMeta[2]} с {fmtDate(selSeries[0].date)}
           </div>
           <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={selSeries.map((p) => ({ date: fmtShort(p.date), v: p.v }))} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid stroke="#262626" vertical={false} />
-                <XAxis dataKey="date" tick={{ fill: "#a3a3a3", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: "#a3a3a3", fontSize: 11 }} axisLine={false} tickLine={false} domain={["auto", "auto"]} />
-                <Tooltip contentStyle={{ background: "#171717", border: "none", borderRadius: 8 }} labelStyle={{ color: "#a3a3a3" }} />
-                <Line type="monotone" dataKey="v" name={selMeta[2]} stroke="var(--color-accent-400)" strokeWidth={2.5} dot={{ r: 3, fill: "var(--color-accent-400)" }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <Trend points={selSeries.map((p) => ({ date: fmtShort(p.date), v: p.v }))} unit={selMeta[2]} />
           </div>
         </div>
       )}
@@ -105,12 +96,11 @@ export function MeasureEditor({ data, up, id, back }) {
         ))}
       </div>
       <p className="mt-2 text-xs text-neutral-500">Серым — прошлое значение. Заполняй только то, что мерил.</p>
-      <button onClick={save} className="mt-4 w-full rounded-xl bg-accent-400 py-3 font-semibold text-black">Сохранить</button>
+      <Button block onClick={save} className="mt-4">Сохранить</Button>
       {existing && (
-        <ConfirmButton onConfirm={() => { up((d) => { d.measurements = d.measurements.filter((x) => x.id !== existing.id); }); back(); }}
-          confirmText="Удалить замер?" className="mt-3 w-full py-3 text-neutral-500" armedClassName="mt-3 w-full rounded-xl bg-red-600 py-3 text-white">
+        <DeleteButton onConfirm={() => { up((d) => { d.measurements = d.measurements.filter((x) => x.id !== existing.id); }); back(); }} confirmText="Удалить замер?">
           Удалить замер
-        </ConfirmButton>
+        </DeleteButton>
       )}
     </div>
   );

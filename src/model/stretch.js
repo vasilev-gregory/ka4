@@ -2,7 +2,8 @@
 import { DAY, fmtDur } from "../core/util.js";
 import { ST_DEFAULTS, ST_WEEK_MAX, ST_WEEK_MIN } from "./catalog.js";
 
-export const stExMap = (data) => Object.fromEntries(data.stretch.exercises.map((e) => [e.id, e]));
+// all functions here take the stretching part of the data (data.stretch)
+export const stExMap = (s) => Object.fromEntries(s.exercises.map((e) => [e.id, e]));
 
 export const stTiming = (p, it) => ({ ...ST_DEFAULTS, ...(p.timing || {}), ...((it && it.over) || {}) });
 
@@ -38,14 +39,14 @@ export function buildTimeline(p, exMap) {
 export const PHASE = { prep: "Вступление", work: "Работа", switch: "Смена стороны", rest: "Отдых", roundRest: "Отдых между кругами" };
 
 // seconds of hold per area in a week, counted per side (left side or one-sided holds only)
-export function stretchWeek(data, ws) {
+export function stretchWeek(s, ws) {
   const we = ws + 7 * DAY + 3600e3;
-  const exMap = stExMap(data);
+  const exMap = stExMap(s);
   const areas = {};
   const days = new Set();
-  data.stretch.sessions.filter((s) => s.startedAt >= ws && s.startedAt < we).forEach((s) => {
-    days.add(new Date(s.startedAt).toDateString());
-    Object.entries(s.work || {}).forEach(([exId, sec]) => {
+  s.sessions.filter((x) => x.startedAt >= ws && x.startedAt < we).forEach((x) => {
+    days.add(new Date(x.startedAt).toDateString());
+    Object.entries(x.work || {}).forEach(([exId, sec]) => {
       const area = (exMap[exId] && exMap[exId].area) || "без группы";
       areas[area] = (areas[area] || 0) + sec;
     });
@@ -55,6 +56,6 @@ export function stretchWeek(data, ws) {
 
 export function stretchVerdict(sec) {
   if (sec >= ST_WEEK_MAX) return ["максимум", "bg-accent-400 text-black", "дальше прирост почти не растёт"];
-  if (sec >= ST_WEEK_MIN) return ["есть эффект", "bg-teal-900 text-teal-200", `до максимума эффекта ещё ${fmtDur((ST_WEEK_MAX - sec) * 1000)}`];
+  if (sec >= ST_WEEK_MIN) return ["есть эффект", "bg-accent-900 text-accent-200", `до максимума эффекта ещё ${fmtDur((ST_WEEK_MAX - sec) * 1000)}`];
   return ["мало", "bg-neutral-800 text-neutral-400", `до минимума ещё ${fmtDur((ST_WEEK_MIN - sec) * 1000)}`];
 }

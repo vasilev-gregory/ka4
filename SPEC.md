@@ -44,20 +44,32 @@
 ```
 src/
   main.jsx               вход, сервис-воркер, проверка обновлений
-  App.jsx                оболочка: вкладки, стек экранов, режим, оверлеи
-  storage.js             IndexedDB + зеркало localStorage
-  core/                  util (формат, даты), sound
+  App.jsx                загрузка данных; оболочка: вкладки, стек экранов (таблица SCREENS/TABS), режим, оверлеи
+  storage.js             IndexedDB + зеркало localStorage, оповещение других вкладок, защита хранилища
+  core/                  util (формат, даты), sound, appUpdate (версия, сброс кэша)
   model/                 чистая логика и данные — без React (кроме usePersistentData)
+    types.js             форма сохранённых данных (JSDoc)
     catalog.js           справочники и каталоги
     images.js            миниатюры: автоматически из src/assets/ex/*.jpg
     state.js             seed + migrate, SCHEMA_VERSION
-    workout.js           сила: подходы, отрезки, отдых, нагрузка, неделя
-    stretch.js           растяжка: тайминги, таймлайн, неделя
-    backup.js            бэкап и сброс кэша приложения
+    workout.js           сила, запросы: подходы, отрезки, отдых, нагрузка, неделя
+    workoutActions.js    сила, изменения: всё, что UI делает с тренировкой
+    stretch.js           растяжка, запросы: тайминги, таймлайн, неделя
+    stretchActions.js    растяжка, изменения (работают только с data.stretch)
+    backup.js            бэкап: файл, текст, разбор
     usePersistentData.js загрузка/сохранение состояния
-  ui/                    kit (примитивы, контекст), sortable, gestures (свайп, удержание, перестановка)
-  strength/ stretch/ measures/ settings/   экраны по разделам
-tests/unit/               node:test, чистая логика model/
-tests/e2e/                Playwright: сценарии в браузере на продакшн-сборке
+  ui/                    kit (Button, Card, SwitchRow, …), gestures, sortable, navigation (история браузера),
+                         TrendChart (грузится по требованию), useWakeLock
+  shell/                 части оболочки: TabBar, BackupNag
+  strength/workout/      идущая тренировка: ActiveWorkout → ExerciseCard → SetRow, RestBar, ProgramList
+  strength/ stretch/ measures/ settings/   остальные экраны по разделам
+tests/unit/              node:test, чистая логика model/
+tests/e2e/               Playwright: сценарии в браузере на продакшн-сборке
 ```
-Правила: экраны получают `data/up/open/back` пропсами; `up(fn)` меняет черновик (immer, без глубокого копирования), ссылки на черновик за пределы `fn` не выносить; производные от настроек хелперы (`bwAt`, `nm1/nm2`) — через `useApp()`. Логика, которую можно проверить без браузера, живёт в `model/` и покрыта `tests/unit`.
+Правила:
+- Экраны получают `data/up/open/back` пропсами; экраны растяжки — только `stretch/upStretch` (срез `data.stretch`).
+- Изменения данных с правилами предметной области — функции в `model/*Actions.js`, экран только вызывает `up((d) => action(d, …))`. Время передаётся параметром `now`, чтобы правила проверялись тестами.
+- `up(fn)` меняет черновик (immer, без глубокого копирования); ссылки на черновик за пределы `fn` не выносить.
+- Цвет акцента — только `*-accent-*` (тема в `index.css`), не `amber`/`teal` напрямую.
+- Системная кнопка «назад» снимает верхний экран; экран с несохранёнными изменениями задерживает уход через `useLeaveGuard`.
+- Производные от настроек хелперы (`bwAt`, `nm1/nm2`) — через `useApp()`.

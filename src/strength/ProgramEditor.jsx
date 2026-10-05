@@ -3,7 +3,8 @@ import { useState } from "react";
 import { X, RefreshCw, GripVertical } from "lucide-react";
 import { startWorkout } from "../model/workoutActions.js";
 import { Picker } from "./ExerciseList.jsx";
-import { ConfirmButton, ExImg, Header, Stepper, useApp } from "../ui/kit.jsx";
+import { Button, DeleteButton, ExImg, Header, Stepper, useApp } from "../ui/kit.jsx";
+import { useLeaveGuard } from "../ui/navigation.js";
 import { moveItem, useSortable } from "../ui/sortable.js";
 
 export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
@@ -14,16 +15,18 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
   const [leaveAsk, setLeaveAsk] = useState(false);
   const mut = (fn) => setDraft((d) => { const c = structuredClone(d); fn(c); return c; });
   const sort = useSortable((from, to) => mut((pp) => { moveItem(pp.items, from, to); }));
+  const dirty = !!saved && !!draft && JSON.stringify(draft) !== JSON.stringify(saved);
+  // going back (header arrow or system back) with unsaved changes asks first
+  useLeaveGuard(() => { if (dirty) setLeaveAsk(true); return dirty; });
+  const leave = () => back({ force: true });
   if (!saved || !draft) return <div className="p-4"><Header title="Программа удалена" back={back} /></div>;
 
   const p = draft;
-  const dirty = JSON.stringify(draft) !== JSON.stringify(saved);
   const save = () => up((d) => { const i = d.programs.findIndex((x) => x.id === id); if (i >= 0) d.programs[i] = structuredClone(draft); });
-  const tryBack = () => (dirty ? setLeaveAsk(true) : back());
 
   return (
     <div className="p-4 pb-44">
-      <Header title="Программа" back={tryBack} />
+      <Header title="Программа" back={back} />
       <input value={p.name} placeholder="Название программы" autoFocus={!saved.name}
         onChange={(e) => mut((pp) => { pp.name = e.target.value; })}
         className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-hidden focus:ring-2 focus:ring-accent-400" />
@@ -45,9 +48,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
           </div>
         ))}
       </div>
-      <button onClick={() => setPicker(true)} className="mt-2 w-full rounded-xl border border-dashed border-neutral-700 py-3 text-neutral-300">
-        Добавить упражнение
-      </button>
+      <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить упражнение</Button>
       <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте.</p>
 
       <button
@@ -56,21 +57,20 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
         className="mt-6 w-full rounded-xl bg-neutral-800 py-3 font-semibold disabled:opacity-40">
         {data.active ? "Уже идёт тренировка" : dirty ? "Сохранить и начать тренировку" : "Начать тренировку"}
       </button>
-      <ConfirmButton onConfirm={() => { up((d) => { d.programs = d.programs.filter((x) => x.id !== id); }); back(); }}
-        confirmText="Удалить программу?" className="mt-3 w-full py-3 text-neutral-500" armedClassName="mt-3 w-full rounded-xl bg-red-600 py-3 text-white">
+      <DeleteButton onConfirm={() => { up((d) => { d.programs = d.programs.filter((x) => x.id !== id); }); leave(); }} confirmText="Удалить программу?">
         Удалить программу
-      </ConfirmButton>
+      </DeleteButton>
 
       {(dirty || leaveAsk) && (
         <div className="above-nav fixed inset-x-0 z-40 px-3">
           <div className="mx-auto max-w-md rounded-2xl bg-neutral-900 p-3 shadow-lg">
             {leaveAsk && <p className="mb-2 text-xs text-neutral-300">Есть несохранённые изменения</p>}
             <div className="flex gap-2">
-              <button onClick={() => { setDraft(structuredClone(saved)); setLeaveAsk(false); if (leaveAsk) back(); }}
+              <button onClick={() => { setDraft(structuredClone(saved)); setLeaveAsk(false); if (leaveAsk) leave(); }}
                 className="rounded-xl bg-neutral-800 px-4 py-3 text-neutral-300">
                 {leaveAsk ? "Не сохранять" : "Отменить"}
               </button>
-              <button onClick={() => { save(); if (leaveAsk) back(); setLeaveAsk(false); }}
+              <button onClick={() => { save(); if (leaveAsk) leave(); setLeaveAsk(false); }}
                 className="flex-1 rounded-xl bg-accent-400 py-3 font-semibold text-black">
                 Сохранить
               </button>
