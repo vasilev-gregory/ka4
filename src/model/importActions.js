@@ -1,26 +1,24 @@
 // Importing workouts from another app: match their exercise names to ours (or create new ones),
 // skip workouts that are already here, keep history in date order.
 import { uid } from "../core/util.js";
+import { UNILATERAL } from "./catalog.js";
 import { ALIASES } from "./imports/aliases.js";
 
 // "Bench Press (Barbell)" and "Barbell bench press" are the same exercise: compare word sets
 const words = (s) => (s || "").toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/g, " ").trim().split(" ").filter(Boolean);
 const key = (s) => [...new Set(words(s))].sort().join(" ");
-const base = (s) => key((s || "").replace(/\([^)]*\)/g, " ")); // without the "(Barbell)" part
 
 const ALIAS = new Map(ALIASES.map(([name, id]) => [key(name), id]));
 
-// Finds our exercise for a name from another app: a known equivalent, the same words (either language),
-// then without the bracketed equipment if that is unique. Returns the exercise or null.
+// Finds our exercise for a name from another app: a known equivalent, or the same words (either language).
+// Never by the name without its equipment: "Lateral Raise (Cable)" is not our dumbbell lateral raise.
+// Returns the exercise or null.
 export function matchExercise(exercises, name) {
   const k = key(name);
   const aliased = ALIAS.has(k) && exercises.find((e) => e.id === ALIAS.get(k));
   if (aliased) return aliased;
   const exact = exercises.find((e) => key(e.name) === k || (e.ru && key(e.ru) === k));
-  if (exact) return exact;
-  const b = base(name);
-  const loose = exercises.filter((e) => key(e.name) === b || (e.ru && key(e.ru) === b));
-  return loose.length === 1 ? loose[0] : null;
+  return exact || null;
 }
 
 // first hit wins, so the more specific words come first ("тяга широчайшими" is back, "тяга к подбородку" shoulders)
@@ -47,12 +45,27 @@ const SAME_TIME = 60e3;
 
 const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateString();
 
+const SIDE = { arm: "одной рукой", leg: "одной ногой" };
+// an exercise of the imported file: its name, and "arm" / "leg" when its sets were done one-sided
+const exKey = (e) => (e.uni ? `${e.name}|${e.uni}` : e.name);
+const shownName = (e) => (e.uni ? `${e.name} · ${SIDE[e.uni]}` : e.name);
+
+// One-sided sets go to the one-arm / one-leg variation: ours from the catalog, else one made by an earlier import.
+function matchSided(exercises, e) {
+  if (!e.uni) return { ex: matchExercise(exercises, e.name), base: null };
+  const base = matchExercise(exercises, e.name);
+  const variant = base && UNILATERAL[base.id] && exercises.find((x) => x.id === UNILATERAL[base.id]);
+  return { ex: variant || matchExercise(exercises, shownName(e)), base };
+}
+
 // What an import would do, without changing anything: { add: workouts to add, skipped, exercises:
-// Map name -> existing exercise or null (to be created), measures: measurements to add (days without one) }
+// Map key -> { name, ex: existing exercise or null (to be created), base }, measures: measurements to add (days without one) }
 export function planImport(d, workouts, measurements = []) {
   const add = workouts.filter((w) => !d.workouts.some((x) => Math.abs(x.startedAt - w.startedAt) < SAME_TIME));
   const exercises = new Map();
-  add.forEach((w) => w.exercises.forEach((e) => { if (!exercises.has(e.name)) exercises.set(e.name, matchExercise(d.exercises, e.name)); }));
+  add.forEach((w) => w.exercises.forEach((e) => {
+    if (!exercises.has(exKey(e))) exercises.set(exKey(e), { name: shownName(e), ...matchSided(d.exercises, e) });
+  }));
   const measures = measurements.filter((m) => !(d.measurements || []).some((x) => sameDay(x.date, m.date)));
   return { add, skipped: workouts.length - add.length, exercises, measures };
 }
@@ -61,12 +74,12 @@ export function planImport(d, workouts, measurements = []) {
 // adds measurements. Never changes or removes anything that is already there.
 export function applyImport(d, plan, source) {
   const ids = new Map();
-  plan.exercises.forEach((ex, name) => {
-    if (ex) { ids.set(name, ex.id); return; }
-    const time = plan.add.some((w) => w.exercises.some((e) => e.name === name && e.time));
-    const created = { id: uid(), name, group: guessGroup(name), kind: time ? "time" : "reps" };
+  plan.exercises.forEach(({ name, ex, base }, key) => {
+    if (ex) { ids.set(key, ex.id); return; }
+    const time = plan.add.some((w) => w.exercises.some((e) => exKey(e) === key && e.time));
+    const created = { id: uid(), name, group: base ? base.group : guessGroup(name), kind: time ? "time" : "reps" };
     d.exercises.push(created);
-    ids.set(name, created.id);
+    ids.set(key, created.id);
   });
   plan.add.forEach((w) => {
     d.workouts.push({
@@ -74,7 +87,7 @@ export function applyImport(d, plan, source) {
       startedAt: w.startedAt, finishedAt: w.finishedAt,
       segments: [{ start: w.startedAt, end: w.finishedAt }],
       exercises: w.exercises.map((e) => ({
-        exerciseId: ids.get(e.name),
+        exerciseId: ids.get(exKey(e)),
         sets: e.sets.map((s) => ({ w: s.w, r: s.r, p: "", ...(s.t ? { t: s.t } : {}), ...(s.rir != null ? { rir: s.rir } : {}), ...(s.g ? { g: s.g } : {}), done: true })),
       })).filter((e) => e.sets.length),
     });

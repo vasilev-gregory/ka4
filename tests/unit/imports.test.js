@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { parseCsv } from "../../src/model/imports/csv.js";
 import { parseHevy, parseHevyDate } from "../../src/model/imports/hevy.js";
 import { readImport } from "../../src/model/imports/index.js";
+import { oneSided } from "../../src/model/imports/gymkeeper.js";
 import { applyImport, guessGroup, matchExercise, planImport } from "../../src/model/importActions.js";
 import { seed } from "../../src/model/state.js";
 
@@ -43,6 +44,7 @@ test("exercise names from other apps find ours; unknown ones get a guessed group
   const ex = seed().exercises;
   assert.equal(matchExercise(ex, "Bench Press (Barbell)").id, "barbell-bench-press");
   assert.equal(matchExercise(ex, "Squat (Barbell)").id, "squat");
+  assert.equal(matchExercise(ex, "Lateral Raise (Cable)"), null, "not our dumbbell lateral raise");
   assert.equal(matchExercise(ex, "приседания со штангой").id, "squat");
   assert.equal(matchExercise(ex, "Zercher Squat"), null);
   assert.equal(guessGroup("Zercher Squat"), "ноги");
@@ -55,7 +57,7 @@ test("import adds missing workouts in date order, creates unknown exercises, ski
   const workouts = parseHevy(HEVY);
   const plan = planImport(d, workouts);
   assert.equal(plan.add.length, 2);
-  assert.equal([...plan.exercises.values()].filter((x) => !x).length, 2); // Plank, Zercher Squat
+  assert.equal([...plan.exercises.values()].filter((x) => !x.ex).length, 2); // Plank, Zercher Squat
   applyImport(d, plan, "hevy");
   assert.deepEqual(d.workouts.map((w) => (w.id === "mine" ? "mine" : w.name)), ["Legs", "mine", "Push"]);
   assert.equal(d.workouts[0].source, "hevy");
@@ -115,7 +117,7 @@ test("a real GymKeeper export: days, warm-ups, drop sets, measurements; added, n
   const d = seed();
   d.measurements = [{ id: "m", date: r.measurements[0].date + 3600e3, values: { weight: "121" } }]; // same day: kept, not doubled
   const plan = planImport(d, r.workouts, r.measurements);
-  assert.equal(plan.exercises.get("Squat (Barbell)").id, "squat");
+  assert.equal(plan.exercises.get("Squat (Barbell)").ex.id, "squat");
   applyImport(d, plan, "gymkeeper");
   assert.deepEqual(d.measurements.map((m) => m.values.weight), ["121", "112.5"]);
   assert.equal(d.workouts.length, 2);
@@ -125,4 +127,41 @@ test("GymKeeper's internal .db (a Realm file) is refused with what to do instead
   const bytes = new Uint8Array(64);
   bytes.set(new TextEncoder().encode("T-DB"), 16);
   assert.throws(() => readImport("backup.db", "", bytes), /Экспорт/);
+});
+
+test("one-arm / one-leg notes put the sets into the one-sided variation", () => {
+  const head = "Date,Type,Name,№,Val_1,Unit_1,Val_2,Unit_2,Comment";
+  const csv = [head,
+    '1/10/26,📅,,,,,,,"60 min"',
+    '1/10/26,🏋️‍♂️,"Seated Row · Cable",,,,,,""',
+    '1/10/26,🔹,"Seated Row · Cable",1,50,kg,12,rep,"Normal"',
+    '1/10/26,🔹,"Seated Row · Cable",2,25,kg,12,rep,"Hard (1h)"',
+    '1/10/26,🔹,"Seated Row · Cable",3,20,kg,10,rep,"Drop (1рук)"',
+    '1/10/26,🔹,"Seated Row · Cable",4,50,kg,10,rep,"Hard (2рук)"',
+    '1/10/26,🏋️‍♂️,"Lateral Raise · Cable",,,,,,""',
+    '1/10/26,🔹,"Lateral Raise · Cable",1,5,kg,15,rep,"Normal (1р)"',
+    '1/10/26,🏋️‍♂️,"Leg Press · Machine",,,,,,""',
+    '1/10/26,🔹,"Leg Press · Machine",1,80,kg,12,rep,"Normal (г,1 нога)"',
+    '1/10/26,🏋️‍♂️,"Hip Thrust",,,,,,""',
+    '1/10/26,🔹,"Hip Thrust",1,20,kg,12,rep,"Normal (1dumb)"',
+  ].join("\n");
+  assert.equal(oneSided("cbl1h"), "arm"); assert.equal(oneSided("single"), "arm"); assert.equal(oneSided("1dumb"), null); assert.equal(oneSided("2h"), null);
+  const { workouts } = readImport("gk.csv", csv);
+  const ex = workouts[0].exercises;
+  assert.deepEqual(ex.map((e) => [e.name, e.uni || "", e.sets.map((s) => s.w).join(" ")]), [
+    ["Seated Row (Cable)", "", "50 50"], ["Seated Row (Cable)", "arm", "25 20"],
+    ["Lateral Raise (Cable)", "arm", "5"], ["Leg Press (Machine)", "leg", "80"], ["Hip Thrust", "", "20"]]);
+  assert.ok(ex[1].sets[0].g && ex[1].sets[0].g === ex[1].sets[1].g, "a drop set within the one-arm sets");
+
+  const d = seed();
+  applyImport(d, planImport(d, workouts), "gymkeeper");
+  const used = d.workouts[0].exercises.map((e) => d.exercises.find((x) => x.id === e.exerciseId));
+  assert.deepEqual(used.map((x) => x.id.length > 20 ? x.name : x.id).slice(0, 2), ["seated-row", "one-arm-seated-row"]);
+  assert.equal(used[2].name, "Lateral Raise (Cable) · одной рукой"); // no cable lateral raise of ours: made, not mixed with dumbbells
+  assert.equal(used[2].group, "плечи");
+  assert.equal(used[3].name, "Leg Press (Machine) · одной ногой");
+  assert.equal(used[4].id, "hip-thrust"); // "1dumb" is one dumbbell, not one arm
+  // the next import of the same kind reuses the one-sided exercise it made
+  const again = planImport(d, workouts.map((w) => ({ ...w, startedAt: w.startedAt + 864e5 })));
+  assert.equal(again.exercises.get("Lateral Raise (Cable)|arm").ex.name, "Lateral Raise (Cable) · одной рукой");
 });

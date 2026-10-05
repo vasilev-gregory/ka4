@@ -89,4 +89,5 @@ export const ALIASES = [
   ["Chin Up", "close-grip-chin-up"],
   ["Inverted Row", "inverted-row"],
   ["Standing Calf Raise", "calf-raise"],
+  ["Standing Chest Fly (Cable)", "cable-crossover"],
 ];

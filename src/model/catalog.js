@@ -125,6 +125,25 @@ export const SEED_EX = [
   ["Suitcase carry", "Прогулка фермера одной рукой", "кор", "time"],
 ];
 
+// The one-arm / one-leg variation of an exercise (catalog ids). Used to file one-sided sets, e.g. from imports.
+export const UNILATERAL = {
+  "lateral-raise": "one-arm-lateral-raise", "dumbbell-shoulder-press": "one-arm-shoulder-press", "upright-row": "one-arm-upright-row",
+  "reverse-fly": "one-arm-reverse-fly", "dumbbell-bench-press": "one-arm-dumbbell-bench-press", "cable-crossover": "single-arm-cable-crossover",
+  "machine-pec-fly": "one-arm-machine-pec-fly", "lat-pulldown": "one-arm-lat-pulldown", "seated-row": "one-arm-seated-row",
+  "machine-row": "one-arm-machine-row", "dumbbell-bent-over-row": "one-arm-dumbbell-row", "cable-preacher-curl": "one-arm-cable-preacher-curl",
+  "machine-preacher-curl": "one-arm-machine-preacher-curl", "dumbbell-seated-curl": "one-arm-seated-dumbbell-curl",
+  "cable-extension": "one-arm-cable-extension", "cable-extension-samurai": "one-arm-cable-extension-samurai",
+  "triceps-kickback": "one-arm-triceps-kickback", "triceps-press-machine": "one-arm-triceps-press-machine", "wrist-curl": "one-arm-wrist-curl",
+  "machine-chest-press": "one-arm-machine-chest-press", "push-up": "one-arm-push-up", "farmer-s-walk": "suitcase-carry",
+  "cable-shoulder-press": "one-arm-cable-shoulder-press", "machine-shoulder-press": "one-arm-machine-shoulder-press",
+  "reverse-pec-deck": "one-arm-reverse-pec-deck", "rear-delt-row": "one-arm-rear-delt-row", "cable-back-row": "one-arm-cable-row",
+  "cable-bench-press": "one-arm-cable-chest-press", "incline-dumbbell-press": "one-arm-incline-dumbbell-press",
+  "incline-cable-press": "one-arm-incline-cable-press",
+  "leg-extension": "single-leg-leg-extension", "leg-curl": "single-leg-leg-curl", "lying-leg-curl": "single-leg-lying-leg-curl",
+  "hip-thrust": "single-leg-hip-thrust", "romanian-deadlift": "single-leg-romanian-deadlift", "calf-raise": "single-leg-calf-raise",
+  "barbell-glute-bridge": "single-leg-glute-bridge", "horizontal-leg-press": "single-leg-leg-press",
+};
+
 export const PARTIAL_WEIGHT = 0.3;
 
 // For exercises where the body is the main load, working load = share of body weight + added weight.

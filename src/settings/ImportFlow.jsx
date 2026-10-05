@@ -49,7 +49,7 @@ export function ImportFlow({ file, data, up, replace, onDone, onClose }) {
   }
 
   const plan = planImport(data, r.workouts, r.measurements);
-  const created = [...plan.exercises].filter(([, ex]) => !ex).map(([name]) => name);
+  const created = [...plan.exercises.values()].filter((x) => !x.ex).map((x) => x.name);
   const found = plan.exercises.size - created.length;
   const first = plan.add[0], last = plan.add[plan.add.length - 1];
   const n = plan.add.length, nm = plan.measures.length;

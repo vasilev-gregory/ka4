@@ -1,7 +1,8 @@
 // GymKeeper CSV export (Export → workouts). Columns: Date (M/D/YY), Type, Name, №, Val_1, Unit_1, Val_2,
 // Unit_2, Comment. Type: 📅 a day (Comment "57 min"), 🏋️‍♂️ an exercise, 🔹 a set (weight kg / lb,
 // reps; Comment = WarmUp / Easy / Normal / Hard / Drop + an optional "(note)"), 📏 a measurement.
-// There is no start time: a workout is put at noon of its day.
+// There is no start time: a workout is put at noon of its day. A note like "(1рук)", "(1h)", "(single)" or
+// "(1 нога)" marks a one-arm / one-leg set: such sets go to the exercise's one-sided variation.
 import { parseCsv } from "./csv.js";
 
 const HEADERS = ["Date", "Type", "Name", "Val_1", "Unit_1", "Val_2", "Unit_2", "Comment"];
@@ -37,12 +38,33 @@ function groupDrops(sets, label, stamp) {
   sets.forEach((s) => { if (s.g && sets.filter((x) => x.g === s.g).length < 2) delete s.g; });
 }
 
-// -> { workouts: [{ name, startedAt, finishedAt, exercises: [{ name, time, sets }] }], measurements: [{ date, values }] }
+// "1рук", "1р", "1h", "1hand", "cbl1h", "single" → one arm; "1 нога" → one leg; "2рук", "2h", "1dumb" (one dumbbell) → no
+export function oneSided(note) {
+  const s = (note || "").toLowerCase();
+  if (/1\s*-?\s*ног/.test(s)) return "leg";
+  if (/single|1\s*(рук|р\b|р$|h\b|h$|hand)|1h/.test(s)) return "arm";
+  return null;
+}
+
+// -> { workouts: [{ name, startedAt, finishedAt, exercises: [{ name, uni?, time, sets }] }], measurements: [{ date, values }] }
+// uni: "arm" / "leg" — the sets were done one-sided
 export function parseGymKeeper(text) {
   const { rows } = parseCsv(text);
   const workouts = [], measurements = new Map();
-  let w = null, ex = null, labels = [];
-  const closeExercise = () => { if (ex) groupDrops(ex.sets, labels, `${w.startedAt}-${w.exercises.length}`); ex = null; labels = []; };
+  let w = null, ex = null, labels = [], sides = [];
+  // an exercise's sets split into the two-sided ones and each one-sided kind, drop sets grouped within each
+  const closeExercise = () => {
+    if (ex) {
+      for (const uni of [null, "arm", "leg"]) {
+        const idx = ex.sets.map((_, i) => i).filter((i) => sides[i] === uni);
+        if (!idx.length) continue;
+        const part = { name: ex.name, ...(uni ? { uni } : {}), time: false, sets: idx.map((i) => ex.sets[i]) };
+        groupDrops(part.sets, idx.map((i) => labels[i]), `${w.startedAt}-${w.exercises.length}`);
+        w.exercises.push(part);
+      }
+    }
+    ex = null; labels = []; sides = [];
+  };
   rows.forEach((r) => {
     const t = day(r.Date);
     if (t == null) return;
@@ -53,7 +75,7 @@ export function parseGymKeeper(text) {
       workouts.push(w);
     } else if (r.Type.startsWith("🏋")) {
       closeExercise();
-      if (w) { ex = { name: exName(r.Name), time: false, sets: [] }; w.exercises.push(ex); }
+      if (w) ex = { name: exName(r.Name), sets: [] };
     } else if (r.Type.startsWith("🔹") && ex) {
       const label = (r.Comment || "").replace(/\s*\(.*\)\s*$/, "").trim().toLowerCase();
       // weight in kg / lb; a time in the weight column (Bird Dog, Burpee) isn't a weight
@@ -64,6 +86,7 @@ export function parseGymKeeper(text) {
       if (label === "hard") set.rir = 1;
       ex.sets.push(set);
       labels.push(label);
+      sides.push(oneSided((/\((.*)\)\s*$/.exec(r.Comment || "") || [])[1]));
     } else if (r.Type.startsWith("📏")) {
       const key = MEASURE[(r.Name || "").toLowerCase()];
       if (!key || n(r.Val_1) == null) return;
