@@ -45,9 +45,6 @@ export function plural(n, one, few, many) {
   return b === 1 ? one : b >= 2 && b <= 4 ? few : many;
 }
 
-// "3 подх. · 2 раза": hard sets and sessions of a muscle group in a week
-export const fmtGroupWeek = (sets, times) => `${sets} подх. · ${times} ${plural(times, "раз", "раза", "раз")}`;
-
 export const fmtNum = (v) => String(Math.round(v * 10) / 10).replace(".", ",");
 
 // Programs start without a name; wherever a name is shown, an empty one reads as this.

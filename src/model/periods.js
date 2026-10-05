@@ -1,6 +1,7 @@
 // History periods (week / month / year) and an exercise's progress over time: ranges, summaries, chart series.
 import { DAY, num, weekStartOf } from "../core/util.js";
-import { setLoad, stats, weekAnalysis } from "./workout.js";
+import { setLoad, stats } from "./workout.js";
+import { weekLoad } from "./muscles.js";
 import { sessionE1rm } from "./records.js";
 import { PARTIAL_WEIGHT } from "./catalog.js";
 import { workoutKcal } from "./energy.js";
@@ -23,8 +24,8 @@ export function shiftPeriod(zoom, ts, k) {
 
 export const inPeriod = (workouts, { from, to }) => workouts.filter((w) => w.startedAt >= from && w.startedAt < to);
 
-// A month or a year at a glance: workouts, volume, sets, cardio minutes, kcal (estimate), and hard sets per muscle group averaged over
-// the weeks of the period that have already started (weeks: how many; perWeek: group -> { sets, freq }).
+// A month or a year at a glance: workouts, volume, sets, cardio minutes, kcal (estimate), and hard sets per muscle
+// averaged over the weeks of the period that have already started (weeks: how many; perWeek: muscle -> { sets, freq }).
 export function periodSummary(workouts, exMap, bwAt, range, now = Date.now()) {
   const list = inPeriod(workouts, range);
   let vol = 0, sets = 0, cardioMin = 0, cardioKm = 0, kcal = 0;
@@ -33,20 +34,19 @@ export function periodSummary(workouts, exMap, bwAt, range, now = Date.now()) {
     vol += st.vol; sets += st.sets; cardioMin += st.cardioMin; cardioKm += st.cardioKm;
     kcal += workoutKcal(w, exMap, bwAt, now) || 0;
   });
-  const groups = {};
+  const muscles = {};
   let weeks = 0;
   for (let ws = weekStartOf(range.from); ws < range.to && ws <= now; ws = weekStartOf(ws + 8 * DAY)) {
     weeks++;
-    const an = weekAnalysis(list, exMap, ws);
-    Object.entries(an.groups).forEach(([g, p]) => {
-      const t = groups[g] || (groups[g] = { sets: 0, freq: 0 });
+    Object.entries(weekLoad(list, exMap, ws).muscles).forEach(([m, p]) => {
+      const t = muscles[m] || (muscles[m] = { sets: 0, freq: 0 });
       t.sets += p.sets;
-      t.freq += p.days.size;
+      t.freq += p.freq;
     });
   }
   const avg = (n) => Math.round((n / Math.max(1, weeks)) * 10) / 10;
   const perWeek = {};
-  Object.entries(groups).forEach(([g, t]) => { perWeek[g] = { sets: avg(t.sets), freq: avg(t.freq) }; });
+  Object.entries(muscles).forEach(([m, t]) => { perWeek[m] = { sets: avg(t.sets), freq: avg(t.freq) }; });
   const days = new Set(list.map((w) => new Date(w.startedAt).toDateString())).size;
   return { workouts: list.length, days, vol, sets, cardioMin, cardioKm, kcal, weeks, perWeek };
 }

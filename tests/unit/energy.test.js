@@ -2,7 +2,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cardioKcal, workoutKcal } from "../../src/model/energy.js";
-import { fmtSets, programDiff, programItem, stats, weekAnalysis } from "../../src/model/workout.js";
+import { fmtSets, programDiff, programItem, stats } from "../../src/model/workout.js";
+import { weekLoad } from "../../src/model/muscles.js";
 import { sessionE1rm } from "../../src/model/records.js";
 import { exerciseSeries } from "../../src/model/periods.js";
 import { seed } from "../../src/model/state.js";
@@ -25,16 +26,18 @@ test("cardio kcal: table MET, running by speed, rowing by pace, typos ignored, n
 test("workout kcal: strength time at 3.5 MET minus cardio minutes; only-cardio workout", () => {
   const exMap = { squat: ex("squat"), elliptical: ex("elliptical") };
   const w = { startedAt: t0, segments: [{ start: t0, end: t0 + 3600e3 }], exercises: [
-    { exerciseId: "squat", sets: [{ w: "100", r: "5", done: true }] },
+    { exerciseId: "squat", sets: Array.from({ length: 10 }, () => ({ w: "100", r: "5", done: true })) },
     { exerciseId: "elliptical", sets: [{ w: "", r: "15", done: true }] },
   ] };
   assert.equal(workoutKcal(w, exMap, () => 80), Math.round(100 + (3.5 * 80 * 45) / 60));
   assert.equal(workoutKcal(w, exMap, () => 0), null);
+  const forgotten = { ...w, segments: [{ start: t0, end: t0 + 11 * 3600e3 }], exercises: [w.exercises[0]] }; // left running all day
+  assert.equal(workoutKcal(forgotten, exMap, () => 80), Math.round((3.5 * 80 * 50) / 60)); // 10 sets: at most 50 minutes
   const cardioOnly = { ...w, exercises: [w.exercises[1]] };
   assert.equal(workoutKcal(cardioOnly, exMap, () => 80), 100); // waiting around isn't counted
 });
 
-test("cardio stays out of volume, sets, weekly groups and records; has its own totals and series", () => {
+test("cardio stays out of volume, sets, weekly muscles and records; has its own totals and series", () => {
   const exMap = { squat: ex("squat"), run: { ...ex("running"), id: "run" } };
   const w = { startedAt: t0, segments: [{ start: t0, end: t0 + 3600e3 }], exercises: [
     { exerciseId: "squat", sets: [{ w: "100", r: "5", done: true }] },
@@ -45,7 +48,7 @@ test("cardio stays out of volume, sets, weekly groups and records; has its own t
   assert.equal(st.sets, 1);
   assert.equal(st.cardioMin, 45);
   assert.equal(st.cardioKm, 7.5);
-  assert.equal(Object.keys(weekAnalysis([w], exMap, t0 - 86400e3).groups).join(), "ноги");
+  assert.deepEqual(Object.keys(weekLoad([w], exMap, t0 - 86400e3).muscles), ["quads", "glutes"]); // nothing from the run
   assert.equal(sessionE1rm(w.exercises[1].sets, exMap.run, 80), null);
   assert.equal(fmtSets(w.exercises[1].sets, "cardio"), "30 мин · 5 км, 15 мин · 2,5 км");
   assert.deepEqual(exerciseSeries([w], "run", exMap.run, () => 80, "max").map((p) => p.v), [45]);

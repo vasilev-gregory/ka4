@@ -1,7 +1,9 @@
 // One finished workout: totals, what it added to the week, rest, exercises with progress notes.
 import { Trophy } from "lucide-react";
-import { fmtDate, fmtDur, fmtGroupWeek, fmtKg, fmtNum, weekStartOf } from "../core/util.js";
-import { fmtSets, growthStatus, restStats, stats, weekAnalysis } from "../model/workout.js";
+import { fmtDate, fmtDur, fmtKg, fmtNum, weekStartOf } from "../core/util.js";
+import { fmtSets, restStats, stats } from "../model/workout.js";
+import { musclesOf, weekHint, weekLoad } from "../model/muscles.js";
+import { MuscleBreakdown } from "./MuscleBreakdown.jsx";
 import { bestE1rm, previousSession, sessionE1rm } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
 import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
@@ -52,33 +54,14 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
         ))}
       </div>
       {(() => {
-        // what this workout added to the week, per muscle group it trained
-        const ws0 = weekStartOf(w.startedAt);
-        const an = weekAnalysis(data.workouts, exMap, ws0);
-        const groups = [...new Set(w.exercises.map((e) => exMap[e.exerciseId]?.group).filter(Boolean))].filter((g) => an.groups[g]);
-        if (!groups.length) return null;
+        // the week of this workout for the muscles it worked as a main one
+        const worked = [...new Set(w.exercises.flatMap((e) => Object.entries(musclesOf(exMap[e.exerciseId])).filter(([, k]) => k >= 1).map(([m]) => m)))];
+        const week = weekLoad(data.workouts, exMap, weekStartOf(w.startedAt)).muscles;
+        if (!worked.some((m) => week[m])) return null;
         return (
           <div className="-mt-3 mb-5 rounded-xl bg-neutral-900 p-3">
-            <div className="mb-2 font-semibold">Неделя по группам</div>
-            <div className="space-y-1.5">
-              {groups.map((g) => {
-                const sets = an.groups[g].sets, freq = an.groups[g].days.size;
-                const [label, cls] = growthStatus(sets, freq);
-                const hint = sets < 4 ? `ещё ${4 - sets} подх. до роста`
-                  : sets < 10 ? `ещё ${10 - sets} подх. до оптимума`
-                  : sets > 20 ? "больше уже мешает восстановлению"
-                  : freq < 2 ? "объём есть, нужна ещё одна тренировка группы на неделе"
-                  : "неделя закрыта";
-                return (
-                  <div key={g} className="flex items-center gap-2 text-xs">
-                    <span className="w-20 shrink-0 text-neutral-300">{g}</span>
-                    <span className="w-24 shrink-0 tabular-nums text-neutral-400">{fmtGroupWeek(sets, freq)}</span>
-                    <span className="min-w-0 flex-1 text-neutral-400">{hint}</span>
-                    <span className={`w-20 shrink-0 rounded-md py-0.5 text-center text-[11px] ${cls}`}>{label}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <div className="font-semibold">Неделя по мышцам</div>
+            <MuscleBreakdown load={week} map={false} only={worked} note={(r) => weekHint(r.sets, r.freq)} />
           </div>
         );
       })()}

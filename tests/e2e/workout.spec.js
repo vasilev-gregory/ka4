@@ -38,7 +38,9 @@ test("finished workout shows the weekly panel; stretch mode hides strength setti
   await page.getByRole("button", { name: "Завершить" }).click();
   const keep = page.getByText("Оставить программу как была");
   if (await keep.count()) await keep.click();
-  await expect(page.getByText("Неделя по группам")).toBeVisible();
+  await expect(page.getByText("Неделя по мышцам")).toBeVisible();
+  await expect(page.getByText("квадрицепс")).toBeVisible(); // the first set was a squat: quads are its main muscle
+  await expect(page.getByText("ещё 3 подх. до роста")).toBeVisible();
   await expect.poll(async () => (await stored(page)).workouts.length).toBe(1);
   expect((await stored(page)).active).toBeNull();
 

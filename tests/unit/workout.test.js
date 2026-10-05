@@ -2,8 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../../src/model/state.js";
-import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, closeStaleWorkout, fmtSets, setColumns, weekAnalysis } from "../../src/model/workout.js";
-import { weekStartOf } from "../../src/core/util.js";
+import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, closeStaleWorkout, fmtSets, setColumns } from "../../src/model/workout.js";
 
 test("set labels and group normalization", () => {
   const ss = [{}, { g: "a" }, { g: "a" }, { g: "b" }, {}];
@@ -73,13 +72,6 @@ test("columns: rest is never a real column, w/r always on", () => {
 
 test("formatting of sets", () => {
   assert.equal(fmtSets([{ w: "80", r: "6", rir: 0, g: "a" }, { w: "60", r: "6", g: "a" }, { w: "40", r: "10", t: "w" }], "reps"), "80×6 отказ → 60×6, разм. 40×10");
-});
-
-test("weekly analysis counts hard sets and days", () => {
-  const exMap = { sq: { id: "sq", group: "ноги" } };
-  const now = Date.now();
-  const an = weekAnalysis([{ startedAt: now, exercises: [{ exerciseId: "sq", sets: [{ done: true }, { done: true, rir: 4 }, { done: true, t: "w" }] }] }], exMap, weekStartOf(now));
-  assert.equal(an.groups["ноги"].sets, 1); assert.equal(an.days, 1);
 });
 
 test("estimated 1RM, records and the previous session", async () => {

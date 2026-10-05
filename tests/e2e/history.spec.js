@@ -1,6 +1,6 @@
 // History zoom (week / month / year) and the exercise chart's time window and drag-to-zoom.
 import { test, expect } from "@playwright/test";
-import { openApp, seedStorage, tab } from "./helpers.js";
+import { openApp, seedStorage, stored, tab } from "./helpers.js";
 
 test.beforeEach(async ({ page }) => {
   await page.clock.setSystemTime(new Date(2026, 9, 7, 12)); // Wed 7 Oct 2026
@@ -39,6 +39,12 @@ test("history: month by default, paging, year overview drills down to a month an
   await expect(period).toHaveText("5 окт. – 11 окт.");
   await expect(page.getByText("тренировок: 1")).toBeVisible();
   await expect(page.getByText("Октябрьская")).toBeVisible();
+  // muscles: the body map and the list; a tap on a muscle on the map picks it in the list
+  await expect(page.getByRole("img", { name: "Спереди" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\. · 1 раз/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /ягодицы.*1 подх\./ })).toBeVisible(); // helping: half a set each
+  await page.locator('[data-muscle="quads"]').first().click();
+  await expect(page.getByRole("button", { name: /квадрицепс/ })).toHaveClass(/bg-neutral-800/);
 
   // the zoom is kept while a workout card is open
   await page.getByText("Октябрьская").click();
@@ -68,4 +74,23 @@ test("exercise chart: metric, time window, drag to zoom and reset", async ({ pag
   await expect(page.getByText(/80 кг → 90 кг, 2 тренировки/)).toBeVisible();
   await page.getByRole("button", { name: "Сбросить" }).click();
   await expect(page.getByText(/60 кг → 90 кг, 3 тренировки/)).toBeVisible();
+});
+
+test("changing an exercise's muscles asks first: it recounts the whole history", async ({ page }) => {
+  await page.getByText("Октябрьская").click();
+  await page.getByText("Приседания со штангой").click();
+  await expect(page.getByText("Мышцы: квадрицепс; помогают: ягодицы")).toBeVisible();
+  await page.getByRole("button", { name: "Изменить" }).click();
+  await page.getByRole("button", { name: "ягодицы", exact: true }).click();
+  const ask = page.getByRole("dialog", { name: "Пересчитать всю историю?" });
+  await expect(ask.getByText(/для всех его тренировок \(3\)/)).toBeVisible();
+  await ask.getByRole("button", { name: "Отмена" }).click();
+  await expect(page.getByText("Мышцы: квадрицепс; помогают: ягодицы")).toBeVisible(); // nothing changed
+
+  await page.getByRole("button", { name: "ягодицы", exact: true }).click();
+  await ask.getByRole("button", { name: "Пересчитать" }).click();
+  await expect(page.getByText("Мышцы: квадрицепс", { exact: true })).toBeVisible(); // a helping muscle tapped once more: removed
+  await page.getByRole("button", { name: "бицепс бедра", exact: true }).click(); // asked once per visit
+  await expect(ask).toHaveCount(0);
+  await expect.poll(async () => (await stored(page)).exercises.find((e) => e.id === "squat").muscles).toEqual({ quads: 1, hams: 1 });
 });

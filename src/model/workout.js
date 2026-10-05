@@ -1,5 +1,5 @@
-// Strength domain logic: sets, segments, rest, load/volume, weekly analysis. Pure functions over app data.
-import { DAY, fmtDur, fmtKg, fmtNum, num } from "../core/util.js";
+// Strength domain logic: sets, segments, rest, load/volume, program lines. Pure functions over app data.
+import { fmtDur, fmtKg, fmtNum, num } from "../core/util.js";
 import { COLUMNS, DEFAULT_COLUMNS, PARTIAL_WEIGHT } from "./catalog.js";
 
 export function lastSession(workouts, exId) {
@@ -244,42 +244,6 @@ export function programDiff(w, programs) {
   if (!p) return null;
   const items = itemsOf(w, p);
   return JSON.stringify(p.items) === JSON.stringify(items) ? null : { programId: p.id, items };
-}
-
-export function weekAnalysis(workouts, exMap, ws) {
-  const we = ws + 7 * DAY + 3600e3; // DST slack
-  const groups = {};
-  const days = new Set();
-  workouts.filter((w) => w.startedAt >= ws && w.startedAt < we).forEach((w) => {
-    const day = new Date(w.startedAt).toDateString();
-    w.exercises.forEach((e) => {
-      const g = exMap[e.exerciseId]?.group;
-      if (!g || exMap[e.exerciseId].kind === "cardio") return; // muscle growth targets are about strength sets
-      let n = 0;
-      e.sets.forEach((s, i) => {
-        if (!s.done || s.t === "w") return;
-        if (s.rir != null && s.rir >= 4) return; // too far from failure to count as a hard set
-        const cont = s.g && i > 0 && e.sets[i - 1].g === s.g && e.sets[i - 1].done;
-        if (!cont) n++;
-      });
-      if (!n) return;
-      days.add(day);
-      const p = groups[g] || (groups[g] = { sets: 0, days: new Set() });
-      p.sets += n;
-      p.days.add(day);
-    });
-  });
-  return { days: days.size, groups };
-}
-
-// Rough evidence-based targets per muscle group per week (Schoenfeld et al. meta-analyses, RP volume landmarks):
-// hard sets = working sets taken close to failure (RIR 0-3); 10+ sets and 2+ sessions a week is the sweet spot,
-// ~4-9 sets still grows, under 4 is roughly maintenance. Drop sets / ladders count as one set.
-export function growthStatus(sets, freq) {
-  if (sets < 4) return ["мало", "bg-neutral-800 text-neutral-400"];
-  if (sets > 20) return ["очень много", "bg-red-950 text-red-300"];
-  if (sets >= 10 && freq >= 2) return ["оптимум", "bg-accent-400 text-black"];
-  return ["рост", "bg-accent-950 text-accent-300"];
 }
 
 // Latest moment anything happened in a workout: a segment start/end or a confirmed set.

@@ -3,6 +3,8 @@ import { num } from "../core/util.js";
 import { CARDIO, CARDIO_MET_DEFAULT, STRENGTH_MET } from "./catalog.js";
 import { durations } from "./workout.js";
 
+const STRENGTH_MIN_PER_SET = 5;
+
 const kcalOf = (met, kg, min) => (met * kg * min) / 60;
 
 // one cardio stretch: r = minutes, w = km (optional). Speed outside believable bounds is ignored (a typo).
@@ -25,11 +27,11 @@ export function cardioKcal(ex, s, bw) {
   return kcalOf(c.met || CARDIO_MET_DEFAULT, bw, min);
 }
 
-// Whole workout: cardio by its own cost, the rest of the workout's time (only if it had strength sets) as
-// strength training. Null when there is no body weight to count with.
+// Whole workout: cardio by its own cost, the rest of the workout's time (only if it had strength sets, and at
+// most 5 minutes a set) as strength training. Null when there is no body weight to count with.
 export function workoutKcal(w, exMap, bwAt, now = Date.now()) {
   const bw = bwAt(w.startedAt);
-  let cardio = 0, cardioMin = 0, strength = false, unknown = false;
+  let cardio = 0, cardioMin = 0, strength = 0, unknown = false;
   w.exercises.forEach((e) => {
     const ex = exMap[e.exerciseId];
     e.sets.forEach((s) => {
@@ -38,11 +40,12 @@ export function workoutKcal(w, exMap, bwAt, now = Date.now()) {
         const k = cardioKcal(ex, s, bw);
         if (k == null) unknown = true; else cardio += k;
         cardioMin += num(s.r);
-      } else strength = true;
+      } else strength++;
     });
   });
   if (!(bw > 0) && (strength || unknown)) return null;
   const { main, extra } = durations(w, now);
-  const strengthMin = strength ? Math.max(0, (main + extra) / 60000 - cardioMin) : 0;
+  // a workout left running for hours (forgot to finish) counts at most ~5 minutes a set, set and rest
+  const strengthMin = strength ? Math.min(Math.max(0, (main + extra) / 60000 - cardioMin), Math.max(30, strength * STRENGTH_MIN_PER_SET)) : 0;
   return Math.round(cardio + kcalOf(STRENGTH_MET, bw || 0, strengthMin));
 }

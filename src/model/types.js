@@ -40,6 +40,7 @@
  * @property {number} [bw]                share of body weight lifted (push-ups ≈ 0.65); w is then extra weight
  * @property {boolean} [assist]           assisted machine: w is the assistance, load = body weight − w
  * @property {string} [photo]             own picture, a JPEG data URL
+ * @property {Record<string, number>} [muscles]  muscles it works, muscle id -> 1 (main) | 0.5 (helping); none = muscles.js rules
  */
 
 /** @typedef {{ id: string, name: string, items: ProgramItem[] }} Program  name may be "" (shown as "Без названия") */
