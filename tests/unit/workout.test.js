@@ -68,7 +68,7 @@ test("running workout abandoned since yesterday ends at its last set", () => {
 });
 
 test("columns: rest is never a real column, w/r always on", () => {
-  assert.deepEqual(setColumns({ columns: [{ key: "rir", on: true }, { key: "w", on: false }, { key: "rest", on: true }] }), ["rir", "w", "r", "p"]);
+  assert.deepEqual(setColumns({ columns: [{ key: "rir", on: true }, { key: "w", on: false }, { key: "rest", on: true }] }), ["rir", "w", "r"]); // partials are opt-in
 });
 
 test("formatting of sets", () => {
@@ -80,4 +80,23 @@ test("weekly analysis counts hard sets and days", () => {
   const now = Date.now();
   const an = weekAnalysis([{ startedAt: now, exercises: [{ exerciseId: "sq", sets: [{ done: true }, { done: true, rir: 4 }, { done: true, t: "w" }] }] }], exMap, weekStartOf(now));
   assert.equal(an.groups["ноги"].sets, 1); assert.equal(an.days, 1);
+});
+
+test("estimated 1RM, records and the previous session", async () => {
+  const { e1rm, recordSets, bestE1rm, previousSession } = await import("../../src/model/records.js");
+  assert.equal(e1rm(100, 1), 100);
+  assert.equal(Math.round(e1rm(100, 10)), 133);
+  assert.equal(e1rm(100, 20), null);
+  const sq = { id: "sq", kind: "reps" };
+  const bw = () => 80;
+  const workouts = [
+    { startedAt: 1, exercises: [{ exerciseId: "sq", sets: [{ w: "100", r: "5", done: true }] }] },
+    { startedAt: 2, exercises: [{ exerciseId: "sq", sets: [{ w: "90", r: "5", done: true }] }] },
+  ];
+  const best = bestE1rm(workouts, "sq", sq, bw);
+  assert.equal(Math.round(best), 117);
+  assert.equal(previousSession(workouts, "sq", 2).workout.startedAt, 1);
+  const today = [{ w: "100", r: "6", done: true }, { w: "100", r: "6", done: true }, { w: "60", r: "10", t: "w", done: true }, { w: "105", r: "6", done: true }];
+  assert.deepEqual([...recordSets(today, sq, 80, best)], [0, 3]);
+  assert.deepEqual([...recordSets(today, sq, 80, null)], [], "first time: no records");
 });

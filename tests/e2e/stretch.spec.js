@@ -38,6 +38,7 @@ test("phases run out on their own and the run is saved", async ({ page }) => {
   const errors = await openApp(page);
   await switchMode(page, "Растяжка");
   const addStretches = await newProgram(page, ["Четвёрка"]);
+  await page.getByText("Таймер программы").click(); // collapsed by default
   // program timer: prep 10->0, work 30->5, switch 5->0, rest 15->0 (the minus buttons, in order)
   const minus = (i) => page.locator("div.rounded-lg.bg-neutral-800 > button:first-child").nth(i);
   for (const [i, n] of [[0, 2], [1, 5], [2, 1], [3, 3]]) for (let k = 0; k < n; k++) await minus(i).click();

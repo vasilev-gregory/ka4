@@ -18,7 +18,7 @@ import { StretchHistory } from "./stretch/StretchHistory.jsx";
 import { StretchHome } from "./stretch/StretchHome.jsx";
 import { StretchPlayer } from "./stretch/StretchPlayer.jsx";
 import { AppCtx, Button, ConfirmButton } from "./ui/kit.jsx";
-import { LeaveGuardProvider, useNavigation } from "./ui/navigation.js";
+import { useNavigation } from "./ui/navigation.js";
 
 export default function App() {
   const { data, update, replace, err, saved, reload, startFresh } = usePersistentData();
@@ -51,7 +51,7 @@ function Shell({ data, up, replace, saved }) {
 
   const { measurements, exercises } = data;
   const { bodyWeight, namesRu } = data.settings;
-  const appCtx = useMemo(() => ({ bwAt: makeBodyWeightAt(measurements || [], bodyWeight || 0), ...makeNames(!!namesRu) }), [measurements, bodyWeight, namesRu]);
+  const appCtx = useMemo(() => ({ bwAt: makeBodyWeightAt(measurements || [], bodyWeight || 0), ...makeNames(namesRu !== false) }), [measurements, bodyWeight, namesRu]);
   const exMap = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
 
   const [modeToast, setModeToast] = useState(false);
@@ -85,26 +85,26 @@ function Shell({ data, up, replace, saved }) {
 
   return (
     <AppCtx.Provider value={appCtx}>
-      <LeaveGuardProvider value={nav.guards}>
-        <div className={`min-h-screen bg-black text-sm text-neutral-100 ${stretchMode ? "mode-stretch" : ""}`}>
-          {saved.state === "error" && (
-            <div className="fixed inset-x-0 top-0 z-50 bg-red-600 px-4 py-2 text-center text-xs text-white">
-              Изменения не сохраняются. Сделай копию в настройках.
-            </div>
-          )}
+      <div className={`min-h-screen bg-black text-sm text-neutral-100 ${stretchMode ? "mode-stretch" : ""}`}>
+        {saved.state === "error" && (
+          <div className="fixed inset-x-0 top-0 z-50 bg-red-600 px-4 py-2 text-center text-xs text-white">
+            Изменения не сохраняются. Сделай копию в настройках.
+          </div>
+        )}
+        <div className="mx-auto max-w-md pb-20">
+          {content}
           {tab === "workout" && !view && !data.active && <BackupNag data={data} up={up} />}
-          <div className="mx-auto max-w-md pb-20">{content}</div>
-          {data.active?.restEndsAt && (
-            <RestBar key={data.active.restEndsAt} endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={data.settings.sound !== false} />
-          )}
-          {modeToast && (
-            <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
-              <div className="rounded-2xl bg-accent-400 px-6 py-4 text-lg font-bold text-black shadow-xl">{stretchMode ? "Растяжка" : "Сила"}</div>
-            </div>
-          )}
-          <TabBar tab={tab} onTab={nav.setTab} onSwipe={() => switchMode()} stretchMode={stretchMode} onTop={!view} workoutRunning={!!data.active} />
         </div>
-      </LeaveGuardProvider>
+        {data.active?.restEndsAt && (
+          <RestBar key={data.active.restEndsAt} endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={data.settings.sound !== false} />
+        )}
+        {modeToast && (
+          <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+            <div className="rounded-2xl bg-accent-400 px-6 py-4 text-lg font-bold text-black shadow-xl">{stretchMode ? "Растяжка" : "Сила"}</div>
+          </div>
+        )}
+        <TabBar tab={tab} onTab={nav.setTab} onSwipe={() => switchMode()} stretchMode={stretchMode} workoutRunning={!!data.active} />
+      </div>
     </AppCtx.Provider>
   );
 }

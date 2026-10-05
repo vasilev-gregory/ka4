@@ -3,6 +3,14 @@ export const uid = () => Date.now().toString(36) + Math.random().toString(36).sl
 
 export const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
+// What a number field keeps from typing / pasting: digits and (if decimal) one "," or ".".
+export function numericInput(v, decimal) {
+  const s = String(v).replace(decimal ? /[^\d.,]/g : /\D/g, "");
+  if (!decimal) return s;
+  const i = s.search(/[.,]/);
+  return i < 0 ? s : s.slice(0, i + 1) + s.slice(i + 1).replace(/[.,]/g, "");
+}
+
 export const num = (v) => parseFloat(String(v ?? "").replace(",", ".")) || 0;
 
 export const pad = (n) => String(n).padStart(2, "0");
@@ -29,6 +37,16 @@ export function weekStartOf(ts) {
 }
 
 export const isoDay = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+
+// Russian plural: plural(3, "подход", "подхода", "подходов") -> "подхода"
+export function plural(n, one, few, many) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  return b === 1 ? one : b >= 2 && b <= 4 ? few : many;
+}
+
+// "3 подх. · 2 раза": hard sets and sessions of a muscle group in a week
+export const fmtGroupWeek = (sets, times) => `${sets} подх. · ${times} ${plural(times, "раз", "раза", "раз")}`;
 
 export const fmtNum = (v) => String(Math.round(v * 10) / 10).replace(".", ",");
 

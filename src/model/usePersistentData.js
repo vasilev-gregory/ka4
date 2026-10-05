@@ -1,3 +1,4 @@
+// The app data hook: loads, saves, syncs between instances (details in the comment on usePersistentData).
 import { useState, useEffect, useRef } from "react";
 import { produce, setAutoFreeze } from "immer";
 import { storage } from "../storage.js";

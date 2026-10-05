@@ -12,19 +12,16 @@ test("back closes detail screens one by one, then stays in the app", async ({ pa
   expect(page.url()).toContain("/ka4/");
 });
 
-test("leaving a program with unsaved changes asks first", async ({ page }) => {
+test("program changes are saved as you go; back returns to the list", async ({ page }) => {
   await openApp(page);
   await page.getByText("I. Ноги и плечи", { exact: true }).click();
   await page.locator("input").first().fill("Переименована");
   await page.goBack();
-  await expect(page.getByText("Есть несохранённые изменения")).toBeVisible();
-  await page.getByRole("button", { name: "Не сохранять" }).click();
-  await expect(page.getByText("+ Новая программа")).toBeVisible();
-  await expect(page.getByText("I. Ноги и плечи", { exact: true })).toBeVisible();
-  // and the history is in step: one more back doesn't reopen anything
-  await page.getByText("II. Грудь и спина").click();
-  await page.goBack();
-  await expect(page.getByText("+ Новая программа")).toBeVisible();
+  await expect(page.getByText("Переименована")).toBeVisible();
+  await page.getByText("Переименована").click();
+  await page.getByRole("button", { name: "Убрать" }).first().click();
+  await page.getByText("Вернуть").click();
+  await expect(page.getByRole("button", { name: "Убрать" })).toHaveCount(7);
 });
 
 test("a stretching run left with system back after a minute is saved", async ({ page }) => {

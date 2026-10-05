@@ -2,9 +2,10 @@
 import { Play } from "lucide-react";
 import { fmtDate, progTitle, uid } from "../../core/util.js";
 import { resolvePendingProgramUpdate, startWorkout } from "../../model/workoutActions.js";
-import { Button, Card, Header } from "../../ui/kit.jsx";
+import { Button, Card, Header, useApp } from "../../ui/kit.jsx";
 
 export function ProgramList({ data, up, exMap, open }) {
+  const { nm1 } = useApp();
   const last = data.workouts[data.workouts.length - 1];
   const pending = data.pendingProgramUpdate;
   const pendingProgram = pending && data.programs.find((x) => x.id === pending.programId);
@@ -16,7 +17,7 @@ export function ProgramList({ data, up, exMap, open }) {
   const start = (p) => up((d) => startWorkout(d, p));
   return (
     <div className="p-4">
-      <Header title="Тренировка" />
+      <Header title="Силовая тренировка" />
       {last && <p className="mb-3 text-xs text-neutral-400">Прошлая: {last.name}, {fmtDate(last.startedAt)}</p>}
       {pendingProgram && (
         <Card className="mb-3">
@@ -34,7 +35,7 @@ export function ProgramList({ data, up, exMap, open }) {
             <button onClick={() => open({ type: "program", id: p.id })} className="min-w-0 flex-1 py-2 text-left">
               <div className="text-base font-semibold">{progTitle(p)}</div>
               <div className="mt-1 text-xs text-neutral-400">
-                {p.items.map((i) => exMap[i.exerciseId]?.name).filter(Boolean).join(", ") || "Пока без упражнений"}
+                {p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений"}
               </div>
             </button>
             <button onClick={() => start(p)} aria-label="Начать" className="flex w-14 shrink-0 items-center justify-center rounded-lg bg-accent-400 text-black">

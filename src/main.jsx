@@ -1,9 +1,11 @@
+// Entry: asks for persistent storage, wires the service worker, mounts the app.
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
+import { protectStorage } from "./storage.js";
 import "./index.css";
 
 // ask the browser not to evict our data under storage pressure
-try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+protectStorage();
 
 // When a freshly deployed service worker takes over, reload once so the new version shows
 // on the first relaunch. All state (including a running workout) is saved on the device

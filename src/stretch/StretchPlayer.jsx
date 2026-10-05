@@ -110,7 +110,7 @@ export function StretchPlayer({ stretch, upStretch, sound, id, back, settings })
           <div className="flex items-center justify-center gap-6 p-6">
             <button onClick={() => run.go(st.idx - 1)} className="rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Назад"><ChevronLeft size={28} /></button>
             <button onClick={run.togglePause} className="rounded-full bg-accent-400 px-8 py-5 text-lg font-semibold text-black">
-              {st.pausedLeft != null ? "Дальше" : "Пауза"}
+              {st.pausedLeft != null ? "Продолжить" : "Пауза"}
             </button>
             <button onClick={() => run.go(st.idx + 1)} className="rotate-180 rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Пропустить"><ChevronLeft size={28} /></button>
           </div>
