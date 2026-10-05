@@ -40,12 +40,23 @@ export default defineConfig({
         display: "standalone",
         background_color: "#000000",
         theme_color: "#000000",
+        // Android (Chrome) lists Кач in the share sheet for these files: exports of other apps, our backups
+        share_target: {
+          action: "/ka4/share-target",
+          method: "POST",
+          enctype: "multipart/form-data",
+          params: { files: [{ name: "file", accept: [".csv", "text/csv", "text/comma-separated-values", ".json", "application/json", ".db", "application/octet-stream", "application/x-sqlite3", "application/vnd.sqlite3"] }] },
+        },
         icons: [
           { src: "icon-192.png?v=35", sizes: "192x192", type: "image/png", purpose: "any" },
           { src: "icon-512.png?v=35", sizes: "512x512", type: "image/png", purpose: "any" },
         ],
       },
-      workbox: { globPatterns: ["**/*.{js,css,html,png,svg,jpg}"], maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,png,svg,jpg}"],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        importScripts: ["share-target-sw.js"], // files shared from other apps (public/share-target-sw.js)
+      },
     }),
   ],
 });
