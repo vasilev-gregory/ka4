@@ -43,7 +43,7 @@
  */
 
 /** @typedef {{ id: string, name: string, items: ProgramItem[] }} Program  name may be "" (shown as "Без названия") */
-/** @typedef {{ exerciseId: string, sets: number }} ProgramItem  sets: how many sets to prefill */
+/** @typedef {{ exerciseId: string, sets: number, min?: number, km?: number }} ProgramItem  sets: how many sets to prefill; cardio plan: min or km */
 
 /**
  * @typedef {object} Workout

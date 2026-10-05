@@ -13,6 +13,20 @@ export function lastSession(workouts, exId) {
 // how many sets a newly added exercise gets: cardio is usually one stretch
 export const defaultSets = (ex) => (ex && ex.kind === "cardio" ? 1 : 3);
 
+// cardio plans in a program: minutes, or km
+export const CARDIO_PLAN = { min: 20, km: 5 };
+
+// A program line for an exercise: sets to prefill; cardio gets one stretch and a plan (minutes) instead.
+export const programItem = (ex) => ({ exerciseId: ex.id, sets: defaultSets(ex), ...(ex.kind === "cardio" ? { min: CARDIO_PLAN.min } : {}) });
+
+// A workout's exercises as program lines (for "update the program?"); cardio plans stay as the program had them.
+function itemsOf(w, program) {
+  return w.exercises.map((e) => {
+    const was = program.items.find((it) => it.exerciseId === e.exerciseId);
+    return { exerciseId: e.exerciseId, sets: e.sets.length || 1, ...(was?.min != null ? { min: was.min } : {}), ...(was?.km != null ? { km: was.km } : {}) };
+  });
+}
+
 export function buildSets(d, exId, n) {
   const last = lastSession(d.workouts, exId);
   const prev = last ? last.sets : [];
@@ -58,7 +72,7 @@ export function finalizeActive(d, updateProgram) {
   if (!w) return null;
   if (updateProgram) {
     const p = d.programs.find((x) => x.id === w.programId);
-    if (p) p.items = w.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
+    if (p) p.items = itemsOf(w, p);
   }
   closeSegment(w);
   w.finishedAt = w.segments[w.segments.length - 1].end;
@@ -228,7 +242,7 @@ export function fmtSets(sets, kind) {
 export function programDiff(w, programs) {
   const p = w.programId && programs.find((x) => x.id === w.programId);
   if (!p) return null;
-  const items = w.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
+  const items = itemsOf(w, p);
   return JSON.stringify(p.items) === JSON.stringify(items) ? null : { programId: p.id, items };
 }
 

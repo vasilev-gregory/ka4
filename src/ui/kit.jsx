@@ -106,11 +106,11 @@ export function Stepper({ value, onChange, step = 1, min = 1, fmt = (v) => v, co
   );
 }
 
-export function SecStepper({ value, onChange, dim, min = 0, step = 5, unit = "с" }) {
+export function SecStepper({ value, onChange, dim, min = 0, step = 5, unit = "с", fmt = (v) => v }) {
   return (
     <div className={`flex items-center rounded-lg bg-neutral-800 ${dim ? "opacity-50" : ""}`}>
       <button className="p-1.5 text-neutral-300" onClick={() => onChange(Math.max(min, value - step))}><Minus size={14} /></button>
-      <span className="w-12 text-center text-xs tabular-nums">{value} {unit}</span>
+      <span className="w-12 text-center text-xs tabular-nums">{fmt(value)} {unit}</span>
       <button className="p-1.5 text-neutral-300" onClick={() => onChange(value + step)}><Plus size={14} /></button>
     </div>
   );
