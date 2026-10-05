@@ -1,21 +1,21 @@
-// Cardio inside a strength workout and on its own; calories in the workout card and the history list.
+// Cardio inside a strength workout and as a program of its own; calories in the workout card and the history list.
 import { test, expect } from "@playwright/test";
-import { openApp, seedStorage, tab } from "./helpers.js";
+import { openApp, seedStorage, stored, tab } from "./helpers.js";
 
-test("a cardio-only workout: picker opens on cardio, minutes and km, calories in the card and in history", async ({ page }) => {
+test("a cardio-only program: no warm-up, the planned minutes as the hint, calories in the card and in history", async ({ page }) => {
   await openApp(page);
-  await seedStorage(page, (d) => { d.settings.bodyWeight = "80"; d.settings.gestureHintSeen = true; });
-  await page.getByRole("button", { name: "Кардио", exact: true }).click();
-  const picker = page.getByRole("heading", { name: "Добавить кардио" });
-  await expect(picker).toBeVisible();
-  await page.getByText("Эллипс").click();
-  await page.getByRole("button", { name: /Добавить \(1\)/ }).click();
-  await expect(page.getByText("Разминка")).toHaveCount(0); // no warm-up block in a cardio workout
+  await seedStorage(page, (d) => {
+    d.settings.bodyWeight = "80";
+    d.settings.gestureHintSeen = true;
+    d.programs = [{ id: "c", name: "Эллипс", items: [{ exerciseId: "elliptical", sets: 1, min: 30 }] }];
+  });
+  await page.getByRole("button", { name: "Начать" }).click();
+  await expect(page.getByText("Разминка")).toHaveCount(0); // a program of only cardio has no warm-up block
   await expect(page.getByText("мин", { exact: true })).toBeVisible();
   const [min, km] = await page.locator("input[inputmode=decimal]").all();
-  await min.fill("30");
+  await expect(min).toHaveAttribute("placeholder", "30");
   await km.fill("4,5");
-  await page.getByRole("button", { name: "Подход сделан" }).click();
+  await page.getByRole("button", { name: "Подход сделан" }).click(); // the planned 30 minutes are taken
   await expect(page.getByText(/кардио 30 мин · 4,5 км/)).toBeVisible();
   await page.getByRole("button", { name: "Завершить" }).click();
 
@@ -25,6 +25,19 @@ test("a cardio-only workout: picker opens on cardio, minutes and km, calories in
   await page.goBack();
   await tab(page, "История");
   await expect(page.getByText(/кардио 30 мин · 4,5 км, ≈200 ккал/)).toHaveCount(2); // the workout row and the month summary
+});
+
+test("program editor: cardio is planned in minutes or km, not in sets", async ({ page }) => {
+  await openApp(page);
+  await page.getByText("I. Ноги и плечи").first().click();
+  await page.getByRole("button", { name: "Добавить упражнение" }).click();
+  await page.getByPlaceholder("Поиск по-русски или по-английски").fill("эллипс");
+  await page.getByText("Эллипс").click();
+  await page.getByRole("button", { name: /Добавить \(1\)/ }).click();
+  await expect(page.getByText("20", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Минуты или километры" }).click();
+  await expect(page.getByText("5", { exact: true })).toBeVisible();
+  await expect.poll(async () => (await stored(page)).programs[0].items.at(-1)).toMatchObject({ exerciseId: "elliptical", sets: 1, km: 5 });
 });
 
 test("cardio as part of a strength workout: «+ Кардио» next to adding exercises", async ({ page }) => {

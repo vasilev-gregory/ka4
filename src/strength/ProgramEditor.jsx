@@ -2,9 +2,10 @@
 import { useState } from "react";
 import { X, RefreshCw, GripVertical } from "lucide-react";
 import { startWorkout } from "../model/workoutActions.js";
-import { defaultSets } from "../model/workout.js";
+import { CARDIO_PLAN, programItem } from "../model/workout.js";
+import { fmtNum } from "../core/util.js";
 import { Picker } from "./ExerciseList.jsx";
-import { Button, DeleteButton, ExImg, Header, Stepper, useApp, useUndo } from "../ui/kit.jsx";
+import { Button, DeleteButton, ExImg, Header, SecStepper, Stepper, useApp, useUndo } from "../ui/kit.jsx";
 import { moveItem, useSortable } from "../ui/sortable.js";
 
 export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
@@ -24,8 +25,12 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
   const pick = (ex) => {
     const rep = picker.replace;
     change((pp) => {
-      if (rep !== undefined) { if (pp.items[rep]) pp.items[rep].exerciseId = ex.id; }
-      else pp.items.push({ exerciseId: ex.id, sets: defaultSets(ex) });
+      if (rep !== undefined) {
+        const old = pp.items[rep];
+        // the same kind keeps its sets; cardio <-> strength starts from the new kind's defaults
+        if (old) pp.items[rep] = (exMap[old.exerciseId]?.kind === "cardio") === (ex.kind === "cardio") ? { ...old, exerciseId: ex.id } : programItem(ex);
+      }
+      else pp.items.push(programItem(ex));
     });
     setPicker(false);
   };
@@ -48,14 +53,15 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
               <div className="truncate">{nm1(exMap[it.exerciseId]) || "Удалённое упражнение"}</div>
               {nm2(exMap[it.exerciseId]) && <div className="truncate text-xs text-neutral-500">{nm2(exMap[it.exerciseId])}</div>}
             </div>
-            <Stepper compact value={it.sets} onChange={(v) => change((pp) => { pp.items[i].sets = v; })} />
+            {exMap[it.exerciseId]?.kind === "cardio" ? <CardioPlan it={it} set={(plan) => change((pp) => { pp.items[i] = { ...pp.items[i], ...plan }; })} />
+              : <Stepper compact value={it.sets} onChange={(v) => change((pp) => { pp.items[i].sets = v; })} />}
             <button onClick={() => setPicker({ replace: i })} className="p-1 text-neutral-500" aria-label="Заменить"><RefreshCw size={16} /></button>
             <button onClick={() => remove(i)} className="p-1 text-neutral-500" aria-label="Убрать"><X size={18} /></button>
           </div>
         ))}
       </div>
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить упражнение</Button>
-      <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте. Изменения сохраняются сразу.</p>
+      <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте, у кардио — план в минутах или километрах (тап по единице). Изменения сохраняются сразу.</p>
 
       <Button block disabled={!!data.active || !p.items.length} className="mt-6"
         onClick={() => { up((d) => startWorkout(d, p)); goWorkout(); }}>
@@ -70,10 +76,23 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
         <Picker data={data} up={up} onClose={() => setPicker(false)} onPick={pick}
           title={picker.replace !== undefined ? "Заменить упражнение" : undefined}
           onPickMany={picker.replace !== undefined ? undefined : (list) => {
-            change((pp) => { list.forEach((ex) => pp.items.push({ exerciseId: ex.id, sets: defaultSets(ex) })); });
+            change((pp) => { list.forEach((ex) => pp.items.push(programItem(ex))); });
             setPicker(false);
           }} />
       )}
+    </div>
+  );
+}
+
+// a cardio line's plan: minutes or km; a tap on the unit switches
+function CardioPlan({ it, set }) {
+  const km = it.km != null;
+  return (
+    <div className="flex items-center gap-1">
+      <button onClick={() => set(km ? { km: undefined, min: CARDIO_PLAN.min } : { min: undefined, km: CARDIO_PLAN.km })}
+        aria-label="Минуты или километры" className="rounded-md bg-neutral-800 px-1.5 py-1 text-[11px] text-neutral-400">{km ? "км" : "мин"}</button>
+      {km ? <SecStepper value={it.km} min={0.5} step={0.5} unit="" fmt={fmtNum} onChange={(v) => set({ km: v })} />
+        : <SecStepper value={it.min ?? CARDIO_PLAN.min} min={5} unit="" onChange={(v) => set({ min: v })} />}
     </div>
   );
 }

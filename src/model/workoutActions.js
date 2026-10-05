@@ -5,22 +5,24 @@ import { buildSets, closeSegment, columnConfig, defaultSets, normalizeGroups, se
 
 const exAt = (d, ei) => d.active && d.active.exercises[ei];
 
-export const CARDIO_WORKOUT = "Кардио";
+// a program's cardio plan (minutes or km) is the hint in that field, over last time's
+const withPlan = (sets, it) => (it.min ? sets.map((s) => ({ ...s, hr: String(it.min) }))
+  : it.km ? sets.map((s) => ({ ...s, hw: String(it.km).replace(".", ",") })) : sets);
 
-// program: start from it; null = an empty workout; "cardio" = an empty cardio-only workout (no warm-up block)
 export function startWorkout(d, program, now = Date.now()) {
-  const cardio = program === "cardio";
-  if (cardio) program = null;
+  const items = program?.items || [];
+  // a program of only cardio needs no warm-up block
+  const cardioOnly = items.length > 0 && items.every((it) => d.exercises.find((e) => e.id === it.exerciseId)?.kind === "cardio");
   d.active = {
     id: uid(),
     programId: program?.id || null,
-    name: program ? progTitle(program) : cardio ? CARDIO_WORKOUT : "Свободная тренировка",
+    name: program ? progTitle(program) : "Свободная тренировка",
     startedAt: now,
     segments: [{ start: now }],
     paused: false,
     restEndsAt: null,
-    ...(cardio ? {} : { warmup: { doneAt: null } }), // a strength workout opens with a warm-up block (no exercises in it yet)
-    exercises: (program?.items || []).map((it) => ({ exerciseId: it.exerciseId, sets: buildSets(d, it.exerciseId, it.sets) })),
+    ...(cardioOnly ? {} : { warmup: { doneAt: null } }), // a strength workout opens with a warm-up block (no exercises in it yet)
+    exercises: items.map((it) => ({ exerciseId: it.exerciseId, sets: withPlan(buildSets(d, it.exerciseId, it.sets), it) })),
   };
 }
 

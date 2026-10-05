@@ -47,7 +47,6 @@ export function ProgramList({ data, up, exMap, open }) {
           <Button variant="dashed" size="lg" className="flex-1" onClick={create}>+ Новая программа</Button>
           <Button variant="dashed" size="lg" className="flex-1" onClick={() => start(null)}>Без программы</Button>
         </div>
-        <Button variant="dashed" size="lg" block onClick={() => start("cardio")}>Кардио</Button>
       </div>
     </div>
   );

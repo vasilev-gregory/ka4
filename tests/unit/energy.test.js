@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cardioKcal, workoutKcal } from "../../src/model/energy.js";
-import { fmtSets, stats, weekAnalysis } from "../../src/model/workout.js";
+import { fmtSets, programDiff, programItem, stats, weekAnalysis } from "../../src/model/workout.js";
 import { sessionE1rm } from "../../src/model/records.js";
 import { exerciseSeries } from "../../src/model/periods.js";
 import { seed } from "../../src/model/state.js";
@@ -63,4 +63,20 @@ test("cardio in a workout: one stretch when added, no rest countdown after it", 
   assert.equal(d.active.restEndsAt, null);
   toggleSet(d, 1, 0, t0 + 120e3);
   assert.ok(d.active.restEndsAt > t0);
+});
+
+test("cardio in a program: a plan in minutes or km becomes the hint; only cardio = no warm-up; the plan survives", () => {
+  const d = seed();
+  const mixed = { id: "p1", name: "Ноги + бег", items: [{ exerciseId: "squat", sets: 3 }, { exerciseId: "treadmill-run", sets: 1, min: 30 }] };
+  const cardio = { id: "p2", name: "Эллипс", items: [{ exerciseId: "elliptical", sets: 1, km: 4.5 }] };
+  d.programs.push(mixed, cardio);
+  startWorkout(d, mixed, t0);
+  assert.ok(d.active.warmup);
+  assert.equal(d.active.exercises[1].sets[0].hr, "30");
+  assert.equal(programDiff(d.active, d.programs), null); // nothing changed: no "update the program?"
+  startWorkout(d, cardio, t0);
+  assert.equal(d.active.warmup, undefined);
+  assert.equal(d.active.exercises[0].sets[0].hw, "4,5");
+  assert.deepEqual(programItem(ex("elliptical")), { exerciseId: "elliptical", sets: 1, min: 20 });
+  assert.deepEqual(programItem(ex("squat")), { exerciseId: "squat", sets: 3 });
 });

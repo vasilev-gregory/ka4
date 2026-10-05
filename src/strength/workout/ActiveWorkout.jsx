@@ -23,9 +23,8 @@ const UNKNOWN_EXERCISE = { name: "Удалённое упражнение", kind
 export function ActiveWorkout({ data, up, exMap, open }) {
   const { bwAt } = useApp();
   const a = data.active;
-  // {} = add, { group } = add, list opened on that group, { replace: ei } = swap that exercise;
-  // a cardio-only workout starts with the cardio list open
-  const [picker, setPicker] = useState(() => (a.name === A.CARDIO_WORKOUT && !a.exercises.length ? { group: "кардио" } : null));
+  // {} = add, { group } = add, list opened on that group, { replace: ei } = swap that exercise
+  const [picker, setPicker] = useState(null);
   const [askUpdate, setAskUpdate] = useState(false);
   const [help, setHelp] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge / delete
