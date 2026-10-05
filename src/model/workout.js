@@ -1,5 +1,5 @@
 // Strength domain logic: sets, segments, rest, load/volume, weekly analysis. Pure functions over app data.
-import { DAY, fmtDur, num, uid } from "../core/util.js";
+import { DAY, fmtDur, num, progTitle, uid } from "../core/util.js";
 import { COLUMNS, DEFAULT_COLUMNS, PARTIAL_WEIGHT } from "./catalog.js";
 
 export function lastSession(workouts, exId) {
@@ -200,7 +200,7 @@ export function startWorkout(up, p) {
     d.active = {
       id: uid(),
       programId: p?.id || null,
-      name: p?.name || "Свободная тренировка",
+      name: p ? progTitle(p) : "Свободная тренировка",
       startedAt: Date.now(),
       segments: [{ start: Date.now() }],
       paused: false,

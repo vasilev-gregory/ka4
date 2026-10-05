@@ -24,7 +24,8 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
   return (
     <div className="p-4 pb-44">
       <Header title="Программа" back={tryBack} />
-      <input value={p.name} onChange={(e) => mut((pp) => { pp.name = e.target.value; })}
+      <input value={p.name} placeholder="Название программы" autoFocus={!saved.name}
+        onChange={(e) => mut((pp) => { pp.name = e.target.value; })}
         className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-none focus:ring-2 focus:ring-amber-400" />
       <div className="space-y-2">
         {p.items.map((it, i) => (

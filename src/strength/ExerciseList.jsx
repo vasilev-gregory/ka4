@@ -82,7 +82,7 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
         <input autoFocus={autoFocus} value={q} onChange={(e) => { setQ(e.target.value); setCreating(false); }}
           placeholder="Поиск по-русски или по-английски"
           className="flex-1 bg-transparent py-3 outline-none placeholder-neutral-500" />
-        {q && <button onClick={() => setQ("")} className="text-neutral-500"><X size={18} /></button>}
+        {q && <button onClick={() => setQ("")} className="-mr-2 p-2 text-neutral-400" aria-label="Очистить поиск"><X size={20} /></button>}
       </div>
 
       {creating ? createForm : (

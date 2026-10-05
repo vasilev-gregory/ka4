@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, Check, Trash2, ChevronLeft, GripVertical, Search, Play, Settings } from "lucide-react";
 import { beep, blip, tick } from "../core/sound.js";
-import { DAY, fmtDate, fmtDur, uid, weekStartOf } from "../core/util.js";
+import { DAY, fmtDate, fmtDur, progTitle, uid, weekStartOf } from "../core/util.js";
 import { ST_AREAS, ST_FIELDS, ST_WEEK_MAX } from "../model/catalog.js";
 import { PHASE, buildTimeline, stExMap, stTiming, stretchVerdict, stretchWeek } from "../model/stretch.js";
 import { ConfirmButton, ExImg, Header, PhotoPicker, SecStepper, exPhoto, useNow } from "../ui/kit.jsx";
@@ -52,7 +52,7 @@ export function StretchHome({ data, up, open }) {
   const exMap = stExMap(data);
   const create = () => {
     const id = uid();
-    up((d) => { d.stretch.programs.push({ id, name: "Растяжка", timing: { ...d.stretch.defaults }, items: [] }); });
+    up((d) => { d.stretch.programs.push({ id, name: "", timing: { ...d.stretch.defaults }, items: [] }); });
     open({ type: "stretchProgram", id });
   };
   return (
@@ -65,7 +65,7 @@ export function StretchHome({ data, up, open }) {
           return (
             <div key={p.id} className="flex items-stretch gap-2 rounded-xl bg-neutral-900 p-2 pl-4">
               <button onClick={() => open({ type: "stretchProgram", id: p.id })} className="min-w-0 flex-1 py-2 text-left">
-                <div className="text-base font-semibold">{p.name}</div>
+                <div className="text-base font-semibold">{progTitle(p)}</div>
                 <div className="mt-1 text-xs text-neutral-400">
                   {p.items.length} упр.{total ? `, ≈ ${fmtDur(total * 1000)}` : ""}
                 </div>
@@ -108,6 +108,7 @@ export function StretchPicker({ data, up, onPick, onClose, already = [] }) {
           <Search size={18} className="text-neutral-500" />
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск или новая растяжка"
             className="flex-1 bg-transparent py-3 outline-none placeholder-neutral-500" />
+          {q && <button onClick={() => setQ("")} className="-mr-2 p-2 text-neutral-400" aria-label="Очистить поиск"><X size={20} /></button>}
         </div>
         <div className="mt-3 divide-y divide-neutral-800 rounded-xl bg-neutral-900">
           {list.map((e) => (
@@ -164,7 +165,8 @@ export function StretchEditor({ data, up, id, back, open }) {
   return (
     <div className="p-4 pb-28">
       <Header title="Программа растяжки" back={back} />
-      <input value={p.name} onChange={(e) => mutP((pp) => { pp.name = e.target.value; })}
+      <input value={p.name} placeholder="Название программы" autoFocus={!p.name}
+        onChange={(e) => mutP((pp) => { pp.name = e.target.value; })}
         className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-none focus:ring-2 focus:ring-teal-400" />
 
       <div className="mb-4 rounded-xl bg-neutral-900 p-3">
@@ -313,7 +315,7 @@ export function StretchPlayer({ data, up, id, back, settings }) {
     const elapsed = Date.now() - st.startedAt;
     if (!complete && elapsed < 60e3) return;
     const work = { ...workDone.current };
-    up((d) => { d.stretch.sessions.push({ id: uid(), programId: id, name: p ? p.name : "Растяжка", startedAt: st.startedAt, finishedAt: Date.now(), complete, work }); });
+    up((d) => { d.stretch.sessions.push({ id: uid(), programId: id, name: progTitle(p, "Растяжка"), startedAt: st.startedAt, finishedAt: Date.now(), complete, work }); });
   };
   const go = (i) => {
     if (i < 0) i = 0;
@@ -382,7 +384,7 @@ export function StretchPlayer({ data, up, id, back, settings }) {
       )}
       <div className="flex items-center justify-between p-4">
         <div className="min-w-0">
-          <div className="truncate text-sm text-neutral-400">{p ? p.name : ""}</div>
+          <div className="truncate text-sm text-neutral-400">{progTitle(p, "Растяжка")}</div>
           {!st.done && <div className="text-xs text-neutral-600">{st.idx + 1} / {tl.length}</div>}
         </div>
         <div className="flex items-center gap-1">

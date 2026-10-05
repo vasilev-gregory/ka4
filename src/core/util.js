@@ -34,3 +34,6 @@ export function weekStartOf(ts) {
 export const isoDay = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 
 export const fmtNum = (v) => String(Math.round(v * 10) / 10).replace(".", ",");
+
+// Programs start without a name; wherever a name is shown, an empty one reads as this.
+export const progTitle = (p, fallback = "Без названия") => ((p && p.name && p.name.trim()) || fallback);

@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Check, Trash2, RefreshCw, GripVertical, Play } from "lucide-react";
 import { beep, blip, tick, unlockAudio } from "../core/sound.js";
-import { fmtDate, fmtDur, fmtKg, num, uid } from "../core/util.js";
+import { fmtDate, fmtDur, fmtKg, num, progTitle, uid } from "../core/util.js";
 import { buildSets, closeSegment, columnConfig, durations, finalizeActive, fmtSets, lastSession, normalizeGroups, restBefore, restShown, segmentsOf, setColumns, setLabels, startWorkout, stats } from "../model/workout.js";
 import { Picker } from "./ExerciseList.jsx";
 import { ConfirmButton, ExImg, Header, useApp, useNow } from "../ui/kit.jsx";
@@ -126,7 +126,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
           {data.programs.map((p) => (
             <div key={p.id} className="flex items-stretch gap-2 rounded-xl bg-neutral-900 p-2 pl-4">
               <button onClick={() => open({ type: "program", id: p.id })} className="min-w-0 flex-1 py-2 text-left">
-                <div className="text-base font-semibold">{p.name}</div>
+                <div className="text-base font-semibold">{progTitle(p)}</div>
                 <div className="mt-1 text-xs text-neutral-400">
                   {p.items.map((i) => exMap[i.exerciseId]?.name).filter(Boolean).join(", ") || "Пока без упражнений"}
                 </div>
@@ -140,7 +140,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
           <div className="flex gap-2">
             <button onClick={() => {
               const id = uid();
-              up((d) => { d.programs.push({ id, name: "Новая программа", items: [] }); });
+              up((d) => { d.programs.push({ id, name: "", items: [] }); });
               open({ type: "program", id });
             }} className="flex-1 rounded-xl border border-dashed border-neutral-700 p-4 text-neutral-300">
               + Новая программа
