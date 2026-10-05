@@ -94,3 +94,18 @@ export async function protectStorage() {
   window.dispatchEvent(new Event("kach-persist-changed"));
   return ok;
 }
+
+// A file shared to Кач from another app (see public/share-target-sw.js): returns it once as a File, or null.
+export async function takeSharedFile() {
+  try {
+    if (!window.caches) return null;
+    const cache = await caches.open("kach-share");
+    const res = await cache.match("shared-file");
+    if (!res) return null;
+    await cache.delete("shared-file");
+    const name = decodeURIComponent(res.headers.get("X-File-Name") || "file");
+    return new File([await res.blob()], name, { type: res.headers.get("Content-Type") || "" });
+  } catch (e) {
+    return null;
+  }
+}

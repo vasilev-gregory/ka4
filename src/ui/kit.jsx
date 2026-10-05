@@ -188,3 +188,16 @@ export function useUndo(ms = 5000) {
   );
   return { offer: (text, run) => setUndo({ text, run }), toast };
 }
+
+// Floating sheet over a dimmed screen: questions and hints. A tap outside closes it.
+export function Sheet({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3" onClick={onClose}>
+      <div className="safe-bottom mx-auto max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl bg-neutral-900 p-4 shadow-xl"
+        role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
+        <div className="mb-2 text-base font-semibold">{title}</div>
+        {children}
+      </div>
+    </div>
+  );
+}

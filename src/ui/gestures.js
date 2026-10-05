@@ -21,7 +21,10 @@ export function useSwipeRows({ disabled = false, onStart } = {}) {
   const st = useRef(null);
   const guard = useClickGuard();
   const bind = (key, onSwipe) => ({
-    onPointerDown: (e) => { if (disabled) return; st.current = { key, x: e.clientX, y: e.clientY, active: false, dx: 0 }; },
+    onPointerDown: (e) => {
+      if (disabled || (e.target.closest && e.target.closest("[data-drag-handle]"))) return; // that's a reorder
+      st.current = { key, x: e.clientX, y: e.clientY, active: false, dx: 0 };
+    },
     onPointerMove: (e) => {
       const s = st.current;
       if (!s || s.key !== key) return;

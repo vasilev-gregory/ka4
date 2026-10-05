@@ -7,6 +7,7 @@ import { usePersistentData } from "./model/usePersistentData.js";
 import { makeBodyWeightAt, makeNames } from "./model/workout.js";
 import { SettingsTab } from "./settings/SettingsTab.jsx";
 import { BackupNag } from "./shell/BackupNag.jsx";
+import { SharedImport } from "./shell/SharedImport.jsx";
 import { TabBar } from "./shell/TabBar.jsx";
 import { ExerciseDetail } from "./strength/ExerciseDetail.jsx";
 import { HistoryTab, WorkoutDetail } from "./strength/History.jsx";
@@ -103,6 +104,7 @@ function Shell({ data, up, replace, saved }) {
             <div className="rounded-2xl bg-accent-400 px-6 py-4 text-lg font-bold text-black shadow-xl">{stretchMode ? "Растяжка" : "Сила"}</div>
           </div>
         )}
+        <SharedImport data={data} up={up} replace={restore} onImported={() => nav.setTab("history")} />
         <TabBar tab={tab} onTab={nav.setTab} onSwipe={() => switchMode()} stretchMode={stretchMode} workoutRunning={!!data.active} />
       </div>
     </AppCtx.Provider>

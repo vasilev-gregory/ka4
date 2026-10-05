@@ -70,6 +70,7 @@ export function finalizeActive(d, updateProgram) {
 // rest before each confirmed set: time since the previous confirmed set anywhere in the workout
 export function restBefore(w) {
   const evs = [];
+  if (w.warmup && w.warmup.doneAt) evs.push({ at: w.warmup.doneAt, ei: -1, si: -1 }); // rest before the first set counts from the warm-up
   w.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { if (s.done && s.at) evs.push({ at: s.at, ei, si, g: s.g }); }));
   evs.sort((a, b) => a.at - b.at);
   const pauses = segmentsOf(w).map((sg) => sg.end).filter(Boolean);
@@ -83,11 +84,13 @@ export function restBefore(w) {
 }
 
 // The set where the running "rest so far" stopwatch is shown: the first unconfirmed set after the
-// last confirmed one (in this exercise, else in the next ones). Null when paused or nothing is running.
+// last confirmed one (in this exercise, else in the next ones), or after the warm-up the first set of
+// the workout. Null when paused or nothing is running.
 export function liveRestKey(w) {
   if (!w || w.paused || !w.lastSetAt) return null;
   let li = -1, ls = -1;
   w.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { if (s.done && s.at === w.lastSetAt) { li = ei; ls = si; } }));
+  if (li < 0 && w.warmup && w.warmup.doneAt === w.lastSetAt) li = 0; // ls = -1: from the very first set
   if (li < 0) return null;
   for (let ei = li; ei < w.exercises.length; ei++) {
     const ss = w.exercises[ei].sets;
