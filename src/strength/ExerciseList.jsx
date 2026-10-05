@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import { X, Check, Search } from "lucide-react";
 import { uid } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
-import { ExImg, Header, useApp } from "../ui/kit.jsx";
+import { Button, ExImg, Header, useApp } from "../ui/kit.jsx";
 
 export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
   const { nm1, nm2 } = useApp();
@@ -42,7 +42,7 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
   ];
   const exact = data.exercises.some((e) => e.name.toLowerCase() === ql || (e.ru || "").toLowerCase() === ql);
 
-  const chip = (active) => `shrink-0 rounded-full px-3 py-1 text-xs ${active ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`;
+  const chip = (active) => `shrink-0 rounded-full px-3 py-1 text-xs ${active ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`;
   const startCreate = (name) => { setNewName(name); setNewRu(""); if (filter) setGrp(filter); setCreating(true); };
   const create = () => {
     const name = newName.trim();
@@ -55,9 +55,9 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
   const createForm = (
     <div className="mt-3 rounded-xl border border-dashed border-neutral-700 p-3">
       <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Название"
-        className="mb-2 w-full rounded-lg bg-black px-3 py-2.5 outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
+        className="mb-2 w-full rounded-lg bg-black px-3 py-2.5 outline-hidden placeholder:text-neutral-600 focus:ring-2 focus:ring-accent-400" />
       <input value={newRu} onChange={(e) => setNewRu(e.target.value)} placeholder="Второе название (необязательно)"
-        className="mb-3 w-full rounded-lg bg-black px-3 py-2.5 outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
+        className="mb-3 w-full rounded-lg bg-black px-3 py-2.5 outline-hidden placeholder:text-neutral-600 focus:ring-2 focus:ring-accent-400" />
       <div className="mb-2 text-xs text-neutral-400">Группа мышц</div>
       <div className="mb-3 flex flex-wrap gap-1.5">
         {GROUPS.map((g) => <button key={g} onClick={() => setGrp(g)} className={chip(grp === g)}>{g}</button>)}
@@ -70,7 +70,7 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
       </div>
       <div className="flex gap-2">
         <button onClick={() => setCreating(false)} className="rounded-lg bg-neutral-800 px-4 py-2.5 text-neutral-300">Отмена</button>
-        <button onClick={create} disabled={!newName.trim()} className="flex-1 rounded-lg bg-amber-400 py-2.5 font-semibold text-black disabled:opacity-40">Создать</button>
+        <button onClick={create} disabled={!newName.trim()} className="flex-1 rounded-lg bg-accent-400 py-2.5 font-semibold text-black disabled:opacity-40">Создать</button>
       </div>
     </div>
   );
@@ -81,7 +81,7 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
         <Search size={18} className="text-neutral-500" />
         <input autoFocus={autoFocus} value={q} onChange={(e) => { setQ(e.target.value); setCreating(false); }}
           placeholder="Поиск по-русски или по-английски"
-          className="flex-1 bg-transparent py-3 outline-none placeholder-neutral-500" />
+          className="flex-1 bg-transparent py-3 outline-hidden placeholder:text-neutral-500" />
         {q && <button onClick={() => setQ("")} className="-mr-2 p-2 text-neutral-400" aria-label="Очистить поиск"><X size={20} /></button>}
       </div>
 
@@ -102,12 +102,13 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
 
       {byGroup.map(([g, list]) => (
         <div key={g} className="mt-4">
-          <div className={`mb-1 px-1 text-xs ${g === "твои" ? "font-semibold text-amber-400" : "text-neutral-500"}`}>
+          <div className={`mb-1 px-1 text-xs ${g === "твои" ? "font-semibold text-accent-400" : "text-neutral-500"}`}>
             {g === "твои" ? "Твои упражнения" : g}
           </div>
           <div className="divide-y divide-neutral-800 rounded-xl bg-neutral-900">
             {list.map((e) => (
-              <button key={e.id} onClick={() => onSelect(e)} className={`flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800 ${selected && selected.has(e.id) ? "bg-neutral-800" : ""}`}>
+              <button key={e.id} onClick={() => onSelect(e)}
+                className={`flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800 ${selected && selected.has(e.id) ? "bg-neutral-800" : ""}`}>
                 <ExImg ex={e} />
                 <span className="min-w-0 flex-1">
                   <span className="block">{nm1(e)}</span>
@@ -116,7 +117,7 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
                 {g === "твои" && <span className="ml-2 text-[11px] text-neutral-500">{e.group}</span>}
                 {e.kind === "time" && <span className="ml-2 text-xs text-neutral-500">на время</span>}
                 {selected && (
-                  <span className={`ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${selected.has(e.id) ? "bg-amber-400 text-black" : "border border-neutral-700"}`}>
+                  <span className={`ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${selected.has(e.id) ? "bg-accent-400 text-black" : "border border-neutral-700"}`}>
                     {selected.has(e.id) && <Check size={14} />}
                   </span>
                 )}
@@ -127,10 +128,9 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
       ))}
 
       {ql && !exact && !creating && (
-        <button onClick={() => { startCreate(q.trim()); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-          className="mt-4 w-full rounded-xl border border-dashed border-neutral-700 py-3 text-neutral-300">
+        <Button variant="dashed" block onClick={() => { startCreate(q.trim()); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="mt-4">
           + Создать «{q.trim()}»
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -150,9 +150,7 @@ export function Picker({ data, up, onPick, onPickMany, onClose, title = "Доб�
       {multi && chosen.length > 0 && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 bg-black/90 px-4 pt-3">
           <div className="mx-auto max-w-md pb-3">
-            <button onClick={() => onPickMany(chosen)} className="w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">
-              Добавить ({chosen.length})
-            </button>
+            <Button block onClick={() => onPickMany(chosen)}>Добавить ({chosen.length})</Button>
           </div>
         </div>
       )}

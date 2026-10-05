@@ -6,6 +6,8 @@ import { GROUPS } from "../model/catalog.js";
 import { fmtSets, fmtWDur, growthStatus, restStats, stats, weekAnalysis } from "../model/workout.js";
 import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
 
+const dayMonth = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+
 export function WeekCalendar({ workouts, exMap }) {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).getTime(); });
   const [selWeek, setSelWeek] = useState(() => weekStartOf(Date.now()));
@@ -40,8 +42,8 @@ export function WeekCalendar({ workouts, exMap }) {
             return (
               <div key={i} className="flex justify-center py-0.5">
                 <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs tabular-nums
-                  ${on ? "bg-amber-400 font-semibold text-black" : inMonth ? "text-neutral-300" : "text-neutral-700"}
-                  ${d.toDateString() === today && !on ? "ring-1 ring-amber-400" : ""}`}>
+                  ${on ? "bg-accent-400 font-semibold text-black" : inMonth ? "text-neutral-300" : "text-neutral-700"}
+                  ${d.toDateString() === today && !on ? "ring-1 ring-accent-400" : ""}`}>
                   {d.getDate()}
                 </span>
               </div>
@@ -53,7 +55,7 @@ export function WeekCalendar({ workouts, exMap }) {
       <div className="mt-4 rounded-xl bg-neutral-900 p-3">
         <div className="mb-2 flex items-baseline justify-between">
           <div className="font-semibold">
-            {new Date(selWeek).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} – {new Date(selWeek + 6 * DAY + 3600e3).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+            {dayMonth(selWeek)} – {dayMonth(selWeek + 6 * DAY + 3600e3)}
           </div>
           <div className="text-xs text-neutral-400">тренировок: {an.days}</div>
         </div>
@@ -65,7 +67,7 @@ export function WeekCalendar({ workouts, exMap }) {
               <div key={g} className="flex items-center gap-2 text-xs">
                 <span className="w-20 shrink-0 text-neutral-300">{g}</span>
                 <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-neutral-800">
-                  <div className="absolute inset-y-0 left-0 rounded-full bg-amber-400" style={{ width: `${Math.min(100, (sets / 20) * 100)}%` }} />
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-accent-400" style={{ width: `${Math.min(100, (sets / 20) * 100)}%` }} />
                   <div className="absolute inset-y-0 w-px bg-neutral-500" style={{ left: "50%" }} />
                 </div>
                 <span className="w-16 shrink-0 text-right tabular-nums text-neutral-400">{sets} п · {freq}×</span>

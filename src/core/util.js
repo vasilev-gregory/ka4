@@ -19,9 +19,6 @@ export const fmtDate = (ts) => new Date(ts).toLocaleDateString("ru-RU", { weekda
 
 export const fmtShort = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "numeric" });
 
-// Rough evidence-based targets per muscle group per week (Schoenfeld et al. meta-analyses, RP volume landmarks):
-// hard sets = working sets taken close to failure (RIR 0-3); 10+ sets and 2+ sessions a week is the sweet spot,
-// ~4-9 sets still grows, under 4 is roughly maintenance. Drop sets / ladders count as one set.
 export const DAY = 864e5;
 
 export function weekStartOf(ts) {

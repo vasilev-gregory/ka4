@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 html, body { background: #000; overscroll-behavior-y: none; -webkit-tap-highlight-color: transparent; }
 body { padding-top: env(safe-area-inset-top); }
@@ -11,15 +9,22 @@ input { font-size: 16px; } /* no auto-zoom on iOS */
 /* solid strip under the iOS status bar so scrolled content doesn't show through */
 body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: #000; z-index: 60; }
 
-/* Stretching mode: same components, teal accent instead of amber. */
-.mode-stretch .bg-amber-400 { background-color: #2dd4bf; }
-.mode-stretch .bg-amber-500 { background-color: #14b8a6; }
-.mode-stretch .bg-amber-950 { background-color: #042f2e; }
-.mode-stretch .text-amber-400 { color: #2dd4bf; }
-.mode-stretch .text-amber-300 { color: #5eead4; }
-.mode-stretch .text-amber-700 { color: #0f766e; }
-.mode-stretch .border-amber-400 { border-color: #2dd4bf; }
-.mode-stretch .ring-amber-400 { --tw-ring-color: #2dd4bf; }
-.mode-stretch .focus\:ring-amber-400:focus { --tw-ring-color: #2dd4bf; }
-.mode-stretch [stroke="#fbbf24"] { stroke: #2dd4bf; }
-.mode-stretch [fill="#fbbf24"] { fill: #2dd4bf; }
+/* Accent colour: amber in strength mode, teal in stretching mode. Use bg-accent-400 etc., never amber/teal directly. */
+@theme {
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-700: #b45309;
+  --color-accent-900: #78350f;
+  --color-accent-950: #451a03;
+}
+.mode-stretch {
+  --color-accent-200: #99f6e4;
+  --color-accent-300: #5eead4;
+  --color-accent-400: #2dd4bf;
+  --color-accent-500: #14b8a6;
+  --color-accent-700: #0f766e;
+  --color-accent-900: #134e4a;
+  --color-accent-950: #042f2e;
+}

@@ -1,12 +1,10 @@
 // One exercise: progress chart, history, editing (name, group, kind, bodyweight share).
 import { useState, useMemo } from "react";
 import { Pencil } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
-import { tick } from "../core/sound.js";
 import { fmtDate, fmtShort, num } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
 import { fmtSets, setLoad } from "../model/workout.js";
-import { ExImg, Header, PhotoPicker, useApp } from "../ui/kit.jsx";
+import { ExImg, Header, PhotoPicker, Trend, useApp } from "../ui/kit.jsx";
 
 export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const { bwAt, nm1, nm2 } = useApp();
@@ -43,13 +41,13 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
       {edit && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-3">
           <input value={ex.name} placeholder="Название" onChange={(e) => mut((x) => { x.name = e.target.value; })}
-            className="mb-2 w-full rounded-lg bg-black px-3 py-2.5 outline-none focus:ring-2 focus:ring-amber-400" />
+            className="mb-2 w-full rounded-lg bg-black px-3 py-2.5 outline-hidden focus:ring-2 focus:ring-accent-400" />
           <input value={ex.ru || ""} placeholder="Второе название" onChange={(e) => mut((x) => { x.ru = e.target.value; })}
-            className="mb-3 w-full rounded-lg bg-black px-3 py-2.5 outline-none focus:ring-2 focus:ring-amber-400" />
+            className="mb-3 w-full rounded-lg bg-black px-3 py-2.5 outline-hidden focus:ring-2 focus:ring-accent-400" />
           <div className="mb-3 flex flex-wrap gap-1.5">
             {GROUPS.map((g) => (
               <button key={g} onClick={() => mut((x) => { x.group = g; })}
-                className={`rounded-full px-3 py-1 text-xs ${ex.group === g ? "bg-amber-400 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{g}</button>
+                className={`rounded-full px-3 py-1 text-xs ${ex.group === g ? "bg-accent-400 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{g}</button>
             ))}
           </div>
           <div className="flex gap-1.5">
@@ -66,7 +64,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
               const on = as ? !!ex.assist : !ex.assist && (ex.bw || 0) === f;
               return (
                 <button key={l} onClick={() => mut((x) => { x.assist = as; x.bw = as ? 0 : f; })}
-                  className={`rounded-full px-3 py-1 text-xs ${on ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+                  className={`rounded-full px-3 py-1 text-xs ${on ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
               );
             })}
           </div>
@@ -79,20 +77,15 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
       <div className="mb-4 flex items-center gap-6">
         <ExImg ex={ex} size={64} />
         <div><div className="text-2xl font-bold tabular-nums">{sessions.length}</div><div className="text-xs text-neutral-400">тренировок</div></div>
-        <div><div className="text-2xl font-bold tabular-nums text-amber-400">{best || "—"}</div><div className="text-xs text-neutral-400">{isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div></div>
+        <div>
+          <div className="text-2xl font-bold tabular-nums text-accent-400">{best || "—"}</div>
+          <div className="text-xs text-neutral-400">{isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div>
+        </div>
       </div>
 
       {chart.length >= 2 && (
         <div className="mb-4 h-48 rounded-xl bg-neutral-900 p-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chart} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid stroke="#262626" vertical={false} />
-              <XAxis dataKey="date" tick={{ fill: "#a3a3a3", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#a3a3a3", fontSize: 11 }} axisLine={false} tickLine={false} domain={["auto", "auto"]} />
-              <Tooltip contentStyle={{ background: "#171717", border: "none", borderRadius: 8 }} labelStyle={{ color: "#a3a3a3" }} />
-              <Line type="monotone" dataKey="v" name={isTime ? "сек" : "кг"} stroke="#fbbf24" strokeWidth={2.5} dot={{ r: 3, fill: "#fbbf24" }} />
-            </LineChart>
-          </ResponsiveContainer>
+          <Trend points={chart} unit={isTime ? "сек" : "кг"} />
         </div>
       )}
 

@@ -1,5 +1,5 @@
 // Shared UI primitives and the app context hook.
-import { useState, useEffect, createContext, useContext, useRef } from "react";
+import { useState, useEffect, createContext, useContext, useRef, lazy, Suspense } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { IMGS } from "../model/images.js";
 
@@ -9,7 +9,7 @@ export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
 
 export function useNow(ms, on = true) {
-  const [n, setN] = useState(Date.now());
+  const [n, setN] = useState(() => Date.now());
   useEffect(() => {
     if (!on) return;
     const t = setInterval(() => setN(Date.now()), ms);
@@ -33,7 +33,7 @@ export function ExImg({ ex, size = 40 }) {
 
 // Pick a picture from the phone, crop it to a square and shrink it (~10 KB) so it can live
 // inside the saved data (and therefore in backups).
-export function PhotoPicker({ ex, onChange, accent = "bg-amber-400" }) {
+export function PhotoPicker({ ex, onChange }) {
   const ref = useRef(null);
   const pick = (e) => {
     const f = e.target.files && e.target.files[0];
@@ -54,7 +54,7 @@ export function PhotoPicker({ ex, onChange, accent = "bg-amber-400" }) {
   return (
     <div className="flex items-center gap-3">
       <ExImg ex={ex} size={48} />
-      <button onClick={() => ref.current && ref.current.click()} className={`rounded-lg px-3 py-2 text-xs font-semibold text-black ${accent}`}>
+      <button onClick={() => ref.current && ref.current.click()} className="rounded-lg bg-accent-400 px-3 py-2 text-xs font-semibold text-black">
         {ex && ex.photo ? "Другое фото" : "Добавить фото"}
       </button>
       {ex && ex.photo && <button onClick={() => onChange(null)} className="text-xs text-neutral-500">убрать</button>}
@@ -114,3 +114,62 @@ export function SecStepper({ value, onChange, dim, min = 0, step = 5, unit = "с
     </div>
   );
 }
+
+const BUTTON = {
+  primary: "rounded-xl bg-accent-400 font-semibold text-black disabled:opacity-40",
+  secondary: "rounded-xl bg-neutral-900 active:bg-neutral-800 disabled:opacity-60",
+  dashed: "rounded-xl border border-dashed border-neutral-700 text-neutral-300",
+  quiet: "rounded-xl bg-neutral-800 text-neutral-300",
+};
+const BUTTON_SIZE = { md: "py-3", lg: "p-4", sm: "px-4 py-2.5" };
+
+// variant: primary (accent) | secondary | dashed (add something) | quiet; block = full width
+export function Button({ variant = "primary", size = "md", block, className = "", ...props }) {
+  return <button {...props} className={`${BUTTON[variant]} ${BUTTON_SIZE[size]} ${block ? "w-full" : ""} ${className}`} />;
+}
+
+export const Card = ({ className = "", ...props }) => <div {...props} className={`rounded-xl bg-neutral-900 p-4 ${className}`} />;
+
+// small on/off or selected/unselected label
+export const Pill = ({ on, children, className = "" }) => (
+  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${on ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-400"} ${className}`}>
+    {children ?? (on ? "вкл" : "выкл")}
+  </span>
+);
+
+// a settings row that toggles something: title, hint, вкл/выкл on the right
+export function SwitchRow({ title, hint, on, onClick, className = "" }) {
+  return (
+    <button onClick={onClick} className={`flex w-full items-center justify-between rounded-xl bg-neutral-900 p-4 text-left ${className}`}>
+      <div>
+        <div className="font-semibold">{title}</div>
+        {hint && <div className="text-xs text-neutral-400">{hint}</div>}
+      </div>
+      <Pill on={on} />
+    </button>
+  );
+}
+
+// one of a few options: [[value, label], …]
+export function Segmented({ options, value, onChange }) {
+  return (
+    <div className="flex gap-1.5">
+      {options.map(([v, l]) => (
+        <button key={String(v)} onClick={() => onChange(v)}
+          className={`flex-1 rounded-lg py-2 text-xs font-semibold ${value === v ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+      ))}
+    </div>
+  );
+}
+
+// "Delete …" at the bottom of a screen: the first tap arms it (turns red), the second deletes
+export const DeleteButton = ({ onConfirm, confirmText, children }) => (
+  <ConfirmButton onConfirm={onConfirm} confirmText={confirmText}
+    className="mt-3 w-full py-3 text-neutral-500" armedClassName="mt-3 w-full rounded-xl bg-red-600 py-3 text-white">
+    {children}
+  </ConfirmButton>
+);
+
+const TrendChartLazy = lazy(() => import("./TrendChart.jsx"));
+// the chart, with an empty box of the same size while its code loads
+export const Trend = (props) => <Suspense fallback={null}><TrendChartLazy {...props} /></Suspense>;

@@ -1,5 +1,5 @@
 // Strength domain logic: sets, segments, rest, load/volume, weekly analysis. Pure functions over app data.
-import { DAY, fmtDur, num, progTitle, uid } from "../core/util.js";
+import { DAY, fmtDur, num } from "../core/util.js";
 import { COLUMNS, DEFAULT_COLUMNS, PARTIAL_WEIGHT } from "./catalog.js";
 
 export function lastSession(workouts, exId) {
@@ -80,6 +80,20 @@ export function restBefore(w) {
     out[`${b.ei}:${b.si}`] = a.ei === b.ei && a.g && a.g === b.g ? "drop" : b.at - a.at;
   }
   return out;
+}
+
+// The set where the running "rest so far" stopwatch is shown: the first unconfirmed set after the
+// last confirmed one (in this exercise, else in the next ones). Null when paused or nothing is running.
+export function liveRestKey(w) {
+  if (!w || w.paused || !w.lastSetAt) return null;
+  let li = -1, ls = -1;
+  w.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { if (s.done && s.at === w.lastSetAt) { li = ei; ls = si; } }));
+  if (li < 0) return null;
+  for (let ei = li; ei < w.exercises.length; ei++) {
+    const ss = w.exercises[ei].sets;
+    for (let si = ei === li ? ls + 1 : 0; si < ss.length; si++) if (!ss[si].done) return `${ei}:${si}`;
+  }
+  return null;
 }
 
 export function restStats(w) {
@@ -195,19 +209,12 @@ export function fmtSets(sets, kind) {
   return parts.map((p, i) => (i === 0 ? "" : sets[i].g && sets[i - 1].g === sets[i].g ? " → " : ", ") + p).join("");
 }
 
-export function startWorkout(up, p) {
-  up((d) => {
-    d.active = {
-      id: uid(),
-      programId: p?.id || null,
-      name: p ? progTitle(p) : "Свободная тренировка",
-      startedAt: Date.now(),
-      segments: [{ start: Date.now() }],
-      paused: false,
-      restEndsAt: null,
-      exercises: (p?.items || []).map((it) => ({ exerciseId: it.exerciseId, sets: buildSets(d, it.exerciseId, it.sets) })),
-    };
-  });
+// What the program would look like if it followed this workout; null when nothing differs.
+export function programDiff(w, programs) {
+  const p = w.programId && programs.find((x) => x.id === w.programId);
+  if (!p) return null;
+  const items = w.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
+  return JSON.stringify(p.items) === JSON.stringify(items) ? null : { programId: p.id, items };
 }
 
 export function weekAnalysis(workouts, exMap, ws) {
@@ -236,26 +243,47 @@ export function weekAnalysis(workouts, exMap, ws) {
   return { days: days.size, groups };
 }
 
+// Rough evidence-based targets per muscle group per week (Schoenfeld et al. meta-analyses, RP volume landmarks):
+// hard sets = working sets taken close to failure (RIR 0-3); 10+ sets and 2+ sessions a week is the sweet spot,
+// ~4-9 sets still grows, under 4 is roughly maintenance. Drop sets / ladders count as one set.
 export function growthStatus(sets, freq) {
   if (sets < 4) return ["мало", "bg-neutral-800 text-neutral-400"];
   if (sets > 20) return ["очень много", "bg-red-950 text-red-300"];
-  if (sets >= 10 && freq >= 2) return ["оптимум", "bg-amber-400 text-black"];
-  return ["рост", "bg-amber-950 text-amber-300"];
+  if (sets >= 10 && freq >= 2) return ["оптимум", "bg-accent-400 text-black"];
+  return ["рост", "bg-accent-950 text-accent-300"];
 }
 
-// A workout left paused overnight is finished on the next launch. If it differed from its
-// program, the change is offered later via data.pendingProgramUpdate.
-export function closeStaleWorkout(d0) {
+// Latest moment anything happened in a workout: a segment start/end or a confirmed set.
+export function lastActivity(w) {
+  let t = w.startedAt || 0;
+  segmentsOf(w).forEach((sg) => { t = Math.max(t, sg.start || 0, sg.end || 0); });
+  w.exercises.forEach((e) => e.sets.forEach((s) => { if (s.done && s.at) t = Math.max(t, s.at); }));
+  return t;
+}
+
+// a running workout with no activity for this long, and not from today, was abandoned
+export const ABANDONED_AFTER = 4 * 3600e3;
+
+// A workout left paused overnight is finished on the next launch. So is one left running
+// (app killed, phone died) since yesterday: it ends at its last activity, not at "now".
+// If it differed from its program, the change is offered later via data.pendingProgramUpdate.
+export function closeStaleWorkout(d0, now = Date.now()) {
   const a = d0.active;
-  if (!a || !a.paused) return d0;
-  const segs = segmentsOf(a);
-  const lastEnd = segs[segs.length - 1].end || a.startedAt;
-  if (new Date(lastEnd).toDateString() === new Date().toDateString()) return d0;
+  if (!a) return d0;
+  const today = new Date(now).toDateString();
+  const last = lastActivity(a);
+  if (a.paused) {
+    const segs = segmentsOf(a);
+    const lastEnd = segs[segs.length - 1].end || a.startedAt;
+    if (new Date(lastEnd).toDateString() === today) return d0;
+  } else if (new Date(last).toDateString() === today || now - last < ABANDONED_AFTER) {
+    return d0;
+  }
   const d = structuredClone(d0);
   const w = d.active;
-  const p = w.programId && d.programs.find((x) => x.id === w.programId);
-  const items = w.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
-  if (p && JSON.stringify(p.items) !== JSON.stringify(items)) d.pendingProgramUpdate = { programId: p.id, items };
+  const diff = programDiff(w, d.programs);
+  if (diff) d.pendingProgramUpdate = diff;
+  closeSegment(w, last); // no-op when paused (the segment is already closed)
   finalizeActive(d, false);
   return d;
 }
