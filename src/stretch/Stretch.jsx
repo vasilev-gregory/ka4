@@ -85,7 +85,7 @@ export function StretchHome({ data, up, open }) {
   );
 }
 
-export function StretchPicker({ data, up, onPick, onClose }) {
+export function StretchPicker({ data, up, onPick, onClose, already = [] }) {
   const [q, setQ] = useState("");
   const [chosen, setChosen] = useState([]);
   const toggle = (ex) => setChosen((c) => (c.some((x) => x.id === ex.id) ? c.filter((x) => x.id !== ex.id) : [...c, ex]));
@@ -116,6 +116,7 @@ export function StretchPicker({ data, up, onPick, onClose }) {
                 <span className="block">{e.ru || e.name}</span>
                 {e.ru && <span className="block text-xs text-neutral-500">{e.name}</span>}
               </span>
+              {already.includes(e.id) && <span className="text-[11px] text-teal-300">уже в программе</span>}
               {e.sides && <span className="text-[11px] text-neutral-500">2 стороны</span>}
               <span className={`ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${chosen.some((x) => x.id === e.id) ? "bg-teal-400 text-black" : "border border-neutral-700"}`}>
                 {chosen.some((x) => x.id === e.id) && <Check size={14} />}
@@ -123,7 +124,7 @@ export function StretchPicker({ data, up, onPick, onClose }) {
             </button>
           ))}
         </div>
-        {ql && !exact && (
+        {ql && !exact && list.length === 0 && (
           <div className="mt-3 rounded-xl border border-dashed border-neutral-700 p-3">
             <div className="mb-2 text-xs text-neutral-300">Новая растяжка «{q.trim()}»</div>
             <div className="mb-3 flex gap-1.5">
@@ -259,8 +260,12 @@ export function StretchEditor({ data, up, id, back, open }) {
       </ConfirmButton>
 
       {picker && (
-        <StretchPicker data={data} up={up} onClose={() => setPicker(false)}
-          onPick={(list) => { mutP((pp) => { list.forEach((ex) => pp.items.push({ exerciseId: ex.id })); }); setPicker(false); }} />
+        <StretchPicker data={data} up={up} onClose={() => setPicker(false)} already={p.items.map((it) => it.exerciseId)}
+          onPick={(list) => {
+            // a stretch appears once per program; repeats come from rounds
+            mutP((pp) => { list.forEach((ex) => { if (!pp.items.some((it) => it.exerciseId === ex.id)) pp.items.push({ exerciseId: ex.id }); }); });
+            setPicker(false);
+          }} />
       )}
     </div>
   );
@@ -334,7 +339,11 @@ export function StretchPlayer({ data, up, id, back }) {
   const close = () => { if (!st.done) { creditPhase(); save(false); } back(); };
 
   const ph = tl[st.idx];
-  const next = ph ? tl.slice(st.idx + 1).find((x) => x.ex && x.ex !== ph.ex) : null; // next different stretch
+  // during rest the screen is about what's coming, not what just ended
+  const resting = ph && (ph.k === "rest" || ph.k === "roundRest");
+  const shownIdx = resting ? tl.findIndex((x, i) => i > st.idx && x.ex) : st.idx;
+  const shownEx = shownIdx >= 0 && tl[shownIdx] ? tl[shownIdx].ex : null;
+  const next = shownEx ? tl.slice(Math.max(shownIdx, st.idx) + 1).find((x) => x.ex && x.ex !== shownEx) : null;
   const pct = ph ? Math.max(0, Math.min(100, 100 - (left / (ph.dur * 1000)) * 100)) : 100;
   const isWork = ph && ph.k === "work";
 
@@ -364,8 +373,9 @@ export function StretchPlayer({ data, up, id, back }) {
             <div className={`mb-3 rounded-full px-4 py-1 text-sm font-semibold ${isWork ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
               {PHASE[ph.k]}
             </div>
-            {ph.ex && exPhoto(ph.ex) && <ExImg ex={ph.ex} size={140} />}
-            {ph.ex && <div className="mt-2 text-2xl font-bold">{ph.ex.ru || ph.ex.name}</div>}
+            {resting && shownEx && <div className="mb-1 text-sm text-neutral-500">Следующая</div>}
+            {shownEx && exPhoto(shownEx) && <ExImg ex={shownEx} size={140} />}
+            {shownEx && <div className="mt-2 text-2xl font-bold">{shownEx.ru || shownEx.name}</div>}
             {ph.side && <div className="mt-1 text-base text-teal-300">{ph.side}</div>}
             <div className={`mt-6 text-8xl font-bold tabular-nums ${isWork ? "text-teal-300" : "text-neutral-200"}`}>
               {st.pausedLeft != null ? fmtDur(left + 999) : fmtDur(Math.max(0, left) + 999)}

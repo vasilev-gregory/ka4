@@ -97,4 +97,10 @@ ok("built-in stretch renamed only if the user kept the old name", () => {
   assert.equal(m.stretch.exercises.find((e) => e.id === "st-lat").name, "Моя широчайшая");
 });
 
+ok("duplicate stretches in a program are merged", () => {
+  const d = seed();
+  d.stretch.programs.push({ id: "p", name: "x", items: [{ exerciseId: "st-pizza" }, { exerciseId: "st-lat" }, { exerciseId: "st-pizza" }] });
+  assert.deepEqual(migrate(d).stretch.programs[0].items.map((i) => i.exerciseId), ["st-pizza", "st-lat"]);
+});
+
 console.log(n, "unit checks passed");
