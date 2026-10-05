@@ -201,7 +201,7 @@ export function StretchEditor({ data, up, id, back, open }) {
           const t = stTiming(p, it);
           const isOpen = openItem === i;
           return (
-            <div key={i + it.exerciseId} ref={(el) => { sort.refs.current[i] = el; }} style={sort.itemStyle(i)}
+            <div key={i + it.exerciseId} ref={sort.itemRef(i)} style={sort.itemStyle(i)}
               className={`rounded-xl p-2 ${sort.dragFrom === i ? "bg-neutral-800" : "bg-neutral-900"}`}>
               <div className="flex items-center gap-1">
                 <button {...sort.handleProps(i, p.items.length)} className="cursor-grab p-1 text-neutral-500" aria-label="Перетащить"><GripVertical size={18} /></button>

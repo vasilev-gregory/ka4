@@ -109,7 +109,9 @@ export function useSortable(onMove) {
     return { transition: "transform 150ms" };
   };
 
-  return { refs, handleProps, itemStyle, dragging: !!drag, dragFrom: drag ? drag.from : -1 };
+  // ref callback for item i (the list measures items while dragging)
+  const itemRef = (i) => (el) => { refs.current[i] = el; };
+  return { itemRef, handleProps, itemStyle, dragging: !!drag, dragFrom: drag ? drag.from : -1 };
 }
 
 export function setDragActive(v) { dragActive = v; }

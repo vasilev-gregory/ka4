@@ -1,5 +1,5 @@
 // Strength domain logic: sets, segments, rest, load/volume, weekly analysis. Pure functions over app data.
-import { DAY, fmtDur, num, progTitle, uid } from "../core/util.js";
+import { DAY, fmtDur, num } from "../core/util.js";
 import { COLUMNS, DEFAULT_COLUMNS, PARTIAL_WEIGHT } from "./catalog.js";
 
 export function lastSession(workouts, exId) {
@@ -80,6 +80,20 @@ export function restBefore(w) {
     out[`${b.ei}:${b.si}`] = a.ei === b.ei && a.g && a.g === b.g ? "drop" : b.at - a.at;
   }
   return out;
+}
+
+// The set where the running "rest so far" stopwatch is shown: the first unconfirmed set after the
+// last confirmed one (in this exercise, else in the next ones). Null when paused or nothing is running.
+export function liveRestKey(w) {
+  if (!w || w.paused || !w.lastSetAt) return null;
+  let li = -1, ls = -1;
+  w.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { if (s.done && s.at === w.lastSetAt) { li = ei; ls = si; } }));
+  if (li < 0) return null;
+  for (let ei = li; ei < w.exercises.length; ei++) {
+    const ss = w.exercises[ei].sets;
+    for (let si = ei === li ? ls + 1 : 0; si < ss.length; si++) if (!ss[si].done) return `${ei}:${si}`;
+  }
+  return null;
 }
 
 export function restStats(w) {
@@ -195,19 +209,12 @@ export function fmtSets(sets, kind) {
   return parts.map((p, i) => (i === 0 ? "" : sets[i].g && sets[i - 1].g === sets[i].g ? " → " : ", ") + p).join("");
 }
 
-export function startWorkout(up, p) {
-  up((d) => {
-    d.active = {
-      id: uid(),
-      programId: p?.id || null,
-      name: p ? progTitle(p) : "Свободная тренировка",
-      startedAt: Date.now(),
-      segments: [{ start: Date.now() }],
-      paused: false,
-      restEndsAt: null,
-      exercises: (p?.items || []).map((it) => ({ exerciseId: it.exerciseId, sets: buildSets(d, it.exerciseId, it.sets) })),
-    };
-  });
+// What the program would look like if it followed this workout; null when nothing differs.
+export function programDiff(w, programs) {
+  const p = w.programId && programs.find((x) => x.id === w.programId);
+  if (!p) return null;
+  const items = w.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
+  return JSON.stringify(p.items) === JSON.stringify(items) ? null : { programId: p.id, items };
 }
 
 export function weekAnalysis(workouts, exMap, ws) {
@@ -274,9 +281,8 @@ export function closeStaleWorkout(d0, now = Date.now()) {
   }
   const d = structuredClone(d0);
   const w = d.active;
-  const p = w.programId && d.programs.find((x) => x.id === w.programId);
-  const items = w.exercises.map((e) => ({ exerciseId: e.exerciseId, sets: e.sets.length || 1 }));
-  if (p && JSON.stringify(p.items) !== JSON.stringify(items)) d.pendingProgramUpdate = { programId: p.id, items };
+  const diff = programDiff(w, d.programs);
+  if (diff) d.pendingProgramUpdate = diff;
   closeSegment(w, last); // no-op when paused (the segment is already closed)
   finalizeActive(d, false);
   return d;

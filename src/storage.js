@@ -76,3 +76,21 @@ export const storage = {
     return { key, deleted: true };
   },
 };
+
+// Browser-level storage facts: whether the data is protected from eviction, and how much is used.
+export async function storageStatus() {
+  const out = { persisted: null, usage: null, quota: null };
+  try { if (navigator.storage && navigator.storage.persisted) out.persisted = await navigator.storage.persisted(); } catch (e) {}
+  try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); out.usage = e.usage; out.quota = e.quota; } } catch (e) {}
+  return out;
+}
+
+export const canProtectStorage = () => !!(navigator.storage && navigator.storage.persist);
+
+// Asks the browser not to evict the data. Returns whether it agreed; announces the change to the app.
+export async function protectStorage() {
+  let ok = false;
+  try { if (canProtectStorage()) ok = await navigator.storage.persist(); } catch (e) {}
+  window.dispatchEvent(new Event("kach-persist-changed"));
+  return ok;
+}

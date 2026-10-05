@@ -1,7 +1,7 @@
 // Strength program editor: edits a draft, explicit save.
 import { useState } from "react";
 import { X, RefreshCw, GripVertical } from "lucide-react";
-import { startWorkout } from "../model/workout.js";
+import { startWorkout } from "../model/workoutActions.js";
 import { Picker } from "./ExerciseList.jsx";
 import { ConfirmButton, ExImg, Header, Stepper, useApp } from "../ui/kit.jsx";
 import { moveItem, useSortable } from "../ui/sortable.js";
@@ -29,7 +29,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
         className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-hidden focus:ring-2 focus:ring-accent-400" />
       <div className="space-y-2">
         {p.items.map((it, i) => (
-          <div key={i + it.exerciseId} ref={(el) => { sort.refs.current[i] = el; }} style={sort.itemStyle(i)}
+          <div key={i + it.exerciseId} ref={sort.itemRef(i)} style={sort.itemStyle(i)}
             className={`flex items-center gap-1 rounded-xl p-2 ${sort.dragFrom === i ? "bg-neutral-800" : "bg-neutral-900"}`}>
             <button {...sort.handleProps(i, p.items.length)} className="cursor-grab p-1 text-neutral-500" aria-label="Перетащить">
               <GripVertical size={18} />
@@ -52,7 +52,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
 
       <button
         disabled={!!data.active}
-        onClick={() => { if (dirty) save(); startWorkout(up, draft); goWorkout(); }}
+        onClick={() => { if (dirty) save(); up((d) => startWorkout(d, draft)); goWorkout(); }}
         className="mt-6 w-full rounded-xl bg-neutral-800 py-3 font-semibold disabled:opacity-40">
         {data.active ? "Уже идёт тренировка" : dirty ? "Сохранить и начать тренировку" : "Начать тренировку"}
       </button>

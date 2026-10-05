@@ -114,3 +114,58 @@ export function SecStepper({ value, onChange, dim, min = 0, step = 5, unit = "с
     </div>
   );
 }
+
+const BUTTON = {
+  primary: "rounded-xl bg-accent-400 font-semibold text-black disabled:opacity-40",
+  secondary: "rounded-xl bg-neutral-900 active:bg-neutral-800 disabled:opacity-60",
+  dashed: "rounded-xl border border-dashed border-neutral-700 text-neutral-300",
+  quiet: "rounded-xl bg-neutral-800 text-neutral-300",
+};
+const BUTTON_SIZE = { md: "py-3", lg: "p-4", sm: "px-4 py-2.5" };
+
+// variant: primary (accent) | secondary | dashed (add something) | quiet; block = full width
+export function Button({ variant = "primary", size = "md", block, className = "", ...props }) {
+  return <button {...props} className={`${BUTTON[variant]} ${BUTTON_SIZE[size]} ${block ? "w-full" : ""} ${className}`} />;
+}
+
+export const Card = ({ className = "", ...props }) => <div {...props} className={`rounded-xl bg-neutral-900 p-4 ${className}`} />;
+
+// small on/off or selected/unselected label
+export const Pill = ({ on, children, className = "" }) => (
+  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${on ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-400"} ${className}`}>
+    {children ?? (on ? "вкл" : "выкл")}
+  </span>
+);
+
+// a settings row that toggles something: title, hint, вкл/выкл on the right
+export function SwitchRow({ title, hint, on, onClick, className = "" }) {
+  return (
+    <button onClick={onClick} className={`flex w-full items-center justify-between rounded-xl bg-neutral-900 p-4 text-left ${className}`}>
+      <div>
+        <div className="font-semibold">{title}</div>
+        {hint && <div className="text-xs text-neutral-400">{hint}</div>}
+      </div>
+      <Pill on={on} />
+    </button>
+  );
+}
+
+// one of a few options: [[value, label], …]
+export function Segmented({ options, value, onChange }) {
+  return (
+    <div className="flex gap-1.5">
+      {options.map(([v, l]) => (
+        <button key={String(v)} onClick={() => onChange(v)}
+          className={`flex-1 rounded-lg py-2 text-xs font-semibold ${value === v ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+      ))}
+    </div>
+  );
+}
+
+// "Delete …" at the bottom of a screen: the first tap arms it (turns red), the second deletes
+export const DeleteButton = ({ onConfirm, confirmText, children }) => (
+  <ConfirmButton onConfirm={onConfirm} confirmText={confirmText}
+    className="mt-3 w-full py-3 text-neutral-500" armedClassName="mt-3 w-full rounded-xl bg-red-600 py-3 text-white">
+    {children}
+  </ConfirmButton>
+);
