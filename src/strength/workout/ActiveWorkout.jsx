@@ -10,11 +10,12 @@ import {
 import { bestE1rm, recordSets } from "../../model/records.js";
 import * as A from "../../model/workoutActions.js";
 import { useHoldReorder, useLongPress, useSwipeRows } from "../../ui/gestures.js";
-import { Button, Card, ConfirmButton, useApp, useNow, useUndo } from "../../ui/kit.jsx";
+import { Button, ConfirmButton, Sheet, useApp, useNow, useUndo } from "../../ui/kit.jsx";
 import { useWakeLock } from "../../ui/useWakeLock.js";
 import { moveItem, useSortable } from "../../ui/sortable.js";
 import { Picker } from "../ExerciseList.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
+import { WorkoutHelp } from "./WorkoutHelp.jsx";
 
 const UNKNOWN_EXERCISE = { name: "Удалённое упражнение", kind: "reps" };
 
@@ -23,6 +24,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const a = data.active;
   const [picker, setPicker] = useState(null); // {} = add, { replace: ei } = swap that exercise
   const [askUpdate, setAskUpdate] = useState(false);
+  const [help, setHelp] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge / delete
   const undo = useUndo();
   const now = useNow(1000, !a.paused);
@@ -95,7 +97,11 @@ export function ActiveWorkout({ data, up, exMap, open }) {
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-neutral-400">{a.paused ? "На паузе" : segs.length > 1 ? `Продолжение, отрезок ${segs.length}` : "Идёт тренировка"}</p>
-          <h1 className="text-lg font-bold">{a.name}</h1>
+          <h1 className="flex items-center gap-2 text-lg font-bold">
+            {a.name}
+            <button onClick={() => setHelp(true)} aria-label="Как работать с подходами"
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-neutral-800 text-xs font-semibold text-neutral-400">?</button>
+          </h1>
         </div>
         <div className="text-right">
           <div className={`text-2xl font-bold tabular-nums ${a.paused ? "text-neutral-500" : "text-accent-400"}`}>
@@ -107,15 +113,6 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           </div>
         </div>
       </div>
-
-      {!data.settings.gestureHintSeen && (
-        <Card className="mb-3 text-xs leading-relaxed text-neutral-300">
-          <div className="mb-1 text-sm font-semibold text-neutral-100">Жесты</div>
-          Свайп подхода вправо — сделано, влево — удалить. Тап по номеру — разминка, удержание — выбрать несколько
-          (дроп-сет, удаление). Удержание названия колонки — переставить колонки. Свайп по нижней панели — растяжка.
-          <Button size="sm" variant="quiet" className="mt-2 block" onClick={() => up((d) => { d.settings.gestureHintSeen = true; })}>Понятно</Button>
-        </Card>
-      )}
 
       {a.paused && (
         <Button block onClick={() => up((d) => A.resumeWorkout(d))} className="mb-3 flex items-center justify-center gap-2">
@@ -153,16 +150,18 @@ export function ActiveWorkout({ data, up, exMap, open }) {
       </div>
 
       {askUpdate && (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3" onClick={() => setAskUpdate(false)}>
-          <div className="safe-bottom mx-auto w-full max-w-md rounded-2xl bg-neutral-900 p-4" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-1 text-base font-semibold">Обновить программу?</div>
-            <p className="mb-4 text-xs text-neutral-400">
-              Состав или подходы отличаются от «{progTitle(program)}». Можно записать в программу то, как ты тренировался сегодня.
-            </p>
-            <Button block onClick={() => doFinish(true)} className="mb-2">Обновить программу</Button>
-            <Button variant="quiet" block onClick={() => doFinish(false)}>Оставить программу как была</Button>
-          </div>
-        </div>
+        <Sheet title="Обновить программу?" onClose={() => setAskUpdate(false)}>
+          <p className="mb-4 text-xs text-neutral-400">
+            Состав или подходы отличаются от «{progTitle(program)}». Можно записать в программу то, как ты тренировался сегодня.
+          </p>
+          <Button block onClick={() => doFinish(true)} className="mb-2">Обновить программу</Button>
+          <Button variant="quiet" block onClick={() => doFinish(false)}>Оставить программу как была</Button>
+        </Sheet>
+      )}
+      {/* shown by itself on the first workout, later from «?» */}
+      {(help || !data.settings.gestureHintSeen) && (
+        <WorkoutHelp rirOn={cols.includes("rir")}
+          onClose={() => { setHelp(false); if (!data.settings.gestureHintSeen) up((d) => { d.settings.gestureHintSeen = true; }); }} />
       )}
 
       {undo.toast}

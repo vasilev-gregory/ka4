@@ -1,10 +1,10 @@
 // Strength workout: swipes on set rows, weekly panel, body weight from measurements.
 import { test, expect } from "@playwright/test";
-import { openApp, tab, stored, seedStorage } from "./helpers.js";
+import { openApp, seedStorage, startWorkout, stored, tab } from "./helpers.js";
 
 test("swipe right marks a set done, swipe left deletes it with undo", async ({ page, context }) => {
   const errors = await openApp(page);
-  await page.getByRole("button", { name: "Начать" }).first().click();
+  await startWorkout(page);
   const checks = page.getByRole("button", { name: "Подход сделан" });
   const cdp = await context.newCDPSession(page);
   const swipe = async (i, dx) => {
@@ -33,7 +33,7 @@ test("swipe right marks a set done, swipe left deletes it with undo", async ({ p
 
 test("finished workout shows the weekly panel; stretch mode hides strength settings", async ({ page }) => {
   await openApp(page);
-  await page.getByRole("button", { name: "Начать" }).first().click();
+  await startWorkout(page);
   await page.getByRole("button", { name: "Подход сделан" }).first().click();
   await page.getByRole("button", { name: "Завершить" }).click();
   const keep = page.getByText("Оставить программу как была");
@@ -68,9 +68,17 @@ test("hints, last time's values, numbers only, records, undo of a swipe mark, pr
       exercises: [{ exerciseId: "squat", sets: [{ w: "100", r: "5", p: "", done: true }] }] });
   });
   await page.getByRole("button", { name: "Начать" }).first().click();
-  await expect(page.getByText("Жесты")).toBeVisible();
+  // the help sheet pops up on the first workout, explains RIR, and comes back from «?»
+  const help = page.getByRole("dialog", { name: "Как работать с подходами" });
+  await expect(help).toBeVisible();
+  await expect(help.getByText("RIR — повторы в запасе")).toBeVisible();
+  await expect(help.getByText(/нижней панели/)).toHaveCount(0);
   await page.getByRole("button", { name: "Понятно" }).click();
-  await expect(page.getByText("Жесты")).toHaveCount(0);
+  await expect(help).toHaveCount(0);
+  await page.getByRole("button", { name: "Как работать с подходами" }).click();
+  await expect(help).toBeVisible();
+  await page.mouse.click(10, 10); // a tap outside closes it
+  await expect(help).toHaveCount(0);
 
   const weight = page.locator("input[inputmode=decimal]").first();
   await weight.focus();

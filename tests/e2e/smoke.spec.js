@@ -1,6 +1,6 @@
 // Clicks through every main screen and fails on JS errors.
 import { test, expect } from "@playwright/test";
-import { openApp, tab, switchMode } from "./helpers.js";
+import { openApp, startWorkout, switchMode, tab } from "./helpers.js";
 
 test("every screen renders, strength and stretching", async ({ page }) => {
   const errors = await openApp(page);
@@ -13,7 +13,7 @@ test("every screen renders, strength and stretching", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Сохранить", exact: true })).toBeVisible();
 
   await tab(page, "Тренировка");
-  await page.getByRole("button", { name: "Начать" }).first().click();
+  await startWorkout(page);
   await page.getByRole("button", { name: "Подход сделан" }).first().click();
   await page.getByText("Добавить упражнение").first().click();
   await page.getByText("Pull up").first().click();
@@ -51,7 +51,7 @@ test("every screen renders, strength and stretching", async ({ page }) => {
   await tab(page, "Настройки");
   await page.getByText("сначала русские").click();
   await tab(page, "Тренировка");
-  await page.getByRole("button", { name: "Начать" }).first().click();
+  await startWorkout(page);
   await expect(page.getByText("Приседания со штангой").first()).toBeVisible();
   expect(errors).toEqual([]);
 });

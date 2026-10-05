@@ -24,7 +24,7 @@ export async function seedStorage(page, mutate) {
   await page.evaluate(async ([k, src]) => {
     const d = JSON.parse(localStorage.getItem(k));
     new Function(`return (${src})`)()(d);
-    d.savedAt = Date.now() + 1e6;
+    d.savedAt = Date.now(); // a real time: a later save from another instance must still win
     const raw = JSON.stringify(d);
     localStorage.setItem(k, raw);
     await new Promise((r) => {
@@ -40,4 +40,11 @@ export async function switchMode(page, label) {
   await tab(page, "Настройки");
   await page.getByRole("button", { name: label, exact: true }).click();
   await tab(page, "Тренировка");
+}
+
+// Starts a workout from the n-th program and closes the help sheet that pops up on the first workout.
+export async function startWorkout(page, n = 0) {
+  await page.getByRole("button", { name: "Начать" }).nth(n).click();
+  const help = page.getByRole("dialog", { name: "Как работать с подходами" });
+  if (await help.waitFor({ timeout: 1500 }).then(() => true, () => false)) await help.getByRole("button", { name: "Понятно" }).click();
 }
