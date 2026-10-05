@@ -1,9 +1,9 @@
-import { useState, useEffect, useLayoutEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, createContext, useContext } from "react";
 import { storage } from "./storage.js";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import {
-  Dumbbell, History, ListChecks, Library, Settings, X, Check, Trash2,
-  ChevronUp, ChevronDown, ChevronLeft, RefreshCw, GripVertical, Ruler, PersonStanding, Search, Play, Pencil, Minus, Plus,
+  Dumbbell, History, Settings, X, Check, Trash2,
+  ChevronLeft, RefreshCw, GripVertical, Ruler, PersonStanding, Search, Play, Pencil, Minus, Plus,
 } from "lucide-react";
 
 const KEY = "gymapp-state-v1";
@@ -307,29 +307,38 @@ const BW_DEFAULTS = {
   "bodyweight-squat": 0.85, "push-up": 0.65, "one-arm-push-up": 0.65, "inverted-row": 0.55,
 };
 const ASSIST_DEFAULTS = { "assisted-pull-up": true };
-// body weight source, refreshed by App on every render (measurements + settings fallback)
-let bodyCtx = { measurements: [], fallback: 0 };
-function bodyWeightAt(ts) {
+// Body weight on a given day: the latest weight measurement up to that day (same day: last entered),
+// else the earliest one after it, else the manual fallback from settings.
+function makeBodyWeightAt(measurements, fallback) {
+  return (ts) => bodyWeightAt(measurements, fallback, ts);
+}
+function bodyWeightAt(measurements, fallback, ts) {
   const dayEnd = new Date(ts).setHours(23, 59, 59, 999);
   let best = null;
-  for (const m of bodyCtx.measurements) {
+  for (const m of measurements) {
     const v = num(m.values && m.values.weight);
     if (!v) continue;
     // ">=": several measurements on the same day -> the one entered last wins
     if (m.date <= dayEnd && (!best || m.date >= best.date)) best = m;
   }
   if (!best) { // nothing before that day: take the earliest measurement after it
-    for (const m of bodyCtx.measurements) {
+    for (const m of measurements) {
       const v = num(m.values && m.values.weight);
       if (v && (!best || m.date < best.date)) best = m;
     }
   }
-  return best ? num(best.values.weight) : num(bodyCtx.fallback);
+  return best ? num(best.values.weight) : num(fallback);
 }
-// which name leads: English (default) or Russian. Set by App from settings on every render.
-let nameCtx = { ru: false };
-const nm1 = (ex) => (!ex ? "" : nameCtx.ru && ex.ru ? ex.ru : ex.name);
-const nm2 = (ex) => (!ex ? "" : nameCtx.ru ? (ex.ru ? ex.name : "") : ex.ru || "");
+// Which exercise name leads (settings.namesRu): returns { nm1: primary, nm2: secondary }.
+function makeNames(ru) {
+  return {
+    nm1: (ex) => (!ex ? "" : ru && ex.ru ? ex.ru : ex.name),
+    nm2: (ex) => (!ex ? "" : ru ? (ex.ru ? ex.name : "") : ex.ru || ""),
+  };
+}
+// Derived, read-only helpers that depend on user data/settings, provided by App to all screens.
+const AppCtx = createContext(null);
+const useApp = () => useContext(AppCtx);
 
 function setLoad(ex, s, bw) {
   if (ex && ex.assist) return Math.max(0, bw - num(s.w));
@@ -337,9 +346,9 @@ function setLoad(ex, s, bw) {
   return num(s.w);
 }
 
-function stats(w, exMap) {
+function stats(w, exMap, bwAt) {
   let vol = 0, sets = 0;
-  const bw = bodyWeightAt(w.startedAt);
+  const bw = bwAt(w.startedAt);
   w.exercises.forEach((e) => {
     const exd = exMap[e.exerciseId];
     const kind = exd?.kind;
@@ -349,7 +358,6 @@ function stats(w, exMap) {
       if (!cont) sets++; // a drop set / ladder is one set
       // partial reps count as 30% of a full rep
       if (kind !== "time") vol += setLoad(exd, s, bw) * (num(s.r) + PARTIAL_WEIGHT * num(s.p));
-      if (kind !== "time") (s.drops || []).forEach((dr) => { vol += num(dr.w) * num(dr.r); });
     });
   });
   const { main, extra, count } = durations(w);
@@ -366,8 +374,6 @@ const fmtKg = (v) => (v >= 1000 ? `${(v / 1000).toFixed(1).replace(".", ",")} т
 const fmtDate = (ts) => new Date(ts).toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" });
 const fmtShort = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "numeric" });
 // Effort per set, RP / Israetel style: reps in reserve. 4 means "4 or more".
-const RIR = [[4, "4+", "легко"], [3, "3", "норм"], [2, "2", "норм"], [1, "1", "тяжело"], [0, "0", "отказ"]];
-const rirLabel = (s) => (s.t === "w" ? "разм." : s.rir === 0 ? "отказ" : s.rir != null ? `RIR ${s.rir === 4 ? "4+" : s.rir}` : "");
 
 // Set row columns: order and visibility are user settings. Weight and reps can't be hidden.
 const COLUMNS = { w: "Вес", r: "Повторы / секунды", p: "Частичные повторы", rir: "RIR (повторов в запасе)", rest: "Отдых (в кнопке ✓)" };
@@ -401,8 +407,7 @@ function normalizeGroups(sets) {
 function fmtSets(sets, kind) {
   const parts = sets
     .map((s) => {
-      let base = kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`;
-      (s.drops || []).forEach((dr) => { base += ` → ${num(dr.w)}×${num(dr.r)}`; });
+      const base = kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`;
       if (s.t === "w") return `разм. ${base}`;
       return s.rir === 0 ? `${base} отказ` : s.rir != null ? `${base} RIR${s.rir === 4 ? "4+" : s.rir}` : base;
     });
@@ -580,21 +585,6 @@ function beep() {
   if (!actx) return;
   try { if (actx.state === "suspended") actx.resume(); tone(988, 0, 0.18); tone(988, 0.22, 0.18); tone(1319, 0.44, 0.45); } catch (e) {}
 }
-function beepOld() {
-  if (!actx) return;
-  try {
-    [0, 0.35, 0.7].forEach((t) => {
-      const o = actx.createOscillator(), g = actx.createGain();
-      o.frequency.value = 880;
-      o.connect(g); g.connect(actx.destination);
-      const s = actx.currentTime + t;
-      g.gain.setValueAtTime(0.0001, s);
-      g.gain.exponentialRampToValueAtTime(0.35, s + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, s + 0.25);
-      o.start(s); o.stop(s + 0.3);
-    });
-  } catch (e) {}
-}
 
 // ---------- small UI ----------
 function ConfirmButton({ onConfirm, children, className = "", armedClassName = "", confirmText = "Точно?" }) {
@@ -641,6 +631,7 @@ function Stepper({ value, onChange, step = 1, min = 1, fmt = (v) => v, compact }
 
 // ---------- exercise list (used in tab and picker) ----------
 function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
+  const { nm1, nm2 } = useApp();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState(""); // muscle group, "" = all
   const [creating, setCreating] = useState(false);
@@ -922,6 +913,7 @@ function startWorkout(up, p) {
 }
 
 function WorkoutTab({ data, up, exMap, open }) {
+  const { nm1, nm2, bwAt } = useApp();
   const a = data.active;
   const [picker, setPicker] = useState(false);
   const [askUpdate, setAskUpdate] = useState(false);
@@ -1008,7 +1000,6 @@ function WorkoutTab({ data, up, exMap, open }) {
   });
   const pressT = useRef(null);
   const longFired = useRef(false);
-  const focusVal = useRef(null);
   const now = useNow(1000, !!a && !a.paused);
   const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
 
@@ -1067,7 +1058,7 @@ function WorkoutTab({ data, up, exMap, open }) {
     );
   }
 
-  const st = stats(a, exMap);
+  const st = stats(a, exMap, bwAt);
   const setSet = (ei, si, patch) => up((d) => { Object.assign(d.active.exercises[ei].sets[si], patch); });
   const toggle = (ei, si) => {
     unlockAudio();
@@ -1099,7 +1090,6 @@ function WorkoutTab({ data, up, exMap, open }) {
     const ss = d.active.exercises[ei].sets, l = ss[ss.length - 1];
     ss.push({ w: "", r: "", p: "", hw: l ? l.w || l.hw || "" : "", hr: l ? l.r || l.hr || "" : "", hp: l ? l.p || l.hp || "" : "", done: false });
   });
-  const delSet = (ei, si) => { setSel(null); up((d) => { const ss = d.active.exercises[ei].sets; ss.splice(si, 1); normalizeGroups(ss); }); };
   const mergeSel = () => {
     const { ei, set } = sel;
     const idx = [...set].sort((x, y) => x - y);
@@ -1202,34 +1192,7 @@ function WorkoutTab({ data, up, exMap, open }) {
       }
     },
   });
-  // merge the next set into this one as extra steps (one set, no rest in between)
-  const mergeNext = (ei, si) => up((d) => {
-    const ss = d.active.exercises[ei].sets, s = ss[si], n = ss[si + 1];
-    if (!n) return;
-    if (!s.drops) s.drops = [];
-    s.drops.push({ w: n.w, r: n.r, hw: n.hw || "", hr: n.hr || "" }, ...(n.drops || []));
-    s.done = s.done || n.done;
-    ss.splice(si + 1, 1);
-  });
-  const splitSet = (ei, si) => up((d) => {
-    const ss = d.active.exercises[ei].sets, s = ss[si];
-    const parts = (s.drops || []).map((dr) => ({ w: dr.w, r: dr.r, p: "", hw: dr.hw || "", hr: dr.hr || "", hp: "", done: s.done }));
-    s.drops = [];
-    ss.splice(si + 1, 0, ...parts);
-  });
-  // typing reps means the set was done: confirm it, or restart rest if it was already confirmed
-  const commitOnBlur = (ei, si, field) => {
-    const s = a.exercises[ei]?.sets[si];
-    if (!s || (s[field] || "") === (focusVal.current || "")) return;
-    if (!s.done) { if ((s[field] || "") !== "") toggle(ei, si); }
-    else up((d) => { d.active.restEndsAt = Date.now() + d.settings.restSec * 1000; });
-  };
   const delEx = (ei) => up((d) => { d.active.exercises.splice(ei, 1); });
-  const moveEx = (ei, dir) => up((d) => {
-    const xs = d.active.exercises, j = ei + dir;
-    if (j < 0 || j >= xs.length) return;
-    [xs[ei], xs[j]] = [xs[j], xs[ei]];
-  });
   const addEx = (ex) => {
     const rep = picker.replace;
     up((d) => {
@@ -1307,9 +1270,9 @@ function WorkoutTab({ data, up, exMap, open }) {
               <span className="w-7" />
               {cols.map((c) => (
                 <span key={c} {...colHeaderProps(ei, c)}
-                  className={`${c === "w" || c === "r" ? "flex-1" : c === "rest" ? "w-9" : "w-9"} rounded py-1 text-center ${
+                  className={`${c === "w" || c === "r" ? "flex-1" : "w-9"} rounded py-1 text-center ${
                     colDrag && colDrag.ei === ei ? (colDrag.key === c ? "bg-amber-400 text-black" : cols[colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
-                  {c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг") : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : c === "rest" ? "отдых" : "RIR"}
+                  {c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг") : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR"}
                 </span>
               ))}
               <span className="w-11" />
@@ -1322,15 +1285,6 @@ function WorkoutTab({ data, up, exMap, open }) {
                 const box = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400";
                 const rirShown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
                 const cell = (c) => {
-                  if (c === "rest") {
-                    const v = rests[`${ei}:${si}`];
-                    const live = liveKey === `${ei}:${si}`;
-                    return (
-                      <span key={c} className={`w-9 shrink-0 text-center text-[11px] tabular-nums ${live ? "font-semibold text-amber-400" : "text-neutral-500"}`}>
-                        {live ? fmtDur(now - a.lastSetAt) : v === "drop" ? "↳" : v ? fmtDur(v) : ""}
-                      </span>
-                    );
-                  }
                   if (c === "w") return (
                     <input key={c} value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
                       className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
@@ -1463,16 +1417,6 @@ function WorkoutTab({ data, up, exMap, open }) {
   );
 }
 
-function SinceBar({ since }) {
-  const now = useNow(1000, true);
-  return (
-    <div className="above-nav pointer-events-none fixed inset-x-0 z-40 flex justify-center px-3">
-      <div className="rounded-full bg-neutral-100 px-4 py-2 text-sm font-semibold tabular-nums text-black shadow-lg">
-        Отдых {fmtDur(now - since)}
-      </div>
-    </div>
-  );
-}
 
 function RestBar({ endsAt, total, up, sound }) {
   const now = useNow(200, true);
@@ -1522,30 +1466,9 @@ function RestBar({ endsAt, total, up, sound }) {
   );
 }
 
-// ---------- programs ----------
-function ProgramsTab({ data, up, exMap, open }) {
-  const create = () => {
-    const id = uid();
-    up((d) => { d.programs.push({ id, name: "Новая программа", items: [] }); });
-    open({ type: "program", id });
-  };
-  return (
-    <div className="p-4">
-      <Header title="Программы" />
-      <div className="space-y-2">
-        {data.programs.map((p) => (
-          <button key={p.id} onClick={() => open({ type: "program", id: p.id })} className="w-full rounded-xl bg-neutral-900 p-4 text-left active:bg-neutral-800">
-            <div className="text-base font-semibold">{p.name}</div>
-            <div className="mt-1 text-xs text-neutral-400">{p.items.length} упр., {p.items.reduce((s, i) => s + i.sets, 0)} подх.</div>
-          </button>
-        ))}
-        <button onClick={create} className="w-full rounded-xl border border-dashed border-neutral-700 p-4 text-neutral-300">Новая программа</button>
-      </div>
-    </div>
-  );
-}
 
 function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
+  const { nm1, nm2 } = useApp();
   const saved = data.programs.find((x) => x.id === id);
   const [draft, setDraft] = useState(() => (saved ? structuredClone(saved) : null));
   const [picker, setPicker] = useState(false);
@@ -1635,6 +1558,7 @@ function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
 
 // ---------- exercises ----------
 function ExerciseDetail({ data, up, exMap, id, back, open }) {
+  const { bwAt, nm1, nm2 } = useApp();
   const [edit, setEdit] = useState(false);
   const ex = exMap[id];
   const sessions = useMemo(() => {
@@ -1652,7 +1576,7 @@ function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const isBody = !!(ex.bw || ex.assist);
   const metric = (sets, ts) => {
     const work = sets.filter((s) => s.t !== "w");
-    const bw = bodyWeightAt(ts);
+    const bw = bwAt(ts);
     return Math.round(Math.max(...(work.length ? work : sets).map((s) => (isTime ? num(s.r) : setLoad(ex, s, bw)))) * 10) / 10;
   };
   const chart = sessions.slice().reverse().map((s) => ({ date: fmtShort(s.w.startedAt), v: metric(s.sets, s.w.startedAt) }));
@@ -1855,6 +1779,7 @@ function WeekCalendar({ workouts, exMap }) {
 }
 
 function HistoryTab({ data, exMap, open }) {
+  const { bwAt } = useApp();
   const list = data.workouts.slice().reverse();
   return (
     <div className="p-4">
@@ -1863,7 +1788,7 @@ function HistoryTab({ data, exMap, open }) {
       {list.length === 0 && <p className="text-neutral-400">Здесь появятся завершённые тренировки.</p>}
       <div className="space-y-2">
         {list.map((w) => {
-          const st = stats(w, exMap);
+          const st = stats(w, exMap, bwAt);
           return (
             <button key={w.id} onClick={() => open({ type: "workout", id: w.id })} className="w-full rounded-xl bg-neutral-900 p-4 text-left active:bg-neutral-800">
               <div className="text-xs text-neutral-400">{fmtDate(w.startedAt)}</div>
@@ -1878,9 +1803,10 @@ function HistoryTab({ data, exMap, open }) {
 }
 
 function WorkoutDetail({ data, up, exMap, id, back, open }) {
+  const { bwAt } = useApp();
   const w = data.workouts.find((x) => x.id === id);
   if (!w) return <div className="p-4"><Header title="Тренировка удалена" back={back} /></div>;
-  const st = stats(w, exMap);
+  const st = stats(w, exMap, bwAt);
   return (
     <div className="p-4 pb-28">
       <Header title={w.name} back={back} />
@@ -2733,6 +2659,7 @@ function ColumnsSettings({ data, up }) {
 }
 
 function SettingsTab({ data, up, replace, saved, back, setMode }) {
+  const { bwAt } = useApp();
   const [exp, setExp] = useState("");
   const [imp, setImp] = useState("");
   const [msg, setMsg] = useState("");
@@ -2824,7 +2751,7 @@ function SettingsTab({ data, up, replace, saved, back, setMode }) {
               </div>
             </div>
             {measured ? (
-              <span className="shrink-0 text-base font-semibold tabular-nums">{fmtNum(bodyWeightAt(Date.now()))} кг</span>
+              <span className="shrink-0 text-base font-semibold tabular-nums">{fmtNum(bwAt(Date.now()))} кг</span>
             ) : (
               <input value={data.settings.bodyWeight || ""} inputMode="decimal" placeholder="кг"
                 onChange={(e) => up((d) => { d.settings.bodyWeight = e.target.value; })}
@@ -3007,6 +2934,10 @@ export default function App() {
     window.addEventListener("kach-persist-changed", check);
     return () => window.removeEventListener("kach-persist-changed", check);
   }, []);
+  const appCtx = useMemo(() => (data ? {
+    bwAt: makeBodyWeightAt(data.measurements || [], data.settings.bodyWeight || 0),
+    ...makeNames(!!data.settings.namesRu),
+  } : null), [data && data.measurements, data && data.settings.bodyWeight, data && data.settings.namesRu]);
   const navSw = useRef(null);
   const navJust = useRef(false);
   const [modeToast, setModeToast] = useState(false);
@@ -3055,8 +2986,6 @@ export default function App() {
   if (!data) return <div className="flex min-h-screen items-center justify-center bg-black text-neutral-400">Загружаю…</div>;
 
   const view = stack[stack.length - 1];
-  bodyCtx = { measurements: data.measurements || [], fallback: data.settings.bodyWeight || 0 };
-  nameCtx = { ru: !!data.settings.namesRu };
   const common = { data, up, exMap, open, back };
   // swipe the tab bar sideways to switch strength <-> stretching
   const navSwipe = {
@@ -3093,6 +3022,7 @@ export default function App() {
     if (r !== "cancelled") up((d) => { d.settings.lastBackupAt = Date.now(); });
   };
   return (
+    <AppCtx.Provider value={appCtx}>
     <div className={`min-h-screen bg-black text-sm text-neutral-100 ${stretchMode ? "mode-stretch" : ""}`}>
       {saved.state === "error" && (
         <div className="fixed inset-x-0 top-0 z-50 bg-red-600 px-4 py-2 text-center text-xs text-white">
@@ -3136,5 +3066,6 @@ export default function App() {
         </div>
       </nav>
     </div>
+    </AppCtx.Provider>
   );
 }
