@@ -23,7 +23,8 @@
  * @property {boolean} [countdown]        rest countdown on (default) / off
  * @property {boolean} [sound]            timer sounds on (default) / off
  * @property {"strength"|"stretch"} [mode]
- * @property {boolean} [namesRu]          Russian exercise names first
+ * @property {boolean} [namesRu]          Russian exercise names first (default); false = English first
+ * @property {boolean} [gestureHintSeen]  the gestures hint on the first workout was dismissed
  * @property {string} [bodyWeight]        manual body weight, used when there are no measurements
  * @property {{ key: "w"|"r"|"p"|"rir"|"rest", on: boolean }[]} [columns] set columns, in order
  * @property {number} [lastBackupAt]

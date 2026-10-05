@@ -22,7 +22,7 @@ export function StretchHistory({ stretch, upStretch }) {
       </div>
       <div className="mb-5">
         <StretchWeekPanel stretch={stretch} ws={ws} />
-        {!Object.keys(stretchWeek(stretch, ws).areas).length && <p className="text-xs text-neutral-500">На этой неделе растяжки не было.</p>}
+        {list.length > 0 && !Object.keys(stretchWeek(stretch, ws).areas).length && <p className="text-xs text-neutral-500">На этой неделе растяжки не было.</p>}
       </div>
       {list.length === 0 && <p className="text-neutral-400">Здесь появятся пройденные растяжки.</p>}
       <div className="space-y-2">

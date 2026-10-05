@@ -1,8 +1,8 @@
 // Stretching program editor: name, program timer, stretches (reorder, per-stretch times, area,
 // photo, sides), start, delete. Changes are saved as you go.
 import { useState } from "react";
-import { X, GripVertical } from "lucide-react";
-import { fmtDur } from "../core/util.js";
+import { X, GripVertical, ChevronDown } from "lucide-react";
+import { fmtDur, plural } from "../core/util.js";
 import { ST_AREAS, ST_FIELDS } from "../model/catalog.js";
 import { buildTimeline, stExMap, stTiming } from "../model/stretch.js";
 import * as S from "../model/stretchActions.js";
@@ -13,6 +13,7 @@ import { StretchPicker } from "./StretchPicker.jsx";
 export function StretchEditor({ stretch, upStretch, id, back, open }) {
   const [picker, setPicker] = useState(false);
   const [openItem, setOpenItem] = useState(null);
+  const [timerOpen, setTimerOpen] = useState(false);
   const change = (fn) => upStretch((s) => { const p = S.findProgram(s, id); if (p) fn(p); });
   const sort = useSortable((from, to) => change((p) => moveItem(p.items, from, to)));
   const p = S.findProgram(stretch, id);
@@ -29,26 +30,6 @@ export function StretchEditor({ stretch, upStretch, id, back, open }) {
       <input value={p.name} placeholder="Название программы" autoFocus={!p.name}
         onChange={(e) => { const name = e.target.value; change((pp) => { pp.name = name; }); }}
         className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-hidden focus:ring-2 focus:ring-accent-400" />
-
-      <div className="mb-4 rounded-xl bg-neutral-900 p-3">
-        <div className="mb-2 text-xs text-neutral-400">Таймер программы</div>
-        <div className="space-y-1.5">
-          {ST_FIELDS.map(([k, l]) => (
-            <div key={k} className="flex items-center justify-between"><span className="text-sm">{l}</span><SecStepper value={T[k]} onChange={(v) => setT(k, v)} /></div>
-          ))}
-        </div>
-        <div className="mt-3"><Segmented options={[["circuit", "по кругу"], ["sequence", "по порядку"]]} value={T.mode} onChange={(v) => setT("mode", v)} /></div>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-sm">{T.mode === "circuit" ? "кругов" : "повторов каждого"}</span>
-          <SecStepper value={T.rounds} min={1} step={1} unit="" onChange={(v) => setT("rounds", v)} />
-        </div>
-        {T.mode === "circuit" && T.rounds > 1 && (
-          <div className="mt-1.5 flex items-center justify-between">
-            <span className="text-sm">отдых между кругами</span>
-            <SecStepper value={T.roundRest} onChange={(v) => setT("roundRest", v)} />
-          </div>
-        )}
-      </div>
 
       <div className="space-y-2">
         {p.items.map((it, i) => {
@@ -75,7 +56,38 @@ export function StretchEditor({ stretch, upStretch, id, back, open }) {
         })}
       </div>
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить растяжку</Button>
-      <p className="mt-2 text-xs text-neutral-500">Тап по растяжке — своё время для неё. Серым — как в программе.</p>
+      {p.items.length > 0 && <p className="mt-2 text-xs text-neutral-500">Тап по растяжке — своё время для неё. Серым — как в программе.</p>}
+      <div className="mt-4 rounded-xl bg-neutral-900 p-3">
+        <button onClick={() => setTimerOpen((x) => !x)} className="flex w-full items-center justify-between text-left">
+          <span>
+            <span className="block text-xs text-neutral-400">Таймер программы</span>
+            <span className="text-sm">
+              {T.prep} / {T.work} / {T.sw} / {T.rest} с · {T.mode === "circuit" ? `${T.rounds} ${plural(T.rounds, "круг", "круга", "кругов")}` : `по порядку × ${T.rounds}`}
+            </span>
+          </span>
+          <ChevronDown size={18} className={`text-neutral-500 transition-transform ${timerOpen ? "rotate-180" : ""}`} />
+        </button>
+        {timerOpen && (
+          <div className="mt-3">
+            <div className="space-y-1.5">
+              {ST_FIELDS.map(([k, l]) => (
+                <div key={k} className="flex items-center justify-between"><span className="text-sm">{l}</span><SecStepper value={T[k]} onChange={(v) => setT(k, v)} /></div>
+              ))}
+            </div>
+            <div className="mt-3"><Segmented options={[["circuit", "по кругу"], ["sequence", "по порядку"]]} value={T.mode} onChange={(v) => setT("mode", v)} /></div>
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-sm">{T.mode === "circuit" ? "кругов" : "повторов каждого"}</span>
+              <SecStepper value={T.rounds} min={1} step={1} unit="" onChange={(v) => setT("rounds", v)} />
+            </div>
+            {T.mode === "circuit" && T.rounds > 1 && (
+              <div className="mt-1.5 flex items-center justify-between">
+                <span className="text-sm">отдых между кругами</span>
+                <SecStepper value={T.roundRest} onChange={(v) => setT("roundRest", v)} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <Button block disabled={!tl.length} onClick={() => open({ type: "stretchPlay", id })} className="mt-6">
         Начать{total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}

@@ -11,7 +11,7 @@ const colTitle = (c, ex) =>
       : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR";
 
 // g: gesture bindings from ActiveWorkout; sel: {ei, set} while selecting sets; act: the card's actions
-export function ExerciseCard({ e, ei, ex, exData, last, cols, compact, sort, sortCount, g, sel, rests, liveKey, liveMs, act, open }) {
+export function ExerciseCard({ e, ei, ex, exData, last, records, cols, compact, sort, sortCount, g, sel, rests, liveKey, liveMs, act, open }) {
   const { nm1, nm2 } = useApp();
   const labels = setLabels(e.sets);
   const selHere = sel && sel.ei === ei ? sel : null;
@@ -53,7 +53,7 @@ export function ExerciseCard({ e, ei, ex, exData, last, cols, compact, sort, sor
               <SetRow key={si} s={s} ex={ex} cols={cols} label={labels[si]}
                 grouped={!!(s.g && si > 0 && e.sets[si - 1].g === s.g)}
                 selected={!!(selHere && selHere.set.has(si))}
-                rest={rests[key]} live={liveKey === key ? liveMs : null}
+                rest={rests[key]} live={liveKey === key ? liveMs : null} record={records.has(si)}
                 swipe={g.swipe && g.swipe.key === key ? g.swipe : null}
                 swipeProps={g.swipeBind(key, (dir) => act.swipeSet(si, dir))}
                 numberProps={g.numberProps(si)}
@@ -61,12 +61,16 @@ export function ExerciseCard({ e, ei, ex, exData, last, cols, compact, sort, sor
             );
           })}
           {selHere ? (
-            <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-neutral-800 p-2 text-xs">
-              <span className="flex-1 text-neutral-300">{selHere.set.size}</span>
-              <button disabled={selHere.set.size < 2} onClick={act.mergeSelected} className="rounded-md bg-accent-400 px-3 py-2 font-semibold text-black disabled:opacity-40">Объединить</button>
-              <button onClick={act.unmergeSelected} className="rounded-md bg-neutral-700 px-3 py-2">Разъед.</button>
-              <button onClick={act.deleteSelected} className="rounded-md bg-red-600 px-3 py-2 text-white">Удалить</button>
-              <button onClick={act.cancelSelection} className="px-2 py-2 text-neutral-400">Отмена</button>
+            <div className="mt-2 rounded-lg bg-neutral-800 p-2 text-xs">
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="text-neutral-300">Выбрано: {selHere.set.size}</span>
+                <button onClick={act.cancelSelection} className="px-1 text-neutral-400">Отмена</button>
+              </div>
+              <div className="flex gap-1.5">
+                <button disabled={selHere.set.size < 2} onClick={act.mergeSelected} className="flex-1 rounded-md bg-accent-400 py-2 font-semibold text-black disabled:opacity-40">Объединить</button>
+                <button onClick={act.unmergeSelected} className="flex-1 rounded-md bg-neutral-700 py-2">Разъединить</button>
+                <button onClick={act.deleteSelected} className="flex-1 rounded-md bg-red-600 py-2 text-white">Удалить</button>
+              </div>
             </div>
           ) : (
             <button onClick={act.addSet} className="mt-2 w-full rounded-lg py-2 text-xs text-neutral-400 active:bg-neutral-800">Добавить подход</button>

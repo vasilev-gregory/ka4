@@ -1,9 +1,9 @@
 // One exercise: progress chart, history, editing (name, group, kind, bodyweight share).
 import { useState, useMemo } from "react";
 import { Pencil } from "lucide-react";
-import { fmtDate, fmtShort, num } from "../core/util.js";
+import { fmtDate, fmtNum, fmtShort, num } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
-import { fmtSets, setLoad } from "../model/workout.js";
+import { bestE1rm, fmtSets, setLoad } from "../model/workout.js";
 import { ExImg, Header, PhotoPicker, Trend, useApp } from "../ui/kit.jsx";
 
 export function ExerciseDetail({ data, up, exMap, id, back, open }) {
@@ -30,6 +30,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   };
   const chart = sessions.slice().reverse().map((s) => ({ date: fmtShort(s.w.startedAt), v: metric(s.sets, s.w.startedAt) }));
   const best = sessions.length ? Math.max(...sessions.map((s) => metric(s.sets, s.w.startedAt))) : 0;
+  const oneRm = bestE1rm(data.workouts, id, ex, bwAt);
   const mut = (fn) => up((d) => { const e = d.exercises.find((x) => x.id === id); if (e) fn(e); });
 
   return (
@@ -81,6 +82,12 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
           <div className="text-2xl font-bold tabular-nums text-accent-400">{best || "—"}</div>
           <div className="text-xs text-neutral-400">{isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div>
         </div>
+        {oneRm != null && (
+          <div>
+            <div className="text-2xl font-bold tabular-nums">≈{fmtNum(Math.round(oneRm * 2) / 2)}</div>
+            <div className="text-xs text-neutral-400">1ПМ, кг (расчёт)</div>
+          </div>
+        )}
       </div>
 
       {chart.length >= 2 && (

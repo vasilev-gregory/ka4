@@ -1,15 +1,16 @@
 // The running workout: header with time and volume, exercise cards, add / finish / pause, the
 // "update the program?" question, undo of a deleted set, the exercise picker.
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Play } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, fmtKg, progTitle } from "../../core/util.js";
 import {
-  durations, finalizeActive, lastSession, liveRestKey, programDiff, restBefore, restShown, segmentsOf, setColumns, stats,
+  bestE1rm, durations, finalizeActive, lastSession, liveRestKey, programDiff, recordSets, restBefore, restShown, segmentsOf, setColumns, stats,
 } from "../../model/workout.js";
 import * as A from "../../model/workoutActions.js";
 import { useHoldReorder, useLongPress, useSwipeRows } from "../../ui/gestures.js";
-import { Button, ConfirmButton, useApp, useNow } from "../../ui/kit.jsx";
+import { Button, Card, ConfirmButton, useApp, useNow, useUndo } from "../../ui/kit.jsx";
+import { useWakeLock } from "../../ui/useWakeLock.js";
 import { moveItem, useSortable } from "../../ui/sortable.js";
 import { Picker } from "../ExerciseList.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
@@ -22,9 +23,9 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const [picker, setPicker] = useState(null); // {} = add, { replace: ei } = swap that exercise
   const [askUpdate, setAskUpdate] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge / delete
-  const [undo, setUndo] = useState(null); // {ei, si, set} right after a swipe-delete
-  useEffect(() => { if (!undo) return; const t = setTimeout(() => setUndo(null), 5000); return () => clearTimeout(t); }, [undo]);
+  const undo = useUndo();
   const now = useNow(1000, !a.paused);
+  useWakeLock(!a.paused); // the screen stays on while training
   const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
   const { drag: colDrag, headerProps } = useHoldReorder((from, to) => up((d) => A.moveColumn(d.settings, from, to)));
   const longPress = useLongPress();
@@ -61,11 +62,17 @@ export function ActiveWorkout({ data, up, exMap, open }) {
     editSet: (si, patch) => up((d) => A.setSet(d, ei, si, patch)),
     toggleSet: (si) => { unlockAudio(); up((d) => A.toggleSet(d, ei, si)); },
     swipeSet: (si, dir) => {
-      if (dir > 0) { unlockAudio(); up((d) => A.toggleSet(d, ei, si)); return; }
-      const removed = a.exercises[ei]?.sets[si];
-      if (!removed) return;
-      setUndo({ ei, si, set: structuredClone(removed) });
+      const s = a.exercises[ei]?.sets[si];
+      if (!s) return;
+      if (dir > 0) {
+        unlockAudio();
+        up((d) => A.toggleSet(d, ei, si));
+        undo.offer(s.done ? "Отметка снята" : "Подход отмечен", () => up((d) => { A.toggleSet(d, ei, si); if (!s.done) A.clearRest(d); }));
+        return;
+      }
+      const removed = structuredClone(s);
       up((d) => A.deleteSet(d, ei, si));
+      undo.offer("Подход удалён", () => up((d) => A.restoreSet(d, ei, si, removed)));
     },
     mergeSelected: () => { up((d) => A.mergeSets(d, ei, sel.set)); setSel(null); },
     unmergeSelected: () => { up((d) => A.unmergeSets(d, ei, sel.set)); setSel(null); },
@@ -100,6 +107,15 @@ export function ActiveWorkout({ data, up, exMap, open }) {
         </div>
       </div>
 
+      {!data.settings.gestureHintSeen && (
+        <Card className="mb-3 text-xs leading-relaxed text-neutral-300">
+          <div className="mb-1 text-sm font-semibold text-neutral-100">Жесты</div>
+          Свайп подхода вправо — сделано, влево — удалить. Тап по номеру — разминка, удержание — выбрать несколько
+          (дроп-сет, удаление). Удержание названия колонки — переставить колонки. Свайп по нижней панели — растяжка.
+          <Button size="sm" variant="quiet" className="mt-2 block" onClick={() => up((d) => { d.settings.gestureHintSeen = true; })}>Понятно</Button>
+        </Card>
+      )}
+
       {a.paused && (
         <Button block onClick={() => up((d) => A.resumeWorkout(d))} className="mb-3 flex items-center justify-center gap-2">
           <Play size={18} /> Продолжить тренировку
@@ -108,7 +124,8 @@ export function ActiveWorkout({ data, up, exMap, open }) {
 
       {a.exercises.map((e, ei) => (
         <ExerciseCard key={ei + e.exerciseId} e={e} ei={ei} ex={exMap[e.exerciseId] || UNKNOWN_EXERCISE} exData={exMap[e.exerciseId]}
-          last={lastSession(data.workouts, e.exerciseId)} cols={cols} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
+          last={lastSession(data.workouts, e.exerciseId)}
+          records={recordSets(e.sets, exMap[e.exerciseId], bwAt(a.startedAt), bestE1rm(data.workouts, e.exerciseId, exMap[e.exerciseId], bwAt))} cols={cols} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
           g={{ swipe, swipeBind, headerProps, colDrag, numberProps: numberProps(ei) }}
           sel={sel} rests={rests} liveKey={liveKey} liveMs={now - a.lastSetAt} act={cardActions(ei)} open={open} />
       ))}
@@ -118,7 +135,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
       <div className="mt-6 flex gap-2">
         <ConfirmButton onConfirm={() => up((d) => { d.active = null; })} confirmText="Удалить тренировку?"
           className="rounded-xl bg-neutral-900 px-4 py-3 text-neutral-400" armedClassName="rounded-xl bg-red-600 px-4 py-3 text-white">
-          Отменить
+          Удалить
         </ConfirmButton>
         {a.paused ? (
           <>
@@ -146,15 +163,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
         </div>
       )}
 
-      {undo && (
-        <div className="fixed inset-x-0 top-0 z-50 px-3" style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}>
-          <div className="mx-auto flex max-w-md items-center gap-3 rounded-xl bg-neutral-100 px-4 py-3 text-sm text-black shadow-lg">
-            <span className="flex-1">Подход удалён</span>
-            <button onClick={() => { const u = undo; setUndo(null); up((d) => A.restoreSet(d, u.ei, u.si, u.set)); }}
-              className="font-semibold text-accent-700">Вернуть</button>
-          </div>
-        </div>
-      )}
+      {undo.toast}
 
       {picker && <Picker data={data} up={up} onPick={pick} onClose={() => setPicker(null)}
         onPickMany={picker.replace !== undefined ? undefined : pickMany}

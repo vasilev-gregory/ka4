@@ -12,8 +12,7 @@ test("a stale second instance doesn't overwrite newer data when it goes to backg
   const a = await context.newPage(); await openApp(a);
   const b = await context.newPage(); await openApp(b);
   await b.getByText("+ Новая программа").click();
-  await b.locator("input").first().fill("Моя программа");
-  await b.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await b.locator("input").first().fill("Моя программа"); // saved as you type
   await expect.poll(async () => (await stored(b)).programs.some((p) => p.name === "Моя программа")).toBe(true);
   await b.close({ runBeforeUnload: true });
   await a.evaluate(() => window.dispatchEvent(new Event("pagehide")));

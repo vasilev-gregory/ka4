@@ -1,11 +1,12 @@
 // Strength history: calendar with weekly analysis, workout list, workout card.
 import { useState } from "react";
-import { ChevronLeft } from "lucide-react";
-import { DAY, fmtDate, fmtDur, fmtKg, weekStartOf } from "../core/util.js";
+import { ChevronLeft, Trophy } from "lucide-react";
+import { DAY, fmtDate, fmtDur, fmtGroupWeek, fmtKg, fmtNum, weekStartOf } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
-import { fmtSets, fmtWDur, growthStatus, restStats, stats, weekAnalysis } from "../model/workout.js";
+import { bestE1rm, fmtSets, fmtWDur, growthStatus, previousSession, restStats, sessionE1rm, stats, weekAnalysis } from "../model/workout.js";
 import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
 
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const dayMonth = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 
 export function WeekCalendar({ workouts, exMap }) {
@@ -20,13 +21,14 @@ export function WeekCalendar({ workouts, exMap }) {
   const shift = (k) => setMonth(new Date(m.getFullYear(), m.getMonth() + k, 1).getTime());
   const an = weekAnalysis(workouts, exMap, selWeek);
   const today = new Date().toDateString();
-  const rows = GROUPS.map((g) => [g, an.groups[g]]);
+  const rows = GROUPS.filter((g) => an.groups[g]).map((g) => [g, an.groups[g]]);
+  const [why, setWhy] = useState(false);
 
   return (
     <div className="mb-5">
       <div className="mb-2 flex items-center justify-between">
         <button onClick={() => shift(-1)} className="p-2 text-neutral-400"><ChevronLeft size={20} /></button>
-        <div className="font-semibold capitalize">{m.toLocaleDateString("ru-RU", { month: "long", year: "numeric" })}</div>
+        <div className="font-semibold">{capitalize(m.toLocaleDateString("ru-RU", { month: "long", year: "numeric" }))}</div>
         <button onClick={() => shift(1)} className="rotate-180 p-2 text-neutral-400"><ChevronLeft size={20} /></button>
       </div>
       <div className="mb-1 grid grid-cols-7 text-center text-[11px] text-neutral-500">
@@ -57,11 +59,16 @@ export function WeekCalendar({ workouts, exMap }) {
           <div className="font-semibold">
             {dayMonth(selWeek)} – {dayMonth(selWeek + 6 * DAY + 3600e3)}
           </div>
-          <div className="text-xs text-neutral-400">тренировок: {an.days}</div>
+          <div className="flex items-center gap-2 text-xs text-neutral-400">
+            тренировок: {an.days}
+            <button onClick={() => setWhy((x) => !x)} aria-label="Как считается"
+              className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${why ? "bg-neutral-600 text-white" : "bg-neutral-800"}`}>?</button>
+          </div>
         </div>
+        {rows.length === 0 && <p className="text-xs text-neutral-500">На этой неделе тяжёлых подходов не было.</p>}
         <div className="space-y-1.5">
           {rows.map(([g, p]) => {
-            const sets = p ? p.sets : 0, freq = p ? p.days.size : 0;
+            const sets = p.sets, freq = p.days.size;
             const [label, cls] = growthStatus(sets, freq);
             return (
               <div key={g} className="flex items-center gap-2 text-xs">
@@ -70,17 +77,17 @@ export function WeekCalendar({ workouts, exMap }) {
                   <div className="absolute inset-y-0 left-0 rounded-full bg-accent-400" style={{ width: `${Math.min(100, (sets / 20) * 100)}%` }} />
                   <div className="absolute inset-y-0 w-px bg-neutral-500" style={{ left: "50%" }} />
                 </div>
-                <span className="w-16 shrink-0 text-right tabular-nums text-neutral-400">{sets} п · {freq}×</span>
+                <span className="w-24 shrink-0 text-right tabular-nums text-neutral-400">{fmtGroupWeek(sets, freq)}</span>
                 <span className={`w-20 shrink-0 rounded-md py-0.5 text-center text-[11px] ${cls}`}>{label}</span>
               </div>
             );
           })}
         </div>
-        <p className="mt-3 text-[11px] leading-snug text-neutral-500">
+        {why && <p className="mt-3 text-[11px] leading-snug text-neutral-500">
           Считаются тяжёлые подходы (RIR 0–3, без разминок), дроп-сет — один подход; каждое упражнение идёт в свою основную группу.
           Ориентир по исследованиям: 10+ подходов в неделю и 2+ тренировки на группу — оптимум (черта на шкале — 10),
           4–9 тоже дают рост, меньше 4 — скорее поддержка.
-        </p>
+        </p>}
       </div>
     </div>
   );
@@ -91,7 +98,7 @@ export function HistoryTab({ data, exMap, open }) {
   const list = data.workouts.slice().reverse();
   return (
     <div className="p-4">
-      <Header title="История" />
+      <Header title="История силовых" />
       <WeekCalendar workouts={data.active ? [...data.workouts, data.active] : data.workouts} exMap={exMap} />
       {list.length === 0 && <p className="text-neutral-400">Здесь появятся завершённые тренировки.</p>}
       <div className="space-y-2">
@@ -110,17 +117,36 @@ export function HistoryTab({ data, exMap, open }) {
   );
 }
 
+// "+2,5 кг", "−1 кг", "так же"
+const fmtDelta = (d) => (Math.abs(d) < 0.25 ? "так же" : `${d > 0 ? "+" : "−"}${fmtNum(Math.round(Math.abs(d) * 2) / 2)} кг`);
+
+// How an exercise went compared with its previous session: a record, or the change of the estimated 1RM.
+function progressNote(data, w, e, ex, bwAt) {
+  const cur = sessionE1rm(e.sets, ex, bwAt(w.startedAt));
+  if (cur == null) return null;
+  const best = bestE1rm(data.workouts, e.exerciseId, ex, bwAt, w.startedAt);
+  if (best != null && cur > best + 1e-9) return { text: "рекорд", good: true };
+  const prev = previousSession(data.workouts, e.exerciseId, w.startedAt);
+  const was = prev && sessionE1rm(prev.sets, ex, bwAt(prev.workout.startedAt));
+  if (was == null) return null;
+  return { text: `${fmtDelta(cur - was)} к прошлому разу`, good: cur - was >= 0.25 };
+}
+
 export function WorkoutDetail({ data, up, exMap, id, back, open }) {
-  const { bwAt } = useApp();
+  const { bwAt, nm1 } = useApp();
   const w = data.workouts.find((x) => x.id === id);
   if (!w) return <div className="p-4"><Header title="Тренировка удалена" back={back} /></div>;
   const st = stats(w, exMap, bwAt);
+  // volume against the previous workout of the same program
+  const prevSame = w.programId && [...data.workouts].reverse().find((x) => x.programId === w.programId && x.startedAt < w.startedAt);
+  const prevVol = prevSame ? stats(prevSame, exMap, bwAt).vol : 0;
+  const volNote = prevVol > 0 ? `объём, ${st.vol >= prevVol ? "+" : "−"}${Math.round(Math.abs(st.vol / prevVol - 1) * 100)}%` : "объём";
   return (
     <div className="p-4 pb-28">
       <Header title={w.name} back={back} />
       <p className="-mt-3 mb-4 text-neutral-400">{fmtDate(w.startedAt)}</p>
       <div className="mb-5 grid grid-cols-3 gap-2">
-        {[[fmtDur(st.dur), st.extra >= 60000 ? `время, +${fmtDur(st.extra)} позже` : "время"], [fmtKg(st.vol), "объём"], [st.sets, "подходов"]].map(([v, l]) => (
+        {[[fmtDur(st.dur), st.extra >= 60000 ? `время, +${fmtDur(st.extra)} позже` : "время"], [fmtKg(st.vol), volNote], [st.sets, "подходов"]].map(([v, l]) => (
           <div key={l} className="rounded-xl bg-neutral-900 p-3">
             <div className="text-lg font-bold tabular-nums">{v}</div>
             <div className="text-xs text-neutral-400">{l}</div>
@@ -148,7 +174,7 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
                 return (
                   <div key={g} className="flex items-center gap-2 text-xs">
                     <span className="w-20 shrink-0 text-neutral-300">{g}</span>
-                    <span className="w-14 shrink-0 tabular-nums text-neutral-400">{sets} п · {freq}×</span>
+                    <span className="w-24 shrink-0 tabular-nums text-neutral-400">{fmtGroupWeek(sets, freq)}</span>
                     <span className="min-w-0 flex-1 text-neutral-400">{hint}</span>
                     <span className={`w-20 shrink-0 rounded-md py-0.5 text-center text-[11px] ${cls}`}>{label}</span>
                   </div>
@@ -175,12 +201,14 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
       <div className="space-y-2">
         {w.exercises.map((e, i) => {
           const ex = exMap[e.exerciseId] || { name: "Удалённое упражнение", kind: "reps" };
+          const note = exMap[e.exerciseId] && progressNote(data, w, e, ex, bwAt);
           return (
             <button key={i} onClick={() => open({ type: "exercise", id: e.exerciseId })} className="flex w-full items-center gap-3 rounded-xl bg-neutral-900 p-3 text-left active:bg-neutral-800">
               <ExImg ex={exMap[e.exerciseId]} />
               <div className="min-w-0 flex-1">
-                <div className="font-semibold">{ex.name}</div>
+                <div className="font-semibold">{nm1(ex) || ex.name}</div>
                 <div className="text-xs text-neutral-300 tabular-nums">{fmtSets(e.sets, ex.kind)}</div>
+                {note && <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>{note.text === "рекорд" && <Trophy size={12} className="mr-1 inline -mt-0.5" />}{note.text}</div>}
               </div>
             </button>
           );

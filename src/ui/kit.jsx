@@ -173,3 +173,18 @@ export const DeleteButton = ({ onConfirm, confirmText, children }) => (
 const TrendChartLazy = lazy(() => import("./TrendChart.jsx"));
 // the chart, with an empty box of the same size while its code loads
 export const Trend = (props) => <Suspense fallback={null}><TrendChartLazy {...props} /></Suspense>;
+
+// "Подход удалён · Вернуть" at the top for a few seconds. undo: { text, run } or null.
+export function useUndo(ms = 5000) {
+  const [undo, setUndo] = useState(null);
+  useEffect(() => { if (!undo) return; const t = setTimeout(() => setUndo(null), ms); return () => clearTimeout(t); }, [undo, ms]);
+  const toast = undo && (
+    <div className="fixed inset-x-0 top-0 z-50 px-3" style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}>
+      <div className="mx-auto flex max-w-md items-center gap-3 rounded-xl bg-neutral-100 px-4 py-3 text-sm text-black shadow-lg">
+        <span className="flex-1">{undo.text}</span>
+        <button onClick={() => { const u = undo; setUndo(null); u.run(); }} className="font-semibold text-accent-700">Вернуть</button>
+      </div>
+    </div>
+  );
+  return { offer: (text, run) => setUndo({ text, run }), toast };
+}
