@@ -16,6 +16,7 @@ const versionFile = () => ({
 
 export default defineConfig({
   base: "/ka4/",
+  build: { assetsInlineLimit: 0 }, // thumbnails as separate files, never inlined into the bundle
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     __COMMIT__: JSON.stringify((process.env.GITHUB_SHA || "local").slice(0, 7)),
@@ -42,7 +43,7 @@ export default defineConfig({
           { src: "https://vasilev-gregory.github.io/ka4/icon-512.png?v=35", sizes: "512x512", type: "image/png", purpose: "any" },
         ],
       },
-      workbox: { globPatterns: ["**/*.{js,css,html,png,svg}"], maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
+      workbox: { globPatterns: ["**/*.{js,css,html,png,svg,jpg}"], maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
     }),
   ],
 });

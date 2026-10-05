@@ -23,6 +23,8 @@ with sync_playwright() as p:
     pg.get_by_role("button", name="Добавить (2)").tap(); pg.wait_for_timeout(400); chk("added 2 at once")
     pg.get_by_text("Squat").first.tap(); pg.wait_for_timeout(400); chk("exercise detail")
     pg.get_by_role("button", name="Изменить").tap(); pg.wait_for_timeout(300); chk("exercise edit")
+    pg.locator("input[type=file][accept='image/*']").first.set_input_files("scripts/fixtures/photo.jpg"); pg.wait_for_timeout(600)
+    print("photo set:", pg.locator("img[src^='data:image/jpeg']").count() > 0)
     pg.get_by_role("button", name="Назад").tap(); pg.wait_for_timeout(300)
     pg.get_by_role("button", name="Пауза").tap(); pg.wait_for_timeout(300); chk("pause")
     pg.get_by_role("button", name="Завершить").tap(); pg.wait_for_timeout(500); chk("finish")

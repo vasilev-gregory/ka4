@@ -5,7 +5,7 @@ import { beep, blip, tick } from "../core/sound.js";
 import { DAY, fmtDate, fmtDur, uid, weekStartOf } from "../core/util.js";
 import { ST_AREAS, ST_FIELDS, ST_WEEK_MAX } from "../model/catalog.js";
 import { PHASE, buildTimeline, stExMap, stTiming, stretchVerdict, stretchWeek } from "../model/stretch.js";
-import { ConfirmButton, Header, SecStepper, useNow } from "../ui/kit.jsx";
+import { ConfirmButton, ExImg, Header, PhotoPicker, SecStepper, exPhoto, useNow } from "../ui/kit.jsx";
 import { moveItem, useSortable } from "../ui/sortable.js";
 
 export function StretchWeekPanel({ data, ws, only }) {
@@ -201,6 +201,7 @@ export function StretchEditor({ data, up, id, back, open }) {
               className={`rounded-xl p-2 ${sort.dragFrom === i ? "bg-neutral-800" : "bg-neutral-900"}`}>
               <div className="flex items-center gap-1">
                 <button {...sort.handleProps(i, p.items.length)} className="cursor-grab p-1 text-neutral-500" aria-label="Перетащить"><GripVertical size={18} /></button>
+                {ex && exPhoto(ex) && <ExImg ex={ex} size={34} />}
                 <button onClick={() => setOpenItem(isOpen ? null : i)} className="ml-1 min-w-0 flex-1 py-1 text-left">
                   <div className="truncate">{ex ? ex.ru || ex.name : "Удалённая растяжка"}</div>
                   <div className={`truncate text-xs ${it.over && Object.keys(it.over).length ? "text-teal-300" : "text-neutral-500"}`}>
@@ -230,6 +231,9 @@ export function StretchEditor({ data, up, id, back, open }) {
                         className={`rounded-full px-2.5 py-1 text-[11px] ${ex.area === ar ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{ar}</button>
                     ))}
                   </div>
+                  <div className="mt-1 text-xs text-neutral-400">Фото</div>
+                  <PhotoPicker ex={ex} accent="bg-teal-400"
+                    onChange={(v) => up((d) => { const e = d.stretch.exercises.find((x) => x.id === ex.id); if (e) { if (v) e.photo = v; else delete e.photo; } })} />
                   <button onClick={() => up((d) => { const e = d.stretch.exercises.find((x) => x.id === ex.id); if (e) e.sides = !e.sides; })}
                     className={`mt-1 rounded-full px-3 py-1 text-xs ${ex.sides ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
                     на обе стороны: {ex.sides ? "да" : "нет"}
@@ -360,6 +364,7 @@ export function StretchPlayer({ data, up, id, back }) {
             <div className={`mb-3 rounded-full px-4 py-1 text-sm font-semibold ${isWork ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
               {PHASE[ph.k]}
             </div>
+            {ph.ex && exPhoto(ph.ex) && <ExImg ex={ph.ex} size={140} />}
             {ph.ex && <div className="mt-2 text-2xl font-bold">{ph.ex.ru || ph.ex.name}</div>}
             {ph.side && <div className="mt-1 text-base text-teal-300">{ph.side}</div>}
             <div className={`mt-6 text-8xl font-bold tabular-nums ${isWork ? "text-teal-300" : "text-neutral-200"}`}>

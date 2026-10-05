@@ -152,7 +152,12 @@ export const ST_FIELDS = [["prep", "вступление"], ["work", "работ
 
 export const ST_AREAS = ["сгибатели бедра", "квадрицепс", "задняя поверхность бедра", "ягодицы", "приводящие", "икры", "широчайшие", "грудь", "плечи", "спина", "шея"];
 
-export const ST_AREA_DEFAULTS = { "st-hip-flexor-forward": "сгибатели бедра", "st-hip-flexor-tall": "сгибатели бедра", "st-figure-four": "ягодицы", "st-elephant-walk": "задняя поверхность бедра", "st-lat": "широчайшие" };
+export const ST_AREA_DEFAULTS = { "st-hip-flexor-forward": "сгибатели бедра", "st-hip-flexor-tall": "сгибатели бедра", "st-figure-four": "ягодицы", "st-elephant-walk": "задняя поверхность бедра", "st-lat": "широчайшие", "st-pizza": "приводящие" };
+// earlier names of built-in stretches: renamed in place only if the user didn't change them
+export const ST_OLD_NAMES = {
+  "st-hip-flexor-forward": "Hip flexor stretch, lean forward", "st-hip-flexor-tall": "Hip flexor stretch, tall torso",
+  "st-figure-four": "Figure four", "st-pizza": "Pizza", "st-lat": "Lat stretch",
+};
 
 // Thomas et al. 2018 (Int J Sports Med): ≥5 min of static stretching per muscle group per week for ROM gains,
 // more frequent (≈5 days/week) is better. Later meta-regressions: returns flatten around ~10 min/week per group.
@@ -161,10 +166,10 @@ export const ST_WEEK_MIN = 5 * 60, ST_WEEK_MAX = 10 * 60;
 export const ST_DEFAULTS = { prep: 10, work: 30, sw: 5, rest: 15, rounds: 1, roundRest: 60, mode: "circuit" };
 
 export const ST_SEED = [
-  ["st-hip-flexor-forward", "Hip flexor stretch, lean forward", "Сгибатели бедра: корпус вперёд", true],
-  ["st-hip-flexor-tall", "Hip flexor stretch, tall torso", "Сгибатели бедра: корпус вверх, пятка к ягодице", true],
-  ["st-figure-four", "Figure four", "Четвёрка", true],
+  ["st-hip-flexor-forward", "Low lunge hip flexor stretch", "Сгибатели бедра: выпад, корпус вперёд", true],
+  ["st-hip-flexor-tall", "Kneeling hip flexor stretch, heel to glute", "Сгибатели бедра: на колене, корпус вверх, пятка к ягодице", true],
+  ["st-figure-four", "Supine figure four", "Четвёрка лёжа (стопа на стене)", true],
   ["st-elephant-walk", "Elephant walk", "Походка слона", false],
-  ["st-pizza", "Pizza", "Пицца", false],
-  ["st-lat", "Lat stretch", "Растяжка широчайших", true],
+  ["st-pizza", "Pizza (seated straddle fold)", "Пицца: сед ноги врозь, наклон вперёд", false],
+  ["st-lat", "Kneeling lat stretch", "Широчайшие: на коленях, руки вперёд и в сторону", true],
 ];

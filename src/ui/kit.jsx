@@ -1,5 +1,5 @@
 // Shared UI primitives and the app context hook.
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext, useRef } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { IMGS } from "../model/images.js";
 
@@ -18,13 +18,47 @@ export function useNow(ms, on = true) {
   return n;
 }
 
+// Picture of an exercise: own photo from the phone > built-in thumbnail > initials.
+export const exPhoto = (ex) => (ex && (ex.photo || IMGS[ex.id])) || null;
 export function ExImg({ ex, size = 40 }) {
-  const src = ex && IMGS[ex.id];
+  const src = exPhoto(ex);
   const st = { width: size, height: size };
   if (src) return <img src={src} alt="" style={st} className="shrink-0 rounded-full object-cover" />;
   return (
     <div style={st} className="flex shrink-0 items-center justify-center rounded-full bg-neutral-800 text-xs font-semibold text-neutral-400">
       {(ex?.name || "?").slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
+// Pick a picture from the phone, crop it to a square and shrink it (~10 KB) so it can live
+// inside the saved data (and therefore in backups).
+export function PhotoPicker({ ex, onChange, accent = "bg-amber-400" }) {
+  const ref = useRef(null);
+  const pick = (e) => {
+    const f = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => {
+      const S = 192, m = Math.min(img.width, img.height);
+      const c = document.createElement("canvas");
+      c.width = c.height = S;
+      c.getContext("2d").drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+      URL.revokeObjectURL(url);
+      onChange(c.toDataURL("image/jpeg", 0.75));
+    };
+    img.src = url;
+  };
+  return (
+    <div className="flex items-center gap-3">
+      <ExImg ex={ex} size={48} />
+      <button onClick={() => ref.current && ref.current.click()} className={`rounded-lg px-3 py-2 text-xs font-semibold text-black ${accent}`}>
+        {ex && ex.photo ? "Другое фото" : "Добавить фото"}
+      </button>
+      {ex && ex.photo && <button onClick={() => onChange(null)} className="text-xs text-neutral-500">убрать</button>}
+      <input ref={ref} type="file" accept="image/*" onChange={pick} className="hidden" />
     </div>
   );
 }

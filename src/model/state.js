@@ -1,6 +1,6 @@
 // Persistent state shape: seed for a fresh install and migrate() that upgrades any older saved data.
 import { slug, uid } from "../core/util.js";
-import { ASSIST_DEFAULTS, BW_DEFAULTS, SEED_EX, ST_AREA_DEFAULTS, ST_DEFAULTS, ST_SEED } from "./catalog.js";
+import { ASSIST_DEFAULTS, BW_DEFAULTS, SEED_EX, ST_AREA_DEFAULTS, ST_DEFAULTS, ST_OLD_NAMES, ST_SEED } from "./catalog.js";
 
 export const KEY = "gymapp-state-v1";
 
@@ -37,7 +37,11 @@ export function migrate(d) {
   if (!d.stretch) d.stretch = seedStretch();
   ["exercises", "programs", "sessions"].forEach((k) => { if (!Array.isArray(d.stretch[k])) d.stretch[k] = []; });
   if (!d.stretch.defaults) d.stretch.defaults = { ...ST_DEFAULTS };
-  d.stretch.exercises.forEach((e) => { if (e.area === undefined && ST_AREA_DEFAULTS[e.id]) e.area = ST_AREA_DEFAULTS[e.id]; });
+  d.stretch.exercises.forEach((e) => {
+    if (e.area === undefined && ST_AREA_DEFAULTS[e.id]) e.area = ST_AREA_DEFAULTS[e.id];
+    const seedRow = ST_SEED.find((r) => r[0] === e.id);
+    if (seedRow && ST_OLD_NAMES[e.id] && e.name === ST_OLD_NAMES[e.id]) { e.name = seedRow[1]; e.ru = seedRow[2]; }
+  });
   if (d.settings && d.settings.restMode === "stopwatch" && d.settings.countdown === undefined) d.settings.countdown = false;
   d.exercises.forEach((e) => {
     if (e.bw === undefined && BW_DEFAULTS[e.id]) e.bw = BW_DEFAULTS[e.id];

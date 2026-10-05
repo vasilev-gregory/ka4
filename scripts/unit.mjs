@@ -88,4 +88,13 @@ ok("stretch timeline: circuit, sides, no trailing rest, prep each round", () => 
     "prep,work,switch,work,rest,prep,work,roundRest,prep,work,switch,work,rest,prep,work");
 });
 
+ok("built-in stretch renamed only if the user kept the old name", () => {
+  const d = seed();
+  d.stretch.exercises.find((e) => e.id === "st-pizza").name = "Pizza";
+  d.stretch.exercises.find((e) => e.id === "st-lat").name = "Моя широчайшая";
+  const m = migrate(d);
+  assert.match(m.stretch.exercises.find((e) => e.id === "st-pizza").name, /straddle/);
+  assert.equal(m.stretch.exercises.find((e) => e.id === "st-lat").name, "Моя широчайшая");
+});
+
 console.log(n, "unit checks passed");

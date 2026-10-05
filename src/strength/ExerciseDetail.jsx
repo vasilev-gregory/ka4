@@ -6,7 +6,7 @@ import { tick } from "../core/sound.js";
 import { fmtDate, fmtShort, num } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
 import { fmtSets, setLoad } from "../model/workout.js";
-import { ExImg, Header, useApp } from "../ui/kit.jsx";
+import { ExImg, Header, PhotoPicker, useApp } from "../ui/kit.jsx";
 
 export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const { bwAt, nm1, nm2 } = useApp();
@@ -58,6 +58,8 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
                 className={`rounded-full px-3 py-1 text-xs ${ex.kind === k ? "bg-neutral-100 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
             ))}
           </div>
+          <div className="mb-1.5 mt-3 text-xs text-neutral-400">Фото</div>
+          <PhotoPicker ex={ex} onChange={(v) => mut((x) => { if (v) x.photo = v; else delete x.photo; })} />
           <div className="mb-1.5 mt-3 text-xs text-neutral-400">Вес тела в нагрузке</div>
           <div className="flex flex-wrap gap-1.5">
             {[["нет", 0, false], ["100%", 1, false], ["95%", 0.95, false], ["85%", 0.85, false], ["65%", 0.65, false], ["55%", 0.55, false], ["гравитрон", 0, true]].map(([l, f, as]) => {
