@@ -326,6 +326,11 @@ function bodyWeightAt(ts) {
   }
   return best ? num(best.values.weight) : num(bodyCtx.fallback);
 }
+// which name leads: English (default) or Russian. Set by App from settings on every render.
+let nameCtx = { ru: false };
+const nm1 = (ex) => (!ex ? "" : nameCtx.ru && ex.ru ? ex.ru : ex.name);
+const nm2 = (ex) => (!ex ? "" : nameCtx.ru ? (ex.ru ? ex.name : "") : ex.ru || "");
+
 function setLoad(ex, s, bw) {
   if (ex && ex.assist) return Math.max(0, bw - num(s.w));
   if (ex && ex.bw) return ex.bw * bw + num(s.w);
@@ -635,7 +640,7 @@ function Stepper({ value, onChange, step = 1, min = 1, fmt = (v) => v, compact }
 }
 
 // ---------- exercise list (used in tab and picker) ----------
-function ExerciseList({ data, up, onSelect, autoFocus }) {
+function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState(""); // muscle group, "" = all
   const [creating, setCreating] = useState(false);
@@ -736,14 +741,19 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
           </div>
           <div className="divide-y divide-neutral-800 rounded-xl bg-neutral-900">
             {list.map((e) => (
-              <button key={e.id} onClick={() => onSelect(e)} className="flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800">
+              <button key={e.id} onClick={() => onSelect(e)} className={`flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800 ${selected && selected.has(e.id) ? "bg-neutral-800" : ""}`}>
                 <ExImg ex={e} />
                 <span className="min-w-0 flex-1">
-                  <span className="block">{e.name}</span>
-                  {e.ru && <span className="block text-xs text-neutral-500">{e.ru}</span>}
+                  <span className="block">{nm1(e)}</span>
+                  {nm2(e) && <span className="block text-xs text-neutral-500">{nm2(e)}</span>}
                 </span>
                 {g === "твои" && <span className="ml-2 text-[11px] text-neutral-500">{e.group}</span>}
                 {e.kind === "time" && <span className="ml-2 text-xs text-neutral-500">на время</span>}
+                {selected && (
+                  <span className={`ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${selected.has(e.id) ? "bg-amber-400 text-black" : "border border-neutral-700"}`}>
+                    {selected.has(e.id) && <Check size={14} />}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -760,13 +770,26 @@ function ExerciseList({ data, up, onSelect, autoFocus }) {
   );
 }
 
-function Picker({ data, up, onPick, onClose, title = "Добавить упражнение" }) {
+// With onPickMany the picker stays open: tap to select several, then "Добавить (N)".
+function Picker({ data, up, onPick, onPickMany, onClose, title = "Добавить упражнение" }) {
+  const multi = !!onPickMany;
+  const [chosen, setChosen] = useState([]);
+  const toggle = (ex) => setChosen((c) => (c.some((x) => x.id === ex.id) ? c.filter((x) => x.id !== ex.id) : [...c, ex]));
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-      <div className="mx-auto max-w-md p-4 pb-24">
+      <div className="mx-auto max-w-md p-4 pb-32">
         <Header title={title} right={<button onClick={onClose} className="p-2 text-neutral-400"><X size={22} /></button>} />
-        <ExerciseList data={data} up={up} onSelect={onPick} autoFocus />
+        <ExerciseList data={data} up={up} onSelect={multi ? toggle : onPick} selected={multi ? new Set(chosen.map((x) => x.id)) : null} autoFocus={!multi} />
       </div>
+      {multi && chosen.length > 0 && (
+        <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 bg-black/90 px-4 pt-3">
+          <div className="mx-auto max-w-md pb-3">
+            <button onClick={() => onPickMany(chosen)} className="w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">
+              Добавить ({chosen.length})
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1270,8 +1293,8 @@ function WorkoutTab({ data, up, exMap, open }) {
               </button>
               <ExImg ex={exMap[e.exerciseId]} />
               <button onClick={() => open({ type: "exercise", id: e.exerciseId })} className="ml-2 min-w-0 flex-1 text-left">
-                <div className="font-semibold">{ex.name}</div>
-                {ex.ru && <div className="truncate text-xs text-neutral-500">{ex.ru}</div>}
+                <div className="font-semibold">{nm1(ex)}</div>
+                {nm2(ex) && <div className="truncate text-xs text-neutral-500">{nm2(ex)}</div>}
                 {last && !sort.dragging && <div className="truncate text-xs text-neutral-400">Прошлый раз: {fmtSets(last.sets, ex.kind)}</div>}
               </button>
               <button onClick={() => setPicker({ replace: ei })} className="p-1.5 text-neutral-500" aria-label="Заменить"><RefreshCw size={18} /></button>
@@ -1434,6 +1457,7 @@ function WorkoutTab({ data, up, exMap, open }) {
       )}
 
       {picker && <Picker data={data} up={up} onPick={addEx} onClose={() => setPicker(false)}
+        onPickMany={picker.replace !== undefined ? undefined : (list) => { up((d) => { list.forEach((ex) => d.active.exercises.push({ exerciseId: ex.id, sets: buildSets(d, ex.id, 3) })); }); setPicker(false); }}
         title={picker.replace !== undefined ? "Заменить упражнение" : undefined} />}
     </div>
   );
@@ -1549,8 +1573,8 @@ function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
             </button>
             <ExImg ex={exMap[it.exerciseId]} size={34} />
             <div className="ml-2 min-w-0 flex-1">
-              <div className="truncate">{exMap[it.exerciseId]?.name || "Удалённое упражнение"}</div>
-              {exMap[it.exerciseId]?.ru && <div className="truncate text-xs text-neutral-500">{exMap[it.exerciseId].ru}</div>}
+              <div className="truncate">{nm1(exMap[it.exerciseId]) || "Удалённое упражнение"}</div>
+              {nm2(exMap[it.exerciseId]) && <div className="truncate text-xs text-neutral-500">{nm2(exMap[it.exerciseId])}</div>}
             </div>
             <Stepper compact value={it.sets} onChange={(v) => mut((pp) => { pp.items[i].sets = v; })} />
             <button onClick={() => setPicker({ replace: i })} className="p-1 text-neutral-500" aria-label="Заменить"><RefreshCw size={16} /></button>
@@ -1595,6 +1619,7 @@ function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
       {picker && (
         <Picker data={data} up={up} onClose={() => setPicker(false)}
           title={picker.replace !== undefined ? "Заменить упражнение" : undefined}
+          onPickMany={picker.replace !== undefined ? undefined : (list) => { mut((pp) => { list.forEach((ex) => pp.items.push({ exerciseId: ex.id, sets: 3 })); }); setPicker(false); }}
           onPick={(ex) => {
             const rep = picker.replace;
             mut((pp) => {
@@ -1636,9 +1661,9 @@ function ExerciseDetail({ data, up, exMap, id, back, open }) {
 
   return (
     <div className="p-4 pb-28">
-      <Header title={ex.name} back={back}
+      <Header title={nm1(ex)} back={back}
         right={<button onClick={() => setEdit(!edit)} className="shrink-0 self-start p-2 text-neutral-400" aria-label="Изменить"><Pencil size={20} /></button>} />
-      {ex.ru && <p className="-mt-3 mb-4 text-neutral-400">{ex.ru}</p>}
+      {nm2(ex) && <p className="-mt-3 mb-4 text-neutral-400">{nm2(ex)}</p>}
 
       {edit && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-3">
@@ -2212,6 +2237,8 @@ function StretchHome({ data, up, open }) {
 
 function StretchPicker({ data, up, onPick, onClose }) {
   const [q, setQ] = useState("");
+  const [chosen, setChosen] = useState([]);
+  const toggle = (ex) => setChosen((c) => (c.some((x) => x.id === ex.id) ? c.filter((x) => x.id !== ex.id) : [...c, ex]));
   const [sides, setSides] = useState(true);
   const ql = q.trim().toLowerCase();
   const words = ql.split(/\s+/).filter(Boolean);
@@ -2220,11 +2247,12 @@ function StretchPicker({ data, up, onPick, onClose }) {
   const create = () => {
     const ex = { id: "st-" + uid(), name: q.trim(), sides };
     up((d) => { d.stretch.exercises.push(ex); });
-    onPick(ex);
+    setQ("");
+    setChosen((c) => [...c, ex]);
   };
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-      <div className="mx-auto max-w-md p-4 pb-24">
+      <div className="mx-auto max-w-md p-4 pb-32">
         <Header title="Добавить растяжку" right={<button onClick={onClose} className="p-2 text-neutral-400"><X size={22} /></button>} />
         <div className="flex items-center gap-2 rounded-xl bg-neutral-900 px-3">
           <Search size={18} className="text-neutral-500" />
@@ -2233,12 +2261,15 @@ function StretchPicker({ data, up, onPick, onClose }) {
         </div>
         <div className="mt-3 divide-y divide-neutral-800 rounded-xl bg-neutral-900">
           {list.map((e) => (
-            <button key={e.id} onClick={() => onPick(e)} className="flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800">
+            <button key={e.id} onClick={() => toggle(e)} className={`flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800 ${chosen.some((x) => x.id === e.id) ? "bg-neutral-800" : ""}`}>
               <span className="min-w-0 flex-1">
                 <span className="block">{e.ru || e.name}</span>
                 {e.ru && <span className="block text-xs text-neutral-500">{e.name}</span>}
               </span>
               {e.sides && <span className="text-[11px] text-neutral-500">2 стороны</span>}
+              <span className={`ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${chosen.some((x) => x.id === e.id) ? "bg-teal-400 text-black" : "border border-neutral-700"}`}>
+                {chosen.some((x) => x.id === e.id) && <Check size={14} />}
+              </span>
             </button>
           ))}
         </div>
@@ -2255,6 +2286,13 @@ function StretchPicker({ data, up, onPick, onClose }) {
           </div>
         )}
       </div>
+      {chosen.length > 0 && (
+        <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 bg-black/90 px-4 pt-3">
+          <div className="mx-auto max-w-md pb-3">
+            <button onClick={() => onPick(chosen)} className="w-full rounded-xl bg-teal-400 py-3 font-semibold text-black">Добавить ({chosen.length})</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2378,7 +2416,7 @@ function StretchEditor({ data, up, id, back, open }) {
 
       {picker && (
         <StretchPicker data={data} up={up} onClose={() => setPicker(false)}
-          onPick={(ex) => { mutP((pp) => { pp.items.push({ exerciseId: ex.id }); }); setPicker(false); }} />
+          onPick={(list) => { mutP((pp) => { list.forEach((ex) => pp.items.push({ exerciseId: ex.id })); }); setPicker(false); }} />
       )}
     </div>
   );
@@ -2766,6 +2804,15 @@ function SettingsTab({ data, up, replace, saved, back, setMode }) {
           : saved.at ? `Сохранено в ${new Date(saved.at).toLocaleTimeString("ru-RU")}` : "Изменений пока не было"}
       </p>
       {data.settings.mode !== "stretch" && (<>
+      <div className="mb-3 rounded-xl bg-neutral-900 p-4">
+        <div className="mb-2 font-semibold">Названия упражнений</div>
+        <div className="flex gap-1.5">
+          {[[true, "сначала русские"], [false, "сначала английские"]].map(([v, l]) => (
+            <button key={l} onClick={() => up((d) => { d.settings.namesRu = v; })}
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${!!data.settings.namesRu === v ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+          ))}
+        </div>
+      </div>
       {(() => {
         const measured = (data.measurements || []).some((m) => num(m.values && m.values.weight) > 0);
         return (
@@ -3009,6 +3056,7 @@ export default function App() {
 
   const view = stack[stack.length - 1];
   bodyCtx = { measurements: data.measurements || [], fallback: data.settings.bodyWeight || 0 };
+  nameCtx = { ru: !!data.settings.namesRu };
   const common = { data, up, exMap, open, back };
   // swipe the tab bar sideways to switch strength <-> stretching
   const navSwipe = {

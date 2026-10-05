@@ -19,7 +19,8 @@ with sync_playwright() as p:
     minus=lambda i: pg.locator("div.rounded-lg.bg-neutral-800 > button:first-child").nth(i)
     for i,n in [(0,2),(1,5),(2,1),(3,3)]:
         for _ in range(n): minus(i).tap()
-    pg.get_by_text("Добавить растяжку").tap(); pg.wait_for_timeout(300); pg.get_by_text("Четвёрка").first.tap(); pg.wait_for_timeout(300)
+    pg.get_by_text("Добавить растяжку").tap(); pg.wait_for_timeout(300); pg.get_by_text("Четвёрка").first.tap(); pg.wait_for_timeout(200)
+    pg.get_by_role("button", name="Добавить (1)").tap(); pg.wait_for_timeout(300)
     pg.get_by_role("button", name="Начать").last.tap(); pg.wait_for_timeout(12500)
     t=pg.inner_text("body"); print("done:", "Готово" in t, "| week:", "Неделя" in t, "| ягодицы:", "ягодицы" in t)
     pg.screenshot(path="/tmp/done.png")
