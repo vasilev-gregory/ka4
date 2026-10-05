@@ -152,7 +152,10 @@ export const ST_FIELDS = [["prep", "вступление"], ["work", "работ
 
 export const ST_AREAS = ["сгибатели бедра", "квадрицепс", "задняя поверхность бедра", "ягодицы", "приводящие", "икры", "широчайшие", "грудь", "плечи", "спина", "шея"];
 
-export const ST_AREA_DEFAULTS = { "st-hip-flexor-forward": "сгибатели бедра", "st-hip-flexor-tall": "сгибатели бедра", "st-figure-four": "ягодицы", "st-elephant-walk": "задняя поверхность бедра", "st-lat": "широчайшие", "st-pizza": "приводящие" };
+export const ST_AREA_DEFAULTS = {
+  "st-hip-flexor-forward": "сгибатели бедра", "st-hip-flexor-tall": "сгибатели бедра", "st-figure-four": "ягодицы",
+  "st-elephant-walk": "задняя поверхность бедра", "st-lat": "широчайшие", "st-pizza": "приводящие",
+};
 // earlier names of built-in stretches: renamed in place only if the user didn't change them
 export const ST_OLD_NAMES = {
   "st-hip-flexor-forward": "Hip flexor stretch, lean forward", "st-hip-flexor-tall": "Hip flexor stretch, tall torso",

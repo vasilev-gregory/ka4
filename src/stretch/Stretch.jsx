@@ -112,7 +112,8 @@ export function StretchPicker({ data, up, onPick, onClose, already = [] }) {
         </div>
         <div className="mt-3 divide-y divide-neutral-800 rounded-xl bg-neutral-900">
           {list.map((e) => (
-            <button key={e.id} onClick={() => toggle(e)} className={`flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800 ${chosen.some((x) => x.id === e.id) ? "bg-neutral-800" : ""}`}>
+            <button key={e.id} onClick={() => toggle(e)}
+              className={`flex w-full items-center gap-3 px-3 py-2 text-left active:bg-neutral-800 ${chosen.some((x) => x.id === e.id) ? "bg-neutral-800" : ""}`}>
               <span className="min-w-0 flex-1">
                 <span className="block">{e.ru || e.name}</span>
                 {e.ru && <span className="block text-xs text-neutral-500">{e.name}</span>}

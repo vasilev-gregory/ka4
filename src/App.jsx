@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dumbbell, History, Settings, X, Ruler, PersonStanding } from "lucide-react";
 import { unlockAudio } from "./core/sound.js";
 import { MeasureEditor, MeasuresTab } from "./measures/Measures.jsx";
@@ -11,6 +11,7 @@ import { HistoryTab, WorkoutDetail } from "./strength/History.jsx";
 import { ProgramEditor } from "./strength/ProgramEditor.jsx";
 import { RestBar, WorkoutTab } from "./strength/Workout.jsx";
 import { StretchEditor, StretchHistory, StretchHome, StretchPlayer } from "./stretch/Stretch.jsx";
+import { useFlick } from "./ui/gestures.js";
 import { AppCtx, ConfirmButton } from "./ui/kit.jsx";
 
 // App shell: tabs, a stack of detail screens on top, strength/stretch mode, global overlays.
@@ -22,7 +23,7 @@ export const TABS = [
 ];
 
 export default function App() {
-  const { data, setData, err, saved, reload, startFresh } = usePersistentData();
+  const { data, update: up, replace, err, saved, reload, startFresh } = usePersistentData();
   const [tab, setTab] = useState("workout");
   const [stack, setStack] = useState([]);
 
@@ -44,18 +45,18 @@ export default function App() {
     bwAt: makeBodyWeightAt(data.measurements || [], data.settings.bodyWeight || 0),
     ...makeNames(!!data.settings.namesRu),
   } : null), [data && data.measurements, data && data.settings.bodyWeight, data && data.settings.namesRu]);
-  const navSw = useRef(null);
-  const navJust = useRef(false);
   const [modeToast, setModeToast] = useState(false);
   useEffect(() => { if (!modeToast) return; const t = setTimeout(() => setModeToast(false), 700); return () => clearTimeout(t); }, [modeToast]);
   const switchMode = (to) => {
     setStack([]);
-    setData((d0) => { const d = structuredClone(d0); d.settings.mode = to || (d.settings.mode === "stretch" ? "strength" : "stretch"); return d; });
+    up((d) => { d.settings.mode = to || (d.settings.mode === "stretch" ? "strength" : "stretch"); });
     setModeToast(true);
   };
 
-  const up = (fn) => setData((d) => { const c = structuredClone(d); fn(c); return c; });
   const exMap = useMemo(() => (data ? Object.fromEntries(data.exercises.map((e) => [e.id, e])) : {}), [data?.exercises]);
+  // swipe the tab bar sideways to switch strength <-> stretching
+  const navSwipe = useFlick(() => switchMode());
+  const restore = (d) => { replace(d); setStack([]); };
   const open = (v) => setStack((s) => [...s, v]);
   const back = () => setStack((s) => s.slice(0, -1));
 
@@ -73,36 +74,21 @@ export default function App() {
 
   const view = stack[stack.length - 1];
   const common = { data, up, exMap, open, back };
-  // swipe the tab bar sideways to switch strength <-> stretching
-  const navSwipe = {
-    style: { touchAction: "pan-y" },
-    onPointerDown: (e) => { navSw.current = { x: e.clientX, y: e.clientY }; },
-    onPointerUp: (e) => {
-      const st0 = navSw.current; navSw.current = null;
-      if (!st0) return;
-      const dx = e.clientX - st0.x, dy = e.clientY - st0.y;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-        navJust.current = true; setTimeout(() => { navJust.current = false; }, 80);
-        switchMode();
-      }
-    },
-    onClickCapture: (e) => { if (navJust.current) { e.stopPropagation(); e.preventDefault(); } },
-  };
   let content;
   const stretchMode = data.settings.mode === "stretch";
   if (view?.type === "stretchProgram") content = <StretchEditor {...common} id={view.id} />;
   else if (view?.type === "stretchPlay") content = (
     <StretchPlayer {...common} id={view.id}
-      settings={(close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={(d) => { setData(d); setStack([]); }} />} />
+      settings={(close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={restore} />} />
   );
-  else if (view?.type === "settings") content = <SettingsTab data={data} up={up} saved={saved} back={back} setMode={switchMode} replace={(d) => { setData(d); setStack([]); }} />;
+  else if (view?.type === "settings") content = <SettingsTab data={data} up={up} saved={saved} back={back} setMode={switchMode} replace={restore} />;
   else if (view?.type === "measure") content = <MeasureEditor {...common} id={view.id} />;
   else if (view?.type === "exercise") content = <ExerciseDetail {...common} id={view.id} />;
   else if (view?.type === "workout") content = <WorkoutDetail {...common} id={view.id} />;
   else if (view?.type === "program") content = <ProgramEditor {...common} id={view.id} goWorkout={() => { setStack([]); setTab("workout"); }} />;
   else if (tab === "workout") content = stretchMode ? <StretchHome {...common} /> : <WorkoutTab {...common} />;
   else if (tab === "history") content = stretchMode ? <StretchHistory {...common} /> : <HistoryTab {...common} />;
-  else if (tab === "settings") content = <SettingsTab data={data} up={up} saved={saved} setMode={switchMode} replace={(d) => { setData(d); setStack([]); }} />;
+  else if (tab === "settings") content = <SettingsTab data={data} up={up} saved={saved} setMode={switchMode} replace={restore} />;
   else if (tab === "measures") content = <MeasuresTab {...common} openSettings={() => open({ type: "settings" })} />;
 
   const showBackupNag = tab === "workout" && !view && !data.active && persistedOk === false && backupDue(data);
@@ -127,7 +113,8 @@ export default function App() {
                 : "Ещё не было ни одной копии данных."} Отправь файл себе в Telegram.
             </div>
             <button onClick={nagShare} className="shrink-0 rounded-lg bg-amber-400 px-3 py-2 text-xs font-semibold text-black">Отправить</button>
-            <button onClick={() => up((d) => { d.settings.lastBackupAt = Date.now() - BACKUP_EVERY + 864e5; })} className="shrink-0 p-1 text-neutral-500" aria-label="Напомнить завтра"><X size={16} /></button>
+            <button onClick={() => up((d) => { d.settings.lastBackupAt = Date.now() - BACKUP_EVERY + 864e5; })}
+              className="shrink-0 p-1 text-neutral-500" aria-label="Напомнить завтра"><X size={16} /></button>
           </div>
         </div>
       )}

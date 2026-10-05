@@ -79,7 +79,10 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
       <div className="mb-4 flex items-center gap-6">
         <ExImg ex={ex} size={64} />
         <div><div className="text-2xl font-bold tabular-nums">{sessions.length}</div><div className="text-xs text-neutral-400">тренировок</div></div>
-        <div><div className="text-2xl font-bold tabular-nums text-amber-400">{best || "—"}</div><div className="text-xs text-neutral-400">{isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div></div>
+        <div>
+          <div className="text-2xl font-bold tabular-nums text-amber-400">{best || "—"}</div>
+          <div className="text-xs text-neutral-400">{isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div>
+        </div>
       </div>
 
       {chart.length >= 2 && (

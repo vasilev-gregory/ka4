@@ -6,6 +6,8 @@ import { GROUPS } from "../model/catalog.js";
 import { fmtSets, fmtWDur, growthStatus, restStats, stats, weekAnalysis } from "../model/workout.js";
 import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
 
+const dayMonth = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+
 export function WeekCalendar({ workouts, exMap }) {
   const [month, setMonth] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1).getTime(); });
   const [selWeek, setSelWeek] = useState(() => weekStartOf(Date.now()));
@@ -53,7 +55,7 @@ export function WeekCalendar({ workouts, exMap }) {
       <div className="mt-4 rounded-xl bg-neutral-900 p-3">
         <div className="mb-2 flex items-baseline justify-between">
           <div className="font-semibold">
-            {new Date(selWeek).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })} – {new Date(selWeek + 6 * DAY + 3600e3).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+            {dayMonth(selWeek)} – {dayMonth(selWeek + 6 * DAY + 3600e3)}
           </div>
           <div className="text-xs text-neutral-400">тренировок: {an.days}</div>
         </div>

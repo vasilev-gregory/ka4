@@ -3,10 +3,14 @@ import { useState, useEffect, useRef } from "react";
 import { Check, Trash2, RefreshCw, GripVertical, Play } from "lucide-react";
 import { beep, blip, tick, unlockAudio } from "../core/sound.js";
 import { fmtDate, fmtDur, fmtKg, num, progTitle, uid } from "../core/util.js";
-import { buildSets, closeSegment, columnConfig, durations, finalizeActive, fmtSets, lastSession, normalizeGroups, restBefore, restShown, segmentsOf, setColumns, setLabels, startWorkout, stats } from "../model/workout.js";
+import {
+  buildSets, closeSegment, columnConfig, durations, finalizeActive, fmtSets, lastSession, normalizeGroups,
+  restBefore, restShown, segmentsOf, setColumns, setLabels, startWorkout, stats,
+} from "../model/workout.js";
 import { Picker } from "./ExerciseList.jsx";
 import { ConfirmButton, ExImg, Header, useApp, useNow } from "../ui/kit.jsx";
-import { moveItem, setDragActive, useSortable } from "../ui/sortable.js";
+import { useHoldReorder, useLongPress, useSwipeRows } from "../ui/gestures.js";
+import { moveItem, useSortable } from "../ui/sortable.js";
 
 export function WorkoutTab({ data, up, exMap, open }) {
   const { nm1, nm2, bwAt } = useApp();
@@ -14,9 +18,6 @@ export function WorkoutTab({ data, up, exMap, open }) {
   const [picker, setPicker] = useState(false);
   const [askUpdate, setAskUpdate] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge
-  const [swipe, setSwipe] = useState(null); // {key, dx}
-  const sw = useRef(null);
-  const justSwiped = useRef(false);
   const [undo, setUndo] = useState(null); // {ei, si, set}
   useEffect(() => { if (!undo) return; const t = setTimeout(() => setUndo(null), 5000); return () => clearTimeout(t); }, [undo]);
   const cols = setColumns(data.settings);
@@ -34,9 +35,6 @@ export function WorkoutTab({ data, up, exMap, open }) {
     }
   }
   // hold a column title (кг, повт., …) and slide it left/right to reorder columns for all exercises
-  const [colDrag, setColDrag] = useState(null); // {ei, key, dx, to}
-  const hdrRefs = useRef({});
-  const colPress = useRef(null);
   const reorderCols = (from, to) => up((d) => {
     const full = columnConfig(d.settings);
     const vis = setColumns(d.settings);
@@ -51,51 +49,10 @@ export function WorkoutTab({ data, up, exMap, open }) {
       return full.find((x) => x.key === k2);
     });
   });
-  const colHeaderProps = (ei, key) => ({
-    ref: (el) => { hdrRefs.current[`${ei}:${key}`] = el; },
-    style: {
-      touchAction: "none", WebkitUserSelect: "none", userSelect: "none", WebkitTouchCallout: "none",
-      ...(colDrag && colDrag.ei === ei && colDrag.key === key ? { transform: `translateX(${colDrag.dx}px)`, position: "relative", zIndex: 20 } : {}),
-    },
-    onContextMenu: (e) => e.preventDefault(),
-    onPointerDown: (ev) => {
-      const x0 = ev.clientX;
-      const target = ev.currentTarget;
-      clearTimeout(colPress.current);
-      const cancel = () => clearTimeout(colPress.current);
-      target.addEventListener("pointerup", cancel, { once: true });
-      target.addEventListener("pointercancel", cancel, { once: true });
-      colPress.current = setTimeout(() => {
-        const rects = cols.map((c) => { const r = hdrRefs.current[`${ei}:${c}`].getBoundingClientRect(); return r.left + r.width / 2; });
-        const from = cols.indexOf(key);
-        let cur = { ei, key, dx: 0, to: from };
-        setColDrag(cur);
-        setDragActive(true);
-        try { navigator.vibrate && navigator.vibrate(20); } catch (e) {}
-        const move = (e2) => {
-          const dx = e2.clientX - x0;
-          const x = rects[from] + dx;
-          let to = 0, best = Infinity;
-          rects.forEach((cx, j) => { if (Math.abs(x - cx) < best) { best = Math.abs(x - cx); to = j; } });
-          cur = { ...cur, dx, to };
-          setColDrag(cur);
-        };
-        const upH = () => {
-          window.removeEventListener("pointermove", move);
-          window.removeEventListener("pointerup", upH);
-          window.removeEventListener("pointercancel", upH);
-          setDragActive(false);
-          setColDrag(null);
-          if (cur.to !== from) reorderCols(from, cur.to);
-        };
-        window.addEventListener("pointermove", move);
-        window.addEventListener("pointerup", upH);
-        window.addEventListener("pointercancel", upH);
-      }, 250);
-    },
-  });
-  const pressT = useRef(null);
-  const longFired = useRef(false);
+  const { drag: colDrag, headerProps } = useHoldReorder(reorderCols);
+  const longPress = useLongPress();
+  // swipe a set row: left = delete (with undo), right = done / undone
+  const { swipe, bind: swipeBind } = useSwipeRows({ disabled: !!sel, onStart: longPress.cancel });
   const now = useNow(1000, !!a && !a.paused);
   const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
 
@@ -203,47 +160,13 @@ export function WorkoutTab({ data, up, exMap, open }) {
     });
     setSel(null);
   };
-  // swipe a set row: left = delete (with undo), right = done / undone
-  const swipeProps = (ei, si) => {
-    const key = `${ei}:${si}`;
-    return {
-      onPointerDown: (e) => { if (sel) return; sw.current = { key, x: e.clientX, y: e.clientY, active: false, dx: 0 }; },
-      onPointerMove: (e) => {
-        const st = sw.current;
-        if (!st || st.key !== key) return;
-        const dx = e.clientX - st.x, dy = e.clientY - st.y;
-        if (!st.active) {
-          if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-            st.active = true;
-            clearTimeout(pressT.current);
-            try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
-            if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
-          } else {
-            if (Math.abs(dy) > 12) sw.current = null;
-            return;
-          }
-        }
-        st.dx = Math.max(-150, Math.min(150, dx));
-        setSwipe({ key, dx: st.dx });
-      },
-      onPointerUp: () => finishSwipe(ei, si),
-      onPointerCancel: () => { sw.current = null; setSwipe(null); },
-      onClickCapture: (e) => { if (justSwiped.current) { e.stopPropagation(); e.preventDefault(); } },
-    };
-  };
-  const finishSwipe = (ei, si) => {
-    const st = sw.current;
-    sw.current = null;
-    setSwipe(null);
-    if (!st || !st.active) return;
-    justSwiped.current = true;
-    setTimeout(() => { justSwiped.current = false; }, 80);
-    if (st.dx < -80) {
+  const onRowSwipe = (ei, si) => (dir) => {
+    if (dir < 0) {
       const removed = a.exercises[ei]?.sets[si];
       if (!removed) return;
       setUndo({ ei, si, set: structuredClone(removed) });
       up((d) => { const ss = d.active.exercises[ei].sets; ss.splice(si, 1); normalizeGroups(ss); });
-    } else if (st.dx > 80) {
+    } else {
       toggle(ei, si);
     }
   };
@@ -264,22 +187,9 @@ export function WorkoutTab({ data, up, exMap, open }) {
     setSel(null);
   };
   // number cell: tap = warm-up on/off (or select while selecting), long press = start selecting
-  const pressProps = (ei, si) => ({
-    onPointerDown: () => {
-      longFired.current = false;
-      clearTimeout(pressT.current);
-      pressT.current = setTimeout(() => {
-        longFired.current = true;
-        try { navigator.vibrate && navigator.vibrate(20); } catch (e) {}
-        setSel({ ei, set: new Set([si]) });
-      }, 450);
-    },
-    onPointerUp: () => clearTimeout(pressT.current),
-    onPointerLeave: () => clearTimeout(pressT.current),
-    onPointerCancel: () => clearTimeout(pressT.current),
-    onContextMenu: (ev) => ev.preventDefault(),
-    onClick: () => {
-      if (longFired.current) { longFired.current = false; return; }
+  const pressProps = (ei, si) => longPress.bind({
+    onLong: () => setSel({ ei, set: new Set([si]) }),
+    onTap: () => {
       if (sel && sel.ei === ei) {
         setSel((prev) => { const n = new Set(prev.set); if (n.has(si)) n.delete(si); else n.add(si); return n.size ? { ei, set: n } : null; });
       } else {
@@ -297,6 +207,10 @@ export function WorkoutTab({ data, up, exMap, open }) {
         if (e) { e.exerciseId = ex.id; e.sets = buildSets(d, ex.id, e.sets.length || 3); }
       } else d.active.exercises.push({ exerciseId: ex.id, sets: buildSets(d, ex.id, 3) });
     });
+    setPicker(false);
+  };
+  const addMany = (list) => {
+    up((d) => { list.forEach((ex) => d.active.exercises.push({ exerciseId: ex.id, sets: buildSets(d, ex.id, 3) })); });
     setPicker(false);
   };
   const hasDone = a.exercises.some((e) => e.sets.some((s) => s.done));
@@ -365,9 +279,9 @@ export function WorkoutTab({ data, up, exMap, open }) {
             <div className="flex items-center gap-1 px-1 text-[11px] text-neutral-500">
               <span className="w-7" />
               {cols.map((c) => (
-                <span key={c} {...colHeaderProps(ei, c)}
+                <span key={c} {...headerProps(ei, c, cols)}
                   className={`${c === "w" || c === "r" ? "flex-1" : "w-9"} rounded py-1 text-center ${
-                    colDrag && colDrag.ei === ei ? (colDrag.key === c ? "bg-amber-400 text-black" : cols[colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
+                    colDrag && colDrag.group === ei ? (colDrag.key === c ? "bg-amber-400 text-black" : cols[colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
                   {c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг") : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR"}
                 </span>
               ))}
@@ -377,6 +291,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
               const labels = setLabels(e.sets);
               return e.sets.map((s, si) => {
                 const inSel = sel && sel.ei === ei && sel.set.has(si);
+                const pulled = swipe && swipe.key === `${ei}:${si}`;
                 const cont = s.g && si > 0 && e.sets[si - 1].g === s.g;
                 const box = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400";
                 const rirShown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
@@ -407,14 +322,19 @@ export function WorkoutTab({ data, up, exMap, open }) {
                 };
                 return (
                   <div key={si} className={`relative overflow-hidden rounded-lg ${cont ? "mt-0.5" : "mt-1.5"}`}>
-                  {swipe && swipe.key === `${ei}:${si}` && (
+                  {pulled && (
                     <div className={`absolute inset-0 flex items-center px-4 text-xs font-semibold ${swipe.dx > 0 ? "justify-start bg-amber-400 text-black" : "justify-end bg-red-600 text-white"}`}>
                       {swipe.dx > 0 ? (s.done ? "Снять отметку" : "Сделано") : "Удалить"}
                     </div>
                   )}
-                  <div {...swipeProps(ei, si)}
-                    style={{ touchAction: "pan-y", transform: swipe && swipe.key === `${ei}:${si}` ? `translateX(${swipe.dx}px)` : undefined, transition: swipe && swipe.key === `${ei}:${si}` ? "none" : "transform 150ms" }}
-                    className={`relative flex items-center gap-1 rounded-lg px-1 ${s.g ? "border-l-2 border-amber-400" : "border-l-2 border-transparent"} ${inSel ? "bg-neutral-700" : "bg-neutral-900"}`}>
+                  <div {...swipeBind(`${ei}:${si}`, onRowSwipe(ei, si))}
+                    style={{
+                      touchAction: "pan-y",
+                      transform: pulled ? `translateX(${swipe.dx}px)` : undefined,
+                      transition: pulled ? "none" : "transform 150ms",
+                    }}
+                    className={`relative flex items-center gap-1 rounded-lg border-l-2 px-1 ${s.g ? "border-amber-400" : "border-transparent"} ${
+                      inSel ? "bg-neutral-700" : "bg-neutral-900"}`}>
                     <button {...pressProps(ei, si)} aria-label="Подход: тап — разминка, удержание — выбрать"
                       style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
                       className={`flex h-11 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${inSel ? "bg-amber-400 text-black" : "bg-black"}`}>
@@ -427,7 +347,8 @@ export function WorkoutTab({ data, up, exMap, open }) {
                       const rv = rests[key];
                       return (
                         <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
-                          className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg leading-none ${s.done ? "bg-amber-400 text-neutral-900" : live ? "bg-neutral-800 text-amber-400" : "bg-neutral-800 text-neutral-400"}`}>
+                          className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg leading-none ${
+                            s.done ? "bg-amber-400 text-neutral-900" : live ? "bg-neutral-800 text-amber-400" : "bg-neutral-800 text-neutral-400"}`}>
                           {live ? (
                             <span className="text-xs font-semibold tabular-nums">{fmtDur(now - a.lastSetAt)}</span>
                           ) : (
@@ -507,7 +428,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
       )}
 
       {picker && <Picker data={data} up={up} onPick={addEx} onClose={() => setPicker(false)}
-        onPickMany={picker.replace !== undefined ? undefined : (list) => { up((d) => { list.forEach((ex) => d.active.exercises.push({ exerciseId: ex.id, sets: buildSets(d, ex.id, 3) })); }); setPicker(false); }}
+        onPickMany={picker.replace !== undefined ? undefined : addMany}
         title={picker.replace !== undefined ? "Заменить упражнение" : undefined} />}
     </div>
   );

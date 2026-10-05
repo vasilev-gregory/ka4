@@ -3,12 +3,14 @@ import { slug, uid } from "../core/util.js";
 import { ASSIST_DEFAULTS, BW_DEFAULTS, SEED_EX, ST_AREA_DEFAULTS, ST_DEFAULTS, ST_OLD_NAMES, ST_SEED } from "./catalog.js";
 
 export const KEY = "gymapp-state-v1";
+// bumped whenever migrate() learns a new upgrade step
+export const SCHEMA_VERSION = 3;
 
 export function seed() {
   const exercises = SEED_EX.map(([name, ru, group, kind]) => ({ id: slug(name), name, ru, group, kind: kind || "reps" }));
   const P = (name, ids) => ({ id: uid(), name, items: ids.map((exerciseId) => ({ exerciseId, sets: 3 })) });
   return {
-    version: 2,
+    version: SCHEMA_VERSION,
     exercises,
     programs: [
       P("I. Ноги и плечи", ["squat", "leg-extension", "leg-curl", "lateral-raise", "overhead-press", "deadlift", "calf-raise"]),
@@ -70,7 +72,7 @@ export function migrate(d) {
   };
   d.workouts.forEach((w) => w.exercises.forEach((e) => { e.sets = flat(e.sets); }));
   if (d.active) d.active.exercises.forEach((e) => { e.sets = flat(e.sets); });
-  d.version = 3;
+  d.version = SCHEMA_VERSION;
   return d;
 }
 

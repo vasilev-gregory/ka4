@@ -240,7 +240,10 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
       </>)}
       <button onClick={() => { unlockAudio(); up((d) => { d.settings.sound = d.settings.sound === false; }); if (data.settings.sound === false) beep(); }}
         className={`${data.settings.mode === "stretch" ? "" : "-mt-4"} mb-6 flex w-full items-center justify-between rounded-xl bg-neutral-900 p-4 text-left`}>
-        <div><div className="font-semibold">Звук таймера</div><div className="text-xs text-neutral-400">Щелчки 3-2-1 и сигналы{data.settings.mode === "stretch" ? " в плеере растяжки" : " в конце отдыха"}</div></div>
+        <div>
+          <div className="font-semibold">Звук таймера</div>
+          <div className="text-xs text-neutral-400">Щелчки 3-2-1 и сигналы{data.settings.mode === "stretch" ? " в плеере растяжки" : " в конце отдыха"}</div>
+        </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.settings.sound === false ? "bg-neutral-800 text-neutral-400" : "bg-amber-400 text-black"}`}>
           {data.settings.sound === false ? "выкл" : "вкл"}
         </span>

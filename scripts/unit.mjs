@@ -1,6 +1,6 @@
 // Unit checks for the pure model layer (no browser). Run: node scripts/unit.mjs
 import assert from "node:assert/strict";
-import { seed, migrate } from "../src/model/state.js";
+import { seed, migrate, SCHEMA_VERSION } from "../src/model/state.js";
 import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, closeStaleWorkout, fmtSets, setColumns, weekAnalysis } from "../src/model/workout.js";
 import { buildTimeline, stExMap } from "../src/model/stretch.js";
 import { weekStartOf } from "../src/core/util.js";
@@ -12,6 +12,7 @@ ok("migrate is idempotent and fills new fields", () => {
   const again = migrate(structuredClone(d));
   assert.deepEqual(again, d);
   assert.ok(d.stretch && Array.isArray(d.measurements));
+  assert.equal(seed().version, SCHEMA_VERSION); assert.equal(d.version, SCHEMA_VERSION);
 });
 
 ok("old nested drops become linear grouped sets", () => {
@@ -62,6 +63,26 @@ ok("paused workout from yesterday gets closed on load", () => {
     exercises: [{ exerciseId: "squat", sets: [{ w: "1", r: "1", done: true }] }] };
   const out = closeStaleWorkout(d);
   assert.equal(out.active, null); assert.equal(out.workouts.length, 1); assert.ok(out.pendingProgramUpdate);
+});
+
+ok("running workout abandoned since yesterday ends at its last set", () => {
+  const mk = (start, lastSet) => {
+    const d = seed();
+    d.active = { id: "a", programId: null, name: "x", startedAt: start, paused: false, segments: [{ start }],
+      exercises: [{ exerciseId: "squat", sets: [{ w: "1", r: "1", done: true, at: lastSet }, { w: "", r: "", done: false }] }] };
+    return d;
+  };
+  const start = new Date(2026, 4, 9, 19, 0).getTime(), lastSet = start + 40 * 60e3;
+  const out = closeStaleWorkout(mk(start, lastSet), new Date(2026, 4, 10, 9, 0).getTime());
+  assert.equal(out.active, null);
+  const w = out.workouts[0];
+  assert.equal(w.finishedAt, lastSet); assert.equal(w.segments[0].end, lastSet); assert.equal(w.exercises[0].sets.length, 1);
+  // same day, hours later: still running
+  const d1 = mk(start, lastSet);
+  assert.equal(closeStaleWorkout(d1, new Date(2026, 4, 9, 23, 0).getTime()), d1);
+  // past midnight but only a short while after the last set: still the same workout
+  const d2 = mk(new Date(2026, 4, 9, 23, 0).getTime(), new Date(2026, 4, 9, 23, 50).getTime());
+  assert.equal(closeStaleWorkout(d2, new Date(2026, 4, 10, 0, 30).getTime()), d2);
 });
 
 ok("columns: rest is never a real column, w/r always on", () => {
