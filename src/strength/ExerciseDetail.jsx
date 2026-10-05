@@ -1,15 +1,17 @@
 // One exercise: progress chart, history, editing (name, group, kind, bodyweight share).
 import { useState, useMemo } from "react";
 import { Pencil } from "lucide-react";
-import { fmtDate, fmtNum, fmtShort, num } from "../core/util.js";
+import { fmtDate, fmtKg, fmtNum, plural } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
-import { fmtSets, setLoad } from "../model/workout.js";
+import { fmtSets } from "../model/workout.js";
+import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
-import { ExImg, Header, PhotoPicker, Trend, useApp } from "../ui/kit.jsx";
+import { ExImg, Header, PhotoPicker, Segmented, Trend, useApp } from "../ui/kit.jsx";
 
 export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const { bwAt, nm1, nm2 } = useApp();
   const [edit, setEdit] = useState(false);
+  const [metric, setMetric] = useState("max");
   const ex = exMap[id];
   const sessions = useMemo(() => {
     const out = [];
@@ -24,13 +26,13 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
 
   const isTime = ex.kind === "time";
   const isBody = !!(ex.bw || ex.assist);
-  const metric = (sets, ts) => {
-    const work = sets.filter((s) => s.t !== "w");
-    const bw = bwAt(ts);
-    return Math.round(Math.max(...(work.length ? work : sets).map((s) => (isTime ? num(s.r) : setLoad(ex, s, bw)))) * 10) / 10;
-  };
-  const chart = sessions.slice().reverse().map((s) => ({ date: fmtShort(s.w.startedAt), v: metric(s.sets, s.w.startedAt) }));
-  const best = sessions.length ? Math.max(...sessions.map((s) => metric(s.sets, s.w.startedAt))) : 0;
+  const maxSeries = exerciseSeries(data.workouts, id, ex, bwAt, "max");
+  const best = maxSeries.length ? Math.max(...maxSeries.map((p) => p.v)) : 0;
+  const shownMetric = isTime ? "max" : metric;
+  const series = shownMetric === "max" ? maxSeries : exerciseSeries(data.workouts, id, ex, bwAt, shownMetric);
+  const unit = isTime ? "сек" : "кг";
+  const times = (n) => `${n} ${plural(n, "тренировка", "тренировки", "тренировок")}`;
+  const fmtV = (v) => (shownMetric === "vol" ? fmtKg(v) : `${fmtNum(v)} ${unit}`);
   const oneRm = bestE1rm(data.workouts, id, ex, bwAt);
   const mut = (fn) => up((d) => { const e = d.exercises.find((x) => x.id === id); if (e) fn(e); });
 
@@ -91,9 +93,15 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
         )}
       </div>
 
-      {chart.length >= 2 && (
-        <div className="mb-4 h-48 rounded-xl bg-neutral-900 p-2">
-          <Trend points={chart} unit={isTime ? "сек" : "кг"} />
+      {maxSeries.length >= 2 && (
+        <div className="mb-4 rounded-xl bg-neutral-900 p-2">
+          {!isTime && (
+            <div className="mb-1.5">
+              <Segmented options={[["max", "макс. вес"], ["e1rm", "≈1ПМ"], ["vol", "объём"]]} value={metric} onChange={setMetric} />
+            </div>
+          )}
+          <Trend points={series} unit={unit}
+            header={(shown) => `${fmtV(shown[0].v)} → ${fmtV(shown[shown.length - 1].v)}, ${times(shown.length)} с ${fmtDate(shown[0].t)}`} />
         </div>
       )}
 

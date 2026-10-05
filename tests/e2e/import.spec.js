@@ -6,6 +6,7 @@ import { openApp, stored, tab } from "./helpers.js";
 const HEVY = "tests/fixtures/hevy-ru.csv";
 
 test("Settings → load a Hevy export: preview, import adds workouts and keeps the existing ones", async ({ page }) => {
+  await page.clock.setSystemTime(new Date(2026, 9, 5, 12)); // History shows the month of the fixtures' workouts
   await openApp(page);
   await tab(page, "Настройки");
   await page.getByText("Данные и приложение").click();

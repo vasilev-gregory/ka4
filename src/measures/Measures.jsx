@@ -1,6 +1,6 @@
 // Body measurements: summary cards with chart, entries list, editor.
 import { useState } from "react";
-import { fmtDate, fmtNum, fmtShort, isoDay, num, numericInput, uid } from "../core/util.js";
+import { fmtDate, fmtNum, isoDay, num, numericInput, uid } from "../core/util.js";
 import { MEASURES } from "../model/catalog.js";
 import { Button, DeleteButton, Header, Trend } from "../ui/kit.jsx";
 
@@ -39,12 +39,8 @@ export function MeasuresTab({ data, open, openSettings }) {
 
       {selSeries.length >= 2 && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-2">
-          <div className="px-2 pt-1 text-xs text-neutral-400">
-            {selMeta[1]}: {fmtNum(selSeries[0].v)} → {fmtNum(selSeries[selSeries.length - 1].v)} {selMeta[2]} с {fmtDate(selSeries[0].date)}
-          </div>
-          <div className="h-44">
-            <Trend points={selSeries.map((p) => ({ date: fmtShort(p.date), v: p.v }))} unit={selMeta[2]} />
-          </div>
+          <Trend points={selSeries.map((p) => ({ t: p.date, v: p.v }))} unit={selMeta[2]} height="h-44"
+            header={(shown) => `${selMeta[1]}: ${fmtNum(shown[0].v)} → ${fmtNum(shown[shown.length - 1].v)} ${selMeta[2]} с ${fmtDate(shown[0].t)}`} />
         </div>
       )}
 
