@@ -3,7 +3,8 @@ import { useState, useMemo } from "react";
 import { Pencil } from "lucide-react";
 import { fmtDate, fmtNum, fmtShort, num } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
-import { bestE1rm, fmtSets, setLoad } from "../model/workout.js";
+import { fmtSets, setLoad } from "../model/workout.js";
+import { bestE1rm } from "../model/records.js";
 import { ExImg, Header, PhotoPicker, Trend, useApp } from "../ui/kit.jsx";
 
 export function ExerciseDetail({ data, up, exMap, id, back, open }) {

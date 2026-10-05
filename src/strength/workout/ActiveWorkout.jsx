@@ -5,8 +5,9 @@ import { Play } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, fmtKg, progTitle } from "../../core/util.js";
 import {
-  bestE1rm, durations, finalizeActive, lastSession, liveRestKey, programDiff, recordSets, restBefore, restShown, segmentsOf, setColumns, stats,
+  durations, finalizeActive, lastSession, liveRestKey, programDiff, restBefore, restShown, segmentsOf, setColumns, stats,
 } from "../../model/workout.js";
+import { bestE1rm, recordSets } from "../../model/records.js";
 import * as A from "../../model/workoutActions.js";
 import { useHoldReorder, useLongPress, useSwipeRows } from "../../ui/gestures.js";
 import { Button, Card, ConfirmButton, useApp, useNow, useUndo } from "../../ui/kit.jsx";
@@ -125,7 +126,8 @@ export function ActiveWorkout({ data, up, exMap, open }) {
       {a.exercises.map((e, ei) => (
         <ExerciseCard key={ei + e.exerciseId} e={e} ei={ei} ex={exMap[e.exerciseId] || UNKNOWN_EXERCISE} exData={exMap[e.exerciseId]}
           last={lastSession(data.workouts, e.exerciseId)}
-          records={recordSets(e.sets, exMap[e.exerciseId], bwAt(a.startedAt), bestE1rm(data.workouts, e.exerciseId, exMap[e.exerciseId], bwAt))} cols={cols} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
+          records={recordSets(e.sets, exMap[e.exerciseId], bwAt(a.startedAt), bestE1rm(data.workouts, e.exerciseId, exMap[e.exerciseId], bwAt))}
+          cols={cols} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
           g={{ swipe, swipeBind, headerProps, colDrag, numberProps: numberProps(ei) }}
           sel={sel} rests={rests} liveKey={liveKey} liveMs={now - a.lastSetAt} act={cardActions(ei)} open={open} />
       ))}

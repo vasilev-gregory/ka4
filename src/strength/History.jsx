@@ -3,7 +3,8 @@ import { useState } from "react";
 import { ChevronLeft, Trophy } from "lucide-react";
 import { DAY, fmtDate, fmtDur, fmtGroupWeek, fmtKg, fmtNum, weekStartOf } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
-import { bestE1rm, fmtSets, fmtWDur, growthStatus, previousSession, restStats, sessionE1rm, stats, weekAnalysis } from "../model/workout.js";
+import { fmtSets, fmtWDur, growthStatus, restStats, stats, weekAnalysis } from "../model/workout.js";
+import { bestE1rm, previousSession, sessionE1rm } from "../model/records.js";
 import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
 
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -208,7 +209,11 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">{nm1(ex) || ex.name}</div>
                 <div className="text-xs text-neutral-300 tabular-nums">{fmtSets(e.sets, ex.kind)}</div>
-                {note && <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>{note.text === "рекорд" && <Trophy size={12} className="mr-1 inline -mt-0.5" />}{note.text}</div>}
+                {note && (
+                  <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>
+                    {note.text === "рекорд" && <Trophy size={12} className="mr-1 inline -mt-0.5" />}{note.text}
+                  </div>
+                )}
               </div>
             </button>
           );

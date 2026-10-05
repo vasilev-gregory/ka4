@@ -83,7 +83,7 @@ test("weekly analysis counts hard sets and days", () => {
 });
 
 test("estimated 1RM, records and the previous session", async () => {
-  const { e1rm, recordSets, bestE1rm, previousSession } = await import("../../src/model/workout.js");
+  const { e1rm, recordSets, bestE1rm, previousSession } = await import("../../src/model/records.js");
   assert.equal(e1rm(100, 1), 100);
   assert.equal(Math.round(e1rm(100, 10)), 133);
   assert.equal(e1rm(100, 20), null);

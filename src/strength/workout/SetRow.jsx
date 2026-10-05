@@ -24,10 +24,12 @@ const takeHint = (value, hint, key, edit) => (e) => {
 function Cell({ col, s, ex, edit }) {
   const doneText = s.done ? "text-accent-300" : "";
   if (col === "w") return (
-    <input value={s.w} placeholder={s.hw || ""} inputMode="decimal" onFocus={takeHint(s.w, s.hw, "w", edit)} onChange={(e) => edit({ w: numericInput(e.target.value, true) })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
+    <input value={s.w} placeholder={s.hw || ""} inputMode="decimal" onFocus={takeHint(s.w, s.hw, "w", edit)}
+      onChange={(e) => edit({ w: numericInput(e.target.value, true) })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
   );
   if (col === "r") return (
-    <input value={s.r} placeholder={s.hr || ""} inputMode="numeric" onFocus={takeHint(s.r, s.hr, "r", edit)} onChange={(e) => edit({ r: numericInput(e.target.value, false) })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
+    <input value={s.r} placeholder={s.hr || ""} inputMode="numeric" onFocus={takeHint(s.r, s.hr, "r", edit)}
+      onChange={(e) => edit({ r: numericInput(e.target.value, false) })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
   );
   if (col === "p") return ex.kind === "time" ? <span className="w-9" /> : (
     <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
