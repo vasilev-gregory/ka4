@@ -39,6 +39,12 @@ test("history: month by default, paging, year overview drills down to a month an
   await expect(period).toHaveText("5 окт. – 11 окт.");
   await expect(page.getByText("тренировок: 1")).toBeVisible();
   await expect(page.getByText("Октябрьская")).toBeVisible();
+  // muscles: the body map and the list; a tap on a muscle on the map picks it in the list
+  await expect(page.getByRole("img", { name: "Спереди" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\. · 1 раз/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /ягодицы.*1 подх\./ })).toBeVisible(); // helping: half a set each
+  await page.locator('[data-muscle="quads"]').first().click();
+  await expect(page.getByRole("button", { name: /квадрицепс/ })).toHaveClass(/bg-neutral-800/);
 
   // the zoom is kept while a workout card is open
   await page.getByText("Октябрьская").click();

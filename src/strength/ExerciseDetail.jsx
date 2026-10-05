@@ -3,10 +3,17 @@ import { useState, useMemo } from "react";
 import { Pencil } from "lucide-react";
 import { fmtDate, fmtKg, fmtNum, plural } from "../core/util.js";
 import { EX_KINDS, GROUPS } from "../model/catalog.js";
+import { cycleMuscle, MUSCLE_NAME, MUSCLES, musclesOf } from "../model/muscles.js";
 import { fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
 import { ExImg, Header, PhotoPicker, Segmented, Trend, useApp } from "../ui/kit.jsx";
+
+// "Мышцы: квадрицепс; помогают: ягодицы"
+const fmtWorked = (w) => {
+  const by = (main) => MUSCLES.filter(([m]) => (main ? w[m] >= 1 : w[m] > 0 && w[m] < 1)).map(([m]) => MUSCLE_NAME[m]).join(", ");
+  return `Мышцы: ${by(true) || "—"}${by(false) ? `; помогают: ${by(false)}` : ""}`;
+};
 
 export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const { bwAt, nm1, nm2 } = useApp();
@@ -26,6 +33,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
 
   const isTime = ex.kind === "time";
   const isCardio = ex.kind === "cardio";
+  const worked = musclesOf(ex);
   const isBody = !!(ex.bw || ex.assist);
   const maxSeries = exerciseSeries(data.workouts, id, ex, bwAt, "max");
   const best = maxSeries.length ? Math.max(...maxSeries.map((p) => p.v)) : 0;
@@ -43,6 +51,9 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
       <Header title={nm1(ex)} back={back}
         right={<button onClick={() => setEdit(!edit)} className="shrink-0 self-start p-2 text-neutral-400" aria-label="Изменить"><Pencil size={20} /></button>} />
       {nm2(ex) && <p className="-mt-3 mb-4 text-neutral-400">{nm2(ex)}</p>}
+      {!isCardio && Object.keys(worked).length > 0 && (
+        <p className="-mt-2 mb-4 text-xs text-neutral-400">{fmtWorked(worked)}</p>
+      )}
 
       {edit && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-3">
@@ -62,6 +73,18 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
                 className={`rounded-full px-3 py-1 text-xs ${ex.kind === k ? "bg-neutral-100 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
             ))}
           </div>
+          {!isCardio && <>
+            <div className="mb-1.5 mt-3 text-xs text-neutral-400">Мышцы: тап — основная, ещё тап — вспомогательная, ещё — убрать</div>
+            <div className="flex flex-wrap gap-1.5">
+              {MUSCLES.map(([m, name]) => (
+                <button key={m} onClick={() => mut((x) => { x.muscles = cycleMuscle(x, m); })}
+                  className={`rounded-full px-3 py-1 text-xs ${worked[m] >= 1 ? "bg-accent-400 text-black" : worked[m] ? "bg-accent-950 text-accent-300" : "bg-neutral-800 text-neutral-400"}`}>
+                  {name}
+                </button>
+              ))}
+            </div>
+            {ex.muscles && <button onClick={() => mut((x) => { delete x.muscles; })} className="mt-1.5 text-[11px] text-neutral-400 underline">как в каталоге</button>}
+          </>}
           <div className="mb-1.5 mt-3 text-xs text-neutral-400">Фото</div>
           <PhotoPicker ex={ex} onChange={(v) => mut((x) => { if (v) x.photo = v; else delete x.photo; })} />
           {!isCardio && <>

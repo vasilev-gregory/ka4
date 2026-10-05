@@ -18,7 +18,7 @@ test("periods: week from Monday, month and year by the calendar, shifting across
 });
 
 test("period summary: workouts, sets and hard sets per group per started week", () => {
-  const exMap = { sq: { id: "sq", kind: "reps", group: "Ноги" } };
+  const exMap = { sq: { id: "squat", kind: "reps", group: "ноги" } };
   const w = (t, n) => ({ startedAt: t, segments: [{ start: t, end: t + 3600e3 }], exercises: [{ exerciseId: "sq", sets: Array.from({ length: n }, () => ({ w: "100", r: "5", done: true })) }] });
   const workouts = [w(at(2026, 8, 30), 9), w(at(2026, 9, 2), 4), w(at(2026, 9, 6), 6)];
   const s = periodSummary(workouts, exMap, bwAt, periodOf("month", at(2026, 9, 1)), at(2026, 9, 7));
@@ -26,7 +26,8 @@ test("period summary: workouts, sets and hard sets per group per started week", 
   assert.equal(s.sets, 10);
   assert.equal(s.vol, 10 * 500);
   assert.equal(s.weeks, 2); // weeks of 28 Sep and 5 Oct; the rest of October has not started yet
-  assert.deepEqual(s.perWeek["Ноги"], { sets: 5, freq: 1 });
+  assert.deepEqual(s.perWeek.quads, { sets: 5, freq: 1 });
+  assert.deepEqual(s.perWeek.glutes, { sets: 2.5, freq: 0 }); // helping muscle: half a set, no session
   assert.equal(s.days, 2);
 });
 

@@ -1,13 +1,14 @@
 // Strength history tab: zoom week / month / year with a calendar, the period's analysis and its workouts.
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
-import { DAY, fmtDate, fmtGroupWeek, fmtNum, plural, weekStartOf } from "../core/util.js";
-import { GROUPS } from "../model/catalog.js";
-import { fmtTotals, fmtWDur, growthStatus, stats, weekAnalysis } from "../model/workout.js";
+import { DAY, fmtDate, fmtNum, plural, weekStartOf } from "../core/util.js";
+import { fmtTotals, fmtWDur, stats } from "../model/workout.js";
+import { weekLoad } from "../model/muscles.js";
 import { workoutKcal } from "../model/energy.js";
 import { inPeriod, periodOf, periodSummary, shiftPeriod } from "../model/periods.js";
 import { Header, Segmented, useApp } from "../ui/kit.jsx";
 import { useFlick } from "../ui/gestures.js";
+import { MuscleBreakdown, MusclesWhy, WhyButton } from "./MuscleBreakdown.jsx";
 
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const dayMonth = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
@@ -78,67 +79,32 @@ function YearGrid({ year, workouts, onMonth }) {
   );
 }
 
-function WhyButton({ on, toggle }) {
-  return (
-    <button onClick={toggle} aria-label="Как считается"
-      className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${on ? "bg-neutral-600 text-white" : "bg-neutral-800"}`}>?</button>
-  );
-}
-
-const WHY = `Считаются тяжёлые подходы (RIR 0–3, без разминок), дроп-сет — один подход; каждое упражнение идёт в свою основную группу.
-  Ориентир по исследованиям: 10+ подходов в неделю и 2+ тренировки на группу — оптимум (черта на шкале — 10),
-  4–9 тоже дают рост, меньше 4 — скорее поддержка.`;
-
-// averages are fractional: "7,5 подх. · 1,5 раза"
-const fmtGroup = (sets, freq) => (!freq ? `${fmtNum(sets)} подх.` : Number.isInteger(freq) ? fmtGroupWeek(fmtNum(sets), freq) : `${fmtNum(sets)} подх. · ${fmtNum(freq)} раза`);
-
-// muscle groups: bar of weekly hard sets (20 = full), sets and times, growth status
-function GroupRows({ rows }) {
-  return (
-    <div className="space-y-1.5">
-      {rows.map(([g, sets, freq]) => {
-        const [label, cls] = growthStatus(sets, freq);
-        return (
-          <div key={g} className="flex items-center gap-2 text-xs">
-            <span className="w-16 shrink-0 text-neutral-300">{g}</span>
-            <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-neutral-800">
-              <div className="absolute inset-y-0 left-0 rounded-full bg-accent-400" style={{ width: `${Math.min(100, (sets / 20) * 100)}%` }} />
-              <div className="absolute inset-y-0 w-px bg-neutral-500" style={{ left: "50%" }} />
-            </div>
-            <span className="w-28 shrink-0 whitespace-nowrap text-right tabular-nums text-neutral-400">{fmtGroup(sets, freq)}</span>
-            <span className={`w-16 shrink-0 rounded-md py-0.5 text-center text-[11px] ${cls}`}>{label}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// week: hard sets per group. month / year: totals and the average week per group.
+// week: hard sets per muscle. month / year: totals and the average week per muscle.
 function PeriodPanel({ zoom, range, workouts, exMap }) {
   const { bwAt } = useApp();
   const [why, setWhy] = useState(false);
-  let title, rows, empty;
+  let title, load, empty;
   if (zoom === "week") {
-    const an = weekAnalysis(workouts, exMap, range.from);
+    const an = weekLoad(workouts, exMap, range.from);
     title = `тренировок: ${an.days}`;
-    rows = GROUPS.filter((g) => an.groups[g]).map((g) => [g, an.groups[g].sets, an.groups[g].days.size]);
+    load = an.muscles;
     empty = "На этой неделе тяжёлых подходов не было.";
   } else {
     const s = periodSummary(workouts, exMap, bwAt, range);
     title = s.workouts ? [`${s.workouts} ${plural(s.workouts, "тренировка", "тренировки", "тренировок")}`, fmtTotals(s),
       s.kcal > 0 && `≈${fmtNum(Math.round(s.kcal / (s.kcal < 1000 ? 10 : 100)) * (s.kcal < 1000 ? 10 : 100))} ккал`].filter(Boolean).join(", ") : "";
-    rows = GROUPS.filter((g) => s.perWeek[g]).map((g) => [g, s.perWeek[g].sets, s.perWeek[g].freq]);
+    load = s.perWeek;
     empty = s.workouts ? "Тяжёлых подходов не было." : zoom === "month" ? "В этом месяце тренировок не было." : "В этом году тренировок не было.";
   }
+  const any = Object.keys(load).length > 0;
   return (
     <div className="mt-3 rounded-xl bg-neutral-900 p-3">
       <div className="mb-2 flex items-center justify-between gap-2 text-xs text-neutral-400">
         <span className="tabular-nums">{title}</span>
-        <span className="flex items-center gap-2">{zoom !== "week" && rows.length > 0 && "в среднем за неделю"}<WhyButton on={why} toggle={() => setWhy((x) => !x)} /></span>
+        <span className="flex items-center gap-2">{zoom !== "week" && any && "в среднем за неделю"}<WhyButton on={why} toggle={() => setWhy((x) => !x)} /></span>
       </div>
-      {rows.length === 0 ? <p className="text-xs text-neutral-500">{empty}</p> : <GroupRows rows={rows} />}
-      {why && <p className="mt-3 text-[11px] leading-snug text-neutral-500">{WHY}</p>}
+      {why && <MusclesWhy />}
+      {any ? <MuscleBreakdown load={load} /> : <p className="text-xs text-neutral-500">{empty}</p>}
     </div>
   );
 }
