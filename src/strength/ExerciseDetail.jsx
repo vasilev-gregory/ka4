@@ -7,7 +7,7 @@ import { cycleMuscle, MUSCLE_NAME, MUSCLES, musclesOf } from "../model/muscles.j
 import { fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
-import { ExImg, Header, PhotoPicker, Segmented, Trend, useApp } from "../ui/kit.jsx";
+import { Button, ExImg, Header, PhotoPicker, Segmented, Sheet, Trend, useApp } from "../ui/kit.jsx";
 
 // "Мышцы: квадрицепс; помогают: ягодицы"
 const fmtWorked = (w) => {
@@ -19,6 +19,9 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const { bwAt, nm1, nm2 } = useApp();
   const [edit, setEdit] = useState(false);
   const [metric, setMetric] = useState("max");
+  // changing the muscles recounts the whole history: asked once per visit, then the change goes through
+  const [muscleAsk, setMuscleAsk] = useState(null); // the change waiting for "Пересчитать"
+  const [muscleOk, setMuscleOk] = useState(false);
   const ex = exMap[id];
   const sessions = useMemo(() => {
     const out = [];
@@ -45,6 +48,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const metrics = isCardio ? [["max", "время"], ["vol", "дистанция"]] : [["max", "макс. вес"], ["e1rm", "≈1ПМ"], ["vol", "объём"]];
   const oneRm = bestE1rm(data.workouts, id, ex, bwAt);
   const mut = (fn) => up((d) => { const e = d.exercises.find((x) => x.id === id); if (e) fn(e); });
+  const changeMuscles = (fn) => (muscleOk || !sessions.length ? mut(fn) : setMuscleAsk(() => fn));
 
   return (
     <div className="p-4 pb-28">
@@ -77,13 +81,13 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
             <div className="mb-1.5 mt-3 text-xs text-neutral-400">Мышцы: тап — основная, ещё тап — вспомогательная, ещё — убрать</div>
             <div className="flex flex-wrap gap-1.5">
               {MUSCLES.map(([m, name]) => (
-                <button key={m} onClick={() => mut((x) => { x.muscles = cycleMuscle(x, m); })}
+                <button key={m} onClick={() => changeMuscles((x) => { x.muscles = cycleMuscle(x, m); })}
                   className={`rounded-full px-3 py-1 text-xs ${worked[m] >= 1 ? "bg-accent-400 text-black" : worked[m] ? "bg-accent-950 text-accent-300" : "bg-neutral-800 text-neutral-400"}`}>
                   {name}
                 </button>
               ))}
             </div>
-            {ex.muscles && <button onClick={() => mut((x) => { delete x.muscles; })} className="mt-1.5 text-[11px] text-neutral-400 underline">как в каталоге</button>}
+            {ex.muscles && <button onClick={() => changeMuscles((x) => { delete x.muscles; })} className="mt-1.5 text-[11px] text-neutral-400 underline">как в каталоге</button>}
           </>}
           <div className="mb-1.5 mt-3 text-xs text-neutral-400">Фото</div>
           <PhotoPicker ex={ex} onChange={(v) => mut((x) => { if (v) x.photo = v; else delete x.photo; })} />
@@ -130,6 +134,16 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
           <Trend points={series} unit={unit}
             header={(shown) => `${fmtV(shown[0].v)} → ${fmtV(shown[shown.length - 1].v)}, ${times(shown.length)} с ${fmtDate(shown[0].t)}`} />
         </div>
+      )}
+
+      {muscleAsk && (
+        <Sheet title="Пересчитать всю историю?" onClose={() => setMuscleAsk(null)}>
+          <p className="mb-4 text-xs text-neutral-400">
+            Мышцы упражнения меняются для всех его тренировок ({sessions.length}): разбор по мышцам в истории пересчитается и за прошлое.
+          </p>
+          <Button block className="mb-2" onClick={() => { mut(muscleAsk); setMuscleOk(true); setMuscleAsk(null); }}>Пересчитать</Button>
+          <Button variant="quiet" block onClick={() => setMuscleAsk(null)}>Отмена</Button>
+        </Sheet>
       )}
 
       {sessions.length === 0 && <p className="text-neutral-400">Истории пока нет. Сделай подход, и он появится здесь.</p>}
