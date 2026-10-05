@@ -1,25 +1,27 @@
-// The body, front and back, with each muscle coloured by how much it was trained; a tap picks a muscle.
+// The body, front and back: every muscle is a shape of its own, nearly see-through until trained and filling
+// with colour as the hard sets add up; a tap picks a muscle.
 import { BACK, FRONT } from "./bodyMapData.js";
 
-// level of a muscle -> fill class; the accent follows the mode (index.css)
-export const LEVEL_FILL = { low: "fill-accent-950", grow: "fill-accent-700", optimal: "fill-accent-400", high: "fill-red-500" };
-const BODY = "fill-neutral-800";
-const ORDER = ["low", "grow", "optimal", "high"];
+// the colour muscles fill with: a warm "worked muscle" red, apart from the mode's accent used by controls
+export const MUSCLE_FILL = "fill-rose-500";
 
-// levels: { muscleId: "low" | "grow" | "optimal" | "high" }; a region showing several muscles takes the highest
-export function BodyMap({ levels, selected, onSelect }) {
-  const fill = (ids) => {
-    const lv = ids.map((m) => levels[m]).filter(Boolean).sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a))[0];
-    return lv ? LEVEL_FILL[lv] : BODY;
-  };
+// how strongly a muscle is filled for a share of the target (0..1): a trace for the first set, full at the target
+export const fillOpacity = (share) => (share > 0 ? 0.15 + 0.85 * Math.min(1, share) : 0);
+
+// fill: { muscleId: share of the weekly target, 0..1+ }; a region showing several muscles takes the largest
+export function BodyMap({ fill, selected, onSelect }) {
+  const share = (ids) => Math.max(0, ...ids.map((m) => fill[m] || 0));
   const view = (regions, label) => (
     <svg viewBox="0 0 100 200" className="h-auto w-1/2 max-w-48" role="img" aria-label={label}>
-      {regions.map(([ids, polys], i) => polys.map((pts, j) => (
-        <polygon key={`${i}:${j}`} points={pts.join(" ")} strokeWidth={ids.includes(selected) ? 0.8 : 0.4}
-          onClick={ids.length ? () => onSelect(ids.find((m) => levels[m]) || ids[0]) : undefined}
-          className={`${fill(ids)} ${ids.includes(selected) ? "stroke-white" : "stroke-black"} ${ids.length ? "cursor-pointer" : ""}`}
-          data-muscle={ids.join(" ") || undefined} />
-      )))}
+      {regions.map(([ids, polys], i) => polys.map((pts, j) => {
+        const on = ids.includes(selected);
+        return (
+          <polygon key={`${i}:${j}`} points={pts.join(" ")} strokeWidth={on ? 0.9 : 0.5} fillOpacity={ids.length ? fillOpacity(share(ids)) : 0.06}
+            onClick={ids.length ? () => onSelect(ids.find((m) => fill[m]) || ids[0]) : undefined}
+            className={`${ids.length ? `${MUSCLE_FILL} cursor-pointer` : "fill-white"} ${on ? "stroke-white" : "stroke-neutral-600"}`}
+            data-muscle={ids.join(" ") || undefined} />
+        );
+      }))}
     </svg>
   );
   return (

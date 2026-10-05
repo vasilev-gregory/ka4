@@ -3,10 +3,13 @@
 import { useState } from "react";
 import { fmtNum, plural } from "../core/util.js";
 import { growthStatus, MUSCLE_NAME, MUSCLES } from "../model/muscles.js";
-import { BodyMap, LEVEL_FILL } from "../ui/BodyMap.jsx";
+import { BodyMap, fillOpacity, MUSCLE_FILL } from "../ui/BodyMap.jsx";
 
-const CHIP = { low: "bg-neutral-800 text-neutral-400", grow: "bg-accent-950 text-accent-300", optimal: "bg-accent-400 text-black", high: "bg-red-950 text-red-300" };
-const LEGEND = [["low", "мало"], ["grow", "рост"], ["optimal", "оптимум"], ["high", "очень много"]];
+// statuses in the muscle colour (BodyMap): the fuller, the closer to the weekly target
+const CHIP = { low: "bg-neutral-800 text-neutral-400", grow: "bg-rose-950 text-rose-300", optimal: "bg-rose-500 text-white", high: "bg-rose-200 text-rose-950" };
+const TARGET = 10; // hard sets a week at which a muscle is filled completely (the optimum)
+// legend stops: [sets, label]
+const LEGEND = [[0, "0"], [4, "4 — рост"], [TARGET, "10+ — оптимум"]];
 
 // "7,5 подх. · 2 раза"; averages over weeks are fractional
 const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum(freq)} ${Number.isInteger(freq) ? plural(freq, "раз", "раза", "раз") : "раза"}` : ""}`;
@@ -16,22 +19,28 @@ export function MuscleBreakdown({ load, map = true, only, note }) {
   const [sel, setSel] = useState(null);
   const rows = MUSCLES.filter(([id]) => load[id]?.sets > 0 && (!only || only.includes(id)))
     .map(([id, name]) => ({ id, name, ...load[id], status: growthStatus(load[id].sets, load[id].freq) }));
-  const levels = Object.fromEntries(rows.map((r) => [r.id, r.status[0]]));
+  const fill = Object.fromEntries(rows.map((r) => [r.id, r.sets / TARGET]));
   const pick = (m) => setSel(sel === m ? null : m);
   return (
     <div>
       {map && <>
-        <BodyMap levels={levels} selected={sel} onSelect={pick} />
-        <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-neutral-400">
-          {LEGEND.map(([k, l]) => (
-            <span key={k} className="flex items-center gap-1">
-              <svg viewBox="0 0 10 10" className="h-2.5 w-2.5"><rect width="10" height="10" rx="2" className={LEVEL_FILL[k]} /></svg>{l}
-            </span>
-          ))}
+        <BodyMap fill={fill} selected={sel} onSelect={pick} />
+        <div className="mx-auto mt-2 max-w-64">
+          <svg viewBox="0 0 100 4" preserveAspectRatio="none" className="h-2 w-full">
+            {Array.from({ length: 20 }, (_, i) => (
+              <rect key={i} x={i * 5} width="5.2" height="4" className={MUSCLE_FILL} fillOpacity={fillOpacity(i / 20 || 0.001)} />
+            ))}
+          </svg>
+          <div className="relative mt-0.5 h-3 text-[10px] text-neutral-500">
+            {LEGEND.map(([n, l]) => (
+              <span key={n} className="absolute -translate-x-1/2 whitespace-nowrap first:translate-x-0 last:-translate-x-full"
+                style={{ left: `${(n / TARGET) * 100}%` }}>{l}</span>
+            ))}
+          </div>
         </div>
         <p className="mt-2 min-h-5 text-center text-xs text-neutral-300">
           {!sel ? <span className="text-neutral-500">Тап по мышце — подробности</span>
-            : levels[sel] ? `${MUSCLE_NAME[sel]}: ${fmtLoad(load[sel].sets, load[sel].freq)} — ${growthStatus(load[sel].sets, load[sel].freq)[1]}`
+            : fill[sel] ? `${MUSCLE_NAME[sel]}: ${fmtLoad(load[sel].sets, load[sel].freq)} — ${growthStatus(load[sel].sets, load[sel].freq)[1]}`
             : `${MUSCLE_NAME[sel]}: тяжёлых подходов не было`}
         </p>
       </>}
@@ -44,7 +53,7 @@ export function MuscleBreakdown({ load, map = true, only, note }) {
               <span className={`w-20 shrink-0 rounded-md py-0.5 text-center text-[11px] ${CHIP[r.status[0]]}`}>{r.status[1]}</span>
             </div>
             <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-800">
-              <div className="absolute inset-y-0 left-0 rounded-full bg-accent-400" style={{ width: `${Math.min(100, (r.sets / 20) * 100)}%` }} />
+              <div className="absolute inset-y-0 left-0 rounded-full bg-rose-500" style={{ width: `${Math.min(100, (r.sets / 20) * 100)}%` }} />
               <div className="absolute inset-y-0 w-px bg-neutral-500" style={{ left: "50%" }} />
             </div>
             {note && <div className="mt-0.5 text-[11px] text-neutral-500">{note(r)}</div>}
@@ -68,6 +77,7 @@ export const MusclesWhy = () => (
     Считаются тяжёлые подходы (RIR 0–3, без разминок), дроп-сет — один подход. Мышца, которая в упражнении основная, получает подход,
     вспомогательная — половину (присед: квадрицепс — подход, ягодицы — половина); тренировка засчитывается мышце, если она была основной.
     Ориентир по исследованиям: 10+ подходов в неделю и 2+ тренировки на мышцу — оптимум (черта на шкале — 10), 4–9 тоже дают рост,
-    меньше 4 — скорее поддержка. Тап по мышце на схеме или в списке выделяет её.
+    меньше 4 — скорее поддержка. На схеме мышца заливается цветом по мере подходов: еле видна — первые, полностью — 10 в неделю.
+    Тап по мышце на схеме или в списке выделяет её.
   </p>
 );
