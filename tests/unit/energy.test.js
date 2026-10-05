@@ -77,6 +77,8 @@ test("cardio in a program: a plan in minutes or km becomes the hint; only cardio
   startWorkout(d, cardio, t0);
   assert.equal(d.active.warmup, undefined);
   assert.equal(d.active.exercises[0].sets[0].hw, "4,5");
+  startWorkout(d, { id: "p3", name: "", items: [{ exerciseId: "elliptical", sets: 1 }] }, t0); // saved before plans existed
+  assert.equal(d.active.exercises[0].sets[0].hr, "20");
   assert.deepEqual(programItem(ex("elliptical")), { exerciseId: "elliptical", sets: 1, min: 20 });
   assert.deepEqual(programItem(ex("squat")), { exerciseId: "squat", sets: 3 });
 });

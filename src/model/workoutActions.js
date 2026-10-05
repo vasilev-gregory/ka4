@@ -1,13 +1,16 @@
 // Strength actions: every change to a workout the UI can make. Each takes the app data (an immer draft
 // inside up()) and mutates it; time comes in as `now` so the rules are testable.
 import { num, progTitle, uid } from "../core/util.js";
-import { buildSets, closeSegment, columnConfig, defaultSets, normalizeGroups, setColumns } from "./workout.js";
+import { buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, normalizeGroups, setColumns } from "./workout.js";
 
 const exAt = (d, ei) => d.active && d.active.exercises[ei];
 
 // a program's cardio plan (minutes or km) is the hint in that field, over last time's
 const withPlan = (sets, it) => (it.min ? sets.map((s) => ({ ...s, hr: String(it.min) }))
   : it.km ? sets.map((s) => ({ ...s, hw: String(it.km).replace(".", ",") })) : sets);
+
+// a cardio line saved before plans existed has none: it gets the default the editor shows
+const planOf = (d, it) => (it.min || it.km || d.exercises.find((e) => e.id === it.exerciseId)?.kind !== "cardio" ? it : { ...it, min: CARDIO_PLAN.min });
 
 export function startWorkout(d, program, now = Date.now()) {
   const items = program?.items || [];
@@ -22,7 +25,7 @@ export function startWorkout(d, program, now = Date.now()) {
     paused: false,
     restEndsAt: null,
     ...(cardioOnly ? {} : { warmup: { doneAt: null } }), // a strength workout opens with a warm-up block (no exercises in it yet)
-    exercises: items.map((it) => ({ exerciseId: it.exerciseId, sets: withPlan(buildSets(d, it.exerciseId, it.sets), it) })),
+    exercises: items.map((it) => ({ exerciseId: it.exerciseId, sets: withPlan(buildSets(d, it.exerciseId, it.sets), planOf(d, it)) })),
   };
 }
 
