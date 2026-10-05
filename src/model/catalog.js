@@ -1,5 +1,5 @@
 // Built-in reference data: muscle groups, exercise catalog, bodyweight shares, stretch catalog, columns.
-export const GROUPS = ["ноги", "плечи", "грудь", "спина", "бицепс", "трицепс", "предплечья", "икры", "кор"];
+export const GROUPS = ["ноги", "плечи", "грудь", "спина", "бицепс", "трицепс", "предплечья", "икры", "кор", "кардио"];
 
 export const SEED_EX = [
   ["Squat", "Приседания со штангой", "ноги"],
@@ -170,9 +170,33 @@ export const SEED_EX = [
   ["Lying leg raise", "Подъём ног лёжа", "кор"],
   ["Bird dog", "Птица-собака", "кор"],
   ["Burpee", "Бёрпи", "кор"],
+  // cardio: a "set" is a stretch of minutes, with an optional distance
+  ["Treadmill run", "Бег на дорожке", "кардио", "cardio"],
+  ["Running", "Бег на улице", "кардио", "cardio"],
+  ["Treadmill walk", "Ходьба на дорожке", "кардио", "cardio"],
+  ["Elliptical", "Эллипс", "кардио", "cardio"],
+  ["Rowing machine", "Гребной тренажёр", "кардио", "cardio"],
+  ["Exercise bike", "Велотренажёр", "кардио", "cardio"],
+  ["Stair climber", "Степпер-лестница", "кардио", "cardio"],
+  ["Jump rope", "Скакалка", "кардио", "cardio"],
 ];
 
+// Energy cost of cardio, MET at a moderate effort (Compendium of Physical Activities, 2024). With a distance,
+// running and walking use their speed (ACSM equations) and rowing its pace (Concept2 formula) instead.
+// Other cardio, including the user's own, counts CARDIO_MET_DEFAULT.
+export const CARDIO = {
+  "treadmill-run": { met: 9.8, pace: "run" }, "running": { met: 9.8, pace: "run" }, "treadmill-walk": { met: 4.3, pace: "walk" },
+  "elliptical": { met: 5 }, "rowing-machine": { met: 7, pace: "row" }, "exercise-bike": { met: 6.8 },
+  "stair-climber": { met: 9 }, "jump-rope": { met: 11.8 },
+};
+export const CARDIO_MET_DEFAULT = 6;
+// a strength workout as a whole, rests included: "resistance training, multiple exercises, 8–15 reps" (Compendium 02054)
+export const STRENGTH_MET = 3.5;
+
 export const PARTIAL_WEIGHT = 0.3;
+
+// what a set of the exercise holds
+export const EX_KINDS = [["reps", "вес и повторы"], ["time", "вес и время"], ["cardio", "кардио: минуты и км"]];
 
 // For exercises where the body is the main load, working load = share of body weight + added weight.
 // Shares are rough biomechanics figures. "assist" = machine-assisted (gravitron): load = body weight − assistance.

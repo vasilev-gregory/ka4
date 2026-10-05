@@ -3,6 +3,7 @@ import { Trophy } from "lucide-react";
 import { fmtDate, fmtDur, fmtGroupWeek, fmtKg, fmtNum, weekStartOf } from "../core/util.js";
 import { fmtSets, growthStatus, restStats, stats, weekAnalysis } from "../model/workout.js";
 import { bestE1rm, previousSession, sessionE1rm } from "../model/records.js";
+import { workoutKcal } from "../model/energy.js";
 import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
 
 // "+2,5 кг", "−1 кг", "так же"
@@ -29,12 +30,21 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
   const prevSame = w.programId && [...data.workouts].reverse().find((x) => x.programId === w.programId && x.startedAt < w.startedAt);
   const prevVol = prevSame ? stats(prevSame, exMap, bwAt).vol : 0;
   const volNote = prevVol > 0 ? `объём, ${st.vol >= prevVol ? "+" : "−"}${Math.round(Math.abs(st.vol / prevVol - 1) * 100)}%` : "объём";
+  const kcal = workoutKcal(w, exMap, bwAt);
+  const cardioOnly = st.cardioMin > 0 && !st.sets;
+  const tiles = [
+    [fmtDur(st.dur), st.extra >= 60000 ? `время, +${fmtDur(st.extra)} позже` : "время"],
+    !cardioOnly && [fmtKg(st.vol), volNote],
+    !cardioOnly && [st.sets, "подходов"],
+    st.cardioMin > 0 && [`${fmtNum(st.cardioMin)} мин`, st.cardioKm > 0 ? `кардио, ${fmtNum(st.cardioKm)} км` : "кардио"],
+    kcal == null ? ["—", "ккал: укажи вес тела в замерах"] : [`≈${kcal}`, "ккал, оценка"],
+  ].filter(Boolean);
   return (
     <div className="p-4 pb-28">
       <Header title={w.name} back={back} />
       <p className="-mt-3 mb-4 text-neutral-400">{fmtDate(w.startedAt)}</p>
-      <div className="mb-5 grid grid-cols-3 gap-2">
-        {[[fmtDur(st.dur), st.extra >= 60000 ? `время, +${fmtDur(st.extra)} позже` : "время"], [fmtKg(st.vol), volNote], [st.sets, "подходов"]].map(([v, l]) => (
+      <div className={`mb-5 grid gap-2 ${tiles.length === 4 ? "grid-cols-2" : "grid-cols-3"}`}>
+        {tiles.map(([v, l]) => (
           <div key={l} className="rounded-xl bg-neutral-900 p-3">
             <div className="text-lg font-bold tabular-nums">{v}</div>
             <div className="text-xs text-neutral-400">{l}</div>

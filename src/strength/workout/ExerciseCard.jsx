@@ -6,7 +6,8 @@ import { ExImg, useApp } from "../../ui/kit.jsx";
 import { SetRow } from "./SetRow.jsx";
 
 const colTitle = (c, ex) =>
-  c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг")
+  ex.kind === "cardio" ? (c === "r" ? "мин" : "км")
+    : c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг")
     : c === "r" ? (ex.kind === "time" ? "сек" : "повт.")
       : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR";
 
@@ -14,6 +15,8 @@ const colTitle = (c, ex) =>
 export function ExerciseCard({ e, ei, ex, exData, last, records, cols, compact, sort, sortCount, g, sel, rests, liveKey, liveMs, act, open }) {
   const { nm1, nm2 } = useApp();
   const labels = setLabels(e.sets);
+  const cardio = ex.kind === "cardio";
+  const exCols = cardio ? ["r", "w"] : cols; // cardio: minutes and km, whatever the strength columns are
   const selHere = sel && sel.ei === ei ? sel : null;
   // the title row swipes: left = remove the exercise (with undo), right = replace it
   const pulled = g.exSwipe && g.exSwipe.key === `ex:${ei}` ? g.exSwipe : null;
@@ -46,8 +49,8 @@ export function ExerciseCard({ e, ei, ex, exData, last, records, cols, compact, 
             {/* hold a column title and slide it to reorder columns for all exercises */}
             <div className="flex items-center gap-1 px-1 text-[11px] text-neutral-500">
               <span className="w-7" />
-              {cols.map((c) => (
-                <span key={c} {...g.headerProps(ei, c, cols)}
+              {exCols.map((c) => (
+                <span key={c} {...(cardio ? {} : g.headerProps(ei, c, cols))}
                   className={`${c === "w" || c === "r" ? "flex-1" : "w-9"} rounded-sm py-1 text-center ${
                     g.colDrag && g.colDrag.group === ei ? (g.colDrag.key === c ? "bg-accent-400 text-black" : cols[g.colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
                   {colTitle(c, ex)}
@@ -58,7 +61,7 @@ export function ExerciseCard({ e, ei, ex, exData, last, records, cols, compact, 
             {e.sets.map((s, si) => {
               const key = `${ei}:${si}`;
               return (
-                <SetRow key={si} s={s} ex={ex} cols={cols} label={labels[si]}
+                <SetRow key={si} s={s} ex={ex} cols={exCols} label={labels[si]}
                   grouped={!!(s.g && si > 0 && e.sets[si - 1].g === s.g)}
                   selected={!!(selHere && selHere.set.has(si))}
                   rest={rests[key]} live={liveKey === key ? liveMs : null} record={records.has(si)}
@@ -81,7 +84,7 @@ export function ExerciseCard({ e, ei, ex, exData, last, records, cols, compact, 
                 </div>
               </div>
             ) : (
-              <button onClick={act.addSet} className="mt-2 w-full rounded-lg py-2 text-xs text-neutral-400 active:bg-neutral-800">Добавить подход</button>
+              <button onClick={act.addSet} className="mt-2 w-full rounded-lg py-2 text-xs text-neutral-400 active:bg-neutral-800">{cardio ? "Добавить отрезок" : "Добавить подход"}</button>
             )}
           </>
         )}

@@ -10,7 +10,7 @@ export function e1rm(load, reps) {
 
 // best estimated 1RM among the confirmed working sets of one session (null for timed exercises)
 export function sessionE1rm(sets, ex, bw) {
-  if (!ex || ex.kind === "time") return null;
+  if (!ex || ex.kind === "time" || ex.kind === "cardio") return null;
   let best = null;
   sets.forEach((s) => {
     if (!s.done || s.t === "w") return;
@@ -49,7 +49,7 @@ export function recordSets(sets, ex, bw, bestBefore) {
   if (bestBefore == null) return out; // first time: nothing to beat
   let best = bestBefore;
   sets.forEach((s, i) => {
-    if (!s.done || s.t === "w" || !ex || ex.kind === "time") return;
+    if (!s.done || s.t === "w" || !ex || ex.kind === "time" || ex.kind === "cardio") return;
     const v = e1rm(setLoad(ex, s, bw), num(s.r));
     if (v != null && v > best + 1e-9) { out.add(i); best = v; }
   });

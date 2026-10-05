@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Play } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
-import { fmtDur, fmtKg, progTitle } from "../../core/util.js";
+import { fmtDur, progTitle } from "../../core/util.js";
 import {
-  durations, finalizeActive, lastSession, liveRestKey, programDiff, restBefore, restShown, segmentsOf, setColumns, stats,
+  durations, finalizeActive, fmtTotals, lastSession, liveRestKey, programDiff, restBefore, restShown, segmentsOf, setColumns, stats,
 } from "../../model/workout.js";
 import { bestE1rm, recordSets } from "../../model/records.js";
 import * as A from "../../model/workoutActions.js";
@@ -23,7 +23,9 @@ const UNKNOWN_EXERCISE = { name: "Удалённое упражнение", kind
 export function ActiveWorkout({ data, up, exMap, open }) {
   const { bwAt } = useApp();
   const a = data.active;
-  const [picker, setPicker] = useState(null); // {} = add, { replace: ei } = swap that exercise
+  // {} = add, { group } = add, list opened on that group, { replace: ei } = swap that exercise;
+  // a cardio-only workout starts with the cardio list open
+  const [picker, setPicker] = useState(() => (a.name === A.CARDIO_WORKOUT && !a.exercises.length ? { group: "кардио" } : null));
   const [askUpdate, setAskUpdate] = useState(false);
   const [help, setHelp] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge / delete
@@ -114,7 +116,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
             {a.paused ? fmtDur(dur.main) : fmtDur(now - segs[segs.length - 1].start)}
           </div>
           <div className="text-xs text-neutral-400 tabular-nums">
-            {st.sets} подх., {fmtKg(st.vol)}
+            {fmtTotals(st)}
             {segs.length > 1 && <span className="block">основная {fmtDur(dur.main)}{dur.extra >= 60000 ? `, +${fmtDur(dur.extra)}` : ""}</span>}
           </div>
         </div>
@@ -137,7 +139,10 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           sel={sel} rests={rests} liveKey={liveKey} liveMs={now - a.lastSetAt} act={cardActions(ei)} open={open} />
       ))}
 
-      <Button variant="dashed" block onClick={() => setPicker({})}>Добавить упражнение</Button>
+      <div className="flex gap-2">
+        <Button variant="dashed" className="min-w-0 flex-1" onClick={() => setPicker({})}>Добавить упражнение</Button>
+        <Button variant="dashed" className="w-28 shrink-0" onClick={() => setPicker({ group: "кардио" })}>+ Кардио</Button>
+      </div>
 
       <div className="mt-6 flex gap-2">
         <ConfirmButton onConfirm={() => up((d) => { d.active = null; })} confirmText="Удалить тренировку?"
@@ -176,7 +181,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
 
       {picker && <Picker data={data} up={up} onPick={pick} onClose={() => setPicker(null)}
         onPickMany={picker.replace !== undefined ? undefined : pickMany}
-        title={picker.replace !== undefined ? "Заменить упражнение" : undefined} />}
+        group={picker.group} title={picker.replace !== undefined ? "Заменить упражнение" : picker.group ? "Добавить кардио" : undefined} />}
     </div>
   );
 }
