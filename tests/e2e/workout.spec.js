@@ -83,6 +83,7 @@ test("hints, last time's values, numbers only, records, undo of a swipe mark, pr
   const weight = page.locator("input[inputmode=decimal]").first();
   await weight.focus();
   await expect(weight).toHaveValue("100"); // last time's value taken on focus
+  await expect.poll(() => weight.evaluate((el) => el.selectionEnd - el.selectionStart)).toBe(3); // selected on the next frame
   await weight.pressSequentially("10x5,5.y"); // replaces the selection; letters and a second separator are dropped
   await expect(weight).toHaveValue("105,5");
   await page.getByRole("button", { name: "Подход сделан" }).first().click();

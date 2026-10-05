@@ -2,6 +2,7 @@
 import { useState, useEffect, createContext, useContext, useRef, lazy, Suspense } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { IMGS } from "../model/images.js";
+import { WINDOWS, windowStart } from "../model/periods.js";
 
 // Derived, read-only helpers that depend on user data/settings, provided by App to all screens.
 export const AppCtx = createContext(null);
@@ -171,8 +172,71 @@ export const DeleteButton = ({ onConfirm, confirmText, children }) => (
 );
 
 const TrendChartLazy = lazy(() => import("./TrendChart.jsx"));
-// the chart, with an empty box of the same size while its code loads
-export const Trend = (props) => <Suspense fallback={null}><TrendChartLazy {...props} /></Suspense>;
+const fmtSpan = (t) => new Date(t).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "2-digit" });
+
+// A value over time with its own time window: presets (3 мес … всё) and Grafana-style zoom: drag across
+// the chart to focus on that stretch. points: [{ t, v }], oldest first, all of them.
+// header(shown): optional line above the chart about the visible points.
+export function Trend({ points, unit, header, height = "h-48" }) {
+  const [win, setWin] = useState(0);
+  const [zoom, setZoom] = useState(null); // { from, to }
+  const [sel, setSel] = useState(null); // selection being dragged, px within the box
+  const box = useRef(null);
+  const drag = useRef(null);
+  const since = windowStart(win);
+  const shown = points.filter((p) => (zoom ? p.t >= zoom.from && p.t <= zoom.to : p.t >= since));
+  // x on screen -> time, over the plot area (the grid), not the axis labels
+  const toT = (x) => {
+    const r = (box.current.querySelector(".recharts-cartesian-grid") || box.current).getBoundingClientRect();
+    const a = shown[0].t, b = shown[shown.length - 1].t;
+    return a + Math.min(1, Math.max(0, (x - r.left) / r.width)) * (b - a);
+  };
+  const gesture = {
+    style: { touchAction: "pan-y" },
+    onPointerDown: (e) => { drag.current = shown.length >= 2 ? { x: e.clientX, y: e.clientY, active: false } : null; },
+    onPointerMove: (e) => {
+      const d = drag.current;
+      if (!d) return;
+      const dx = e.clientX - d.x, dy = e.clientY - d.y;
+      if (!d.active) {
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { drag.current = null; return; } // a scroll
+        if (Math.abs(dx) < 10) return;
+        d.active = true;
+        try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+      const left = box.current.getBoundingClientRect().left;
+      setSel([d.x - left, e.clientX - left]);
+    },
+    onPointerUp: (e) => {
+      const d = drag.current;
+      drag.current = null;
+      setSel(null);
+      if (!d || !d.active) return;
+      const [from, to] = [toT(d.x), toT(e.clientX)].sort((x, y) => x - y);
+      if (points.filter((p) => p.t >= from && p.t <= to).length >= 2) setZoom({ from, to });
+    },
+    onPointerCancel: () => { drag.current = null; setSel(null); },
+  };
+  return (
+    <div>
+      <Segmented options={WINDOWS} value={zoom ? null : win} onChange={(v) => { setWin(v); setZoom(null); }} />
+      {shown.length < 2 ? <p className="py-8 text-center text-xs text-neutral-500">За этот срок меньше двух точек.</p> : <>
+        {header && <div className="px-1 pt-2 text-xs text-neutral-400">{header(shown)}</div>}
+        <div ref={box} data-testid="trend" className={`relative mt-2 select-none [&_*]:outline-none ${height}`} {...gesture}>
+          <Suspense fallback={null}><TrendChartLazy points={shown} unit={unit} /></Suspense>
+          {sel && <div className="pointer-events-none absolute inset-y-0 bg-accent-400/20"
+            style={{ left: Math.min(...sel), width: Math.abs(sel[1] - sel[0]) }} />}
+        </div>
+      </>}
+      <div className="flex h-7 items-center justify-between px-1 text-[11px] text-neutral-500">
+        {zoom ? <>
+          <span className="tabular-nums">{fmtSpan(zoom.from)} – {fmtSpan(zoom.to)}</span>
+          <button onClick={() => setZoom(null)} className="px-1 text-accent-400">Сбросить</button>
+        </> : <span>Проведи пальцем по графику, чтобы приблизить отрезок</span>}
+      </div>
+    </div>
+  );
+}
 
 // "Подход удалён · Вернуть" at the top for a few seconds. undo: { text, run } or null.
 export function useUndo(ms = 5000) {
