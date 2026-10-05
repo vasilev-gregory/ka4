@@ -315,7 +315,8 @@ function bodyWeightAt(ts) {
   for (const m of bodyCtx.measurements) {
     const v = num(m.values && m.values.weight);
     if (!v) continue;
-    if (m.date <= dayEnd && (!best || m.date > best.date)) best = m;
+    // ">=": several measurements on the same day -> the one entered last wins
+    if (m.date <= dayEnd && (!best || m.date >= best.date)) best = m;
   }
   if (!best) { // nothing before that day: take the earliest measurement after it
     for (const m of bodyCtx.measurements) {
@@ -2765,12 +2766,26 @@ function SettingsTab({ data, up, replace, saved, back, setMode }) {
           : saved.at ? `Сохранено в ${new Date(saved.at).toLocaleTimeString("ru-RU")}` : "Изменений пока не было"}
       </p>
       {data.settings.mode !== "stretch" && (<>
-      <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-neutral-900 p-4">
-        <div><div className="font-semibold">Вес тела</div><div className="text-xs text-neutral-400">Если нет замеров. Нужен для подтягиваний, брусьев, отжиманий</div></div>
-        <input value={data.settings.bodyWeight || ""} inputMode="decimal" placeholder="кг"
-          onChange={(e) => up((d) => { d.settings.bodyWeight = e.target.value; })}
-          className="w-20 rounded-lg bg-black px-2 py-2 text-right tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
-      </div>
+      {(() => {
+        const measured = (data.measurements || []).some((m) => num(m.values && m.values.weight) > 0);
+        return (
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-xl bg-neutral-900 p-4">
+            <div>
+              <div className="font-semibold">Вес тела</div>
+              <div className="text-xs text-neutral-400">
+                {measured ? "Из последнего замера, меняется во вкладке «Замеры»" : "Пока нет замеров. Нужен для подтягиваний, брусьев, отжиманий"}
+              </div>
+            </div>
+            {measured ? (
+              <span className="shrink-0 text-base font-semibold tabular-nums">{fmtNum(bodyWeightAt(Date.now()))} кг</span>
+            ) : (
+              <input value={data.settings.bodyWeight || ""} inputMode="decimal" placeholder="кг"
+                onChange={(e) => up((d) => { d.settings.bodyWeight = e.target.value; })}
+                className="w-20 rounded-lg bg-black px-2 py-2 text-right tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
+            )}
+          </div>
+        );
+      })()}
       <button onClick={() => up((d) => { d.settings.countdown = d.settings.countdown === false; if (d.active && d.settings.countdown === false) d.active.restEndsAt = null; })}
         className="mb-3 flex w-full items-center justify-between rounded-xl bg-neutral-900 p-4 text-left">
         <div>
