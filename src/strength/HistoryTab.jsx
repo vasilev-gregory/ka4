@@ -1,9 +1,10 @@
 // Strength history tab: zoom week / month / year with a calendar, the period's analysis and its workouts.
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
-import { DAY, fmtDate, fmtGroupWeek, fmtKg, fmtNum, plural, weekStartOf } from "../core/util.js";
+import { DAY, fmtDate, fmtGroupWeek, fmtNum, plural, weekStartOf } from "../core/util.js";
 import { GROUPS } from "../model/catalog.js";
-import { fmtWDur, growthStatus, stats, weekAnalysis } from "../model/workout.js";
+import { fmtTotals, fmtWDur, growthStatus, stats, weekAnalysis } from "../model/workout.js";
+import { workoutKcal } from "../model/energy.js";
 import { inPeriod, periodOf, periodSummary, shiftPeriod } from "../model/periods.js";
 import { Header, Segmented, useApp } from "../ui/kit.jsx";
 import { useFlick } from "../ui/gestures.js";
@@ -125,9 +126,10 @@ function PeriodPanel({ zoom, range, workouts, exMap }) {
     empty = "На этой неделе тяжёлых подходов не было.";
   } else {
     const s = periodSummary(workouts, exMap, bwAt, range);
-    title = s.workouts ? `${s.workouts} ${plural(s.workouts, "тренировка", "тренировки", "тренировок")}, ${fmtKg(s.vol)}, ${s.sets} подх.` : "";
+    title = s.workouts ? [`${s.workouts} ${plural(s.workouts, "тренировка", "тренировки", "тренировок")}`, fmtTotals(s),
+      s.kcal > 0 && `≈${fmtNum(Math.round(s.kcal / (s.kcal < 1000 ? 10 : 100)) * (s.kcal < 1000 ? 10 : 100))} ккал`].filter(Boolean).join(", ") : "";
     rows = GROUPS.filter((g) => s.perWeek[g]).map((g) => [g, s.perWeek[g].sets, s.perWeek[g].freq]);
-    empty = zoom === "month" ? "В этом месяце тренировок не было." : "В этом году тренировок не было.";
+    empty = s.workouts ? "Тяжёлых подходов не было." : zoom === "month" ? "В этом месяце тренировок не было." : "В этом году тренировок не было.";
   }
   return (
     <div className="mt-3 rounded-xl bg-neutral-900 p-3">
@@ -174,17 +176,19 @@ export function HistoryTab({ data, exMap, open }) {
         ))}
         {zoom === "year" && <YearGrid year={new Date(range.from).getFullYear()} workouts={all} onMonth={(t) => go("month", t)} />}
         {zoom !== "week" && <p className="mt-1 text-center text-[11px] text-neutral-500">{zoom === "month" ? "Тап по неделе — её разбор" : "Тап по месяцу — его календарь"}</p>}
-        <PeriodPanel zoom={zoom} range={range} workouts={all} exMap={exMap} />
+        {/* the running workout counts in the week's sets, but not in the totals of a month / year */}
+        <PeriodPanel zoom={zoom} range={range} workouts={zoom === "week" ? all : data.workouts} exMap={exMap} />
       </div>
       {data.workouts.length === 0 && <p className="text-neutral-400">Здесь появятся завершённые тренировки.</p>}
       <div className="space-y-2">
         {list.map((w) => {
           const st = stats(w, exMap, bwAt);
+          const kcal = workoutKcal(w, exMap, bwAt);
           return (
             <button key={w.id} onClick={() => open({ type: "workout", id: w.id })} className="w-full rounded-xl bg-neutral-900 p-4 text-left active:bg-neutral-800">
               <div className="text-xs text-neutral-400">{fmtDate(w.startedAt)}</div>
               <div className="font-semibold">{w.name}</div>
-              <div className="mt-1 text-xs text-neutral-400 tabular-nums">{fmtWDur(st)}, {fmtKg(st.vol)}, {st.sets} подх.</div>
+              <div className="mt-1 text-xs text-neutral-400 tabular-nums">{fmtWDur(st)}, {fmtTotals(st)}{kcal != null && `, ≈${kcal} ккал`}</div>
             </button>
           );
         })}

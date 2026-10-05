@@ -2,13 +2,13 @@
 import { useState, useMemo } from "react";
 import { X, Check, Search } from "lucide-react";
 import { uid } from "../core/util.js";
-import { GROUPS } from "../model/catalog.js";
+import { EX_KINDS, GROUPS } from "../model/catalog.js";
 import { Button, ExImg, Header, useApp } from "../ui/kit.jsx";
 
-export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
+export function ExerciseList({ data, up, onSelect, autoFocus, selected, group = "" }) {
   const { nm1, nm2 } = useApp();
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState(""); // muscle group, "" = all
+  const [filter, setFilter] = useState(group); // muscle group, "" = all
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newRu, setNewRu] = useState("");
@@ -62,9 +62,9 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
       <div className="mb-3 flex flex-wrap gap-1.5">
         {GROUPS.map((g) => <button key={g} onClick={() => setGrp(g)} className={chip(grp === g)}>{g}</button>)}
       </div>
-      <div className="mb-3 flex gap-1.5">
-        {[["reps", "вес и повторы"], ["time", "вес и время"]].map(([k, l]) => (
-          <button key={k} onClick={() => setKind(k)}
+      <div className="mb-3 flex flex-wrap gap-1.5">
+        {EX_KINDS.map(([k, l]) => (
+          <button key={k} onClick={() => { setKind(k); if (k === "cardio") setGrp("кардио"); }}
             className={`rounded-full px-3 py-1 text-xs ${kind === k ? "bg-neutral-100 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
         ))}
       </div>
@@ -116,6 +116,7 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
                 </span>
                 {g === "твои" && <span className="ml-2 text-[11px] text-neutral-500">{e.group}</span>}
                 {e.kind === "time" && <span className="ml-2 text-xs text-neutral-500">на время</span>}
+                {e.kind === "cardio" && g !== "кардио" && <span className="ml-2 text-xs text-neutral-500">кардио</span>}
                 {selected && (
                   <span className={`ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${selected.has(e.id) ? "bg-accent-400 text-black" : "border border-neutral-700"}`}>
                     {selected.has(e.id) && <Check size={14} />}
@@ -137,7 +138,7 @@ export function ExerciseList({ data, up, onSelect, autoFocus, selected }) {
 }
 
 // With onPickMany the picker stays open: tap to select several, then "Добавить (N)".
-export function Picker({ data, up, onPick, onPickMany, onClose, title = "Добавить упражнение" }) {
+export function Picker({ data, up, onPick, onPickMany, onClose, group, title = "Добавить упражнение" }) {
   const multi = !!onPickMany;
   const [chosen, setChosen] = useState([]);
   const toggle = (ex) => setChosen((c) => (c.some((x) => x.id === ex.id) ? c.filter((x) => x.id !== ex.id) : [...c, ex]));
@@ -145,7 +146,7 @@ export function Picker({ data, up, onPick, onPickMany, onClose, title = "Доб�
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <div className="mx-auto max-w-md p-4 pb-32">
         <Header title={title} right={<button onClick={onClose} className="p-2 text-neutral-400"><X size={22} /></button>} />
-        <ExerciseList data={data} up={up} onSelect={multi ? toggle : onPick} selected={multi ? new Set(chosen.map((x) => x.id)) : null} autoFocus={!multi} />
+        <ExerciseList data={data} up={up} onSelect={multi ? toggle : onPick} selected={multi ? new Set(chosen.map((x) => x.id)) : null} autoFocus={!multi} group={group} />
       </div>
       {multi && chosen.length > 0 && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 bg-black/90 px-4 pt-3">

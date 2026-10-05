@@ -1,5 +1,5 @@
 // Strength domain logic: sets, segments, rest, load/volume, weekly analysis. Pure functions over app data.
-import { DAY, fmtDur, num } from "../core/util.js";
+import { DAY, fmtDur, fmtKg, fmtNum, num } from "../core/util.js";
 import { COLUMNS, DEFAULT_COLUMNS, PARTIAL_WEIGHT } from "./catalog.js";
 
 export function lastSession(workouts, exId) {
@@ -9,6 +9,9 @@ export function lastSession(workouts, exId) {
   }
   return null;
 }
+
+// how many sets a newly added exercise gets: cardio is usually one stretch
+export const defaultSets = (ex) => (ex && ex.kind === "cardio" ? 1 : 3);
 
 export function buildSets(d, exId, n) {
   const last = lastSession(d.workouts, exId);
@@ -34,6 +37,12 @@ export function durations(w, now = Date.now()) {
   const main = Math.max(0, ...segs);
   const total = segs.reduce((x, y) => x + y, 0);
   return { main, extra: total - main, count: segs.length };
+}
+
+// "7 подх., 4,2 т, кардио 20 мин · 3 км": what a workout's stats() add up to, leaving out what's empty
+export function fmtTotals(st) {
+  const cardio = st.cardioMin > 0 && `кардио ${fmtNum(st.cardioMin)} мин${st.cardioKm > 0 ? ` · ${fmtNum(st.cardioKm)} км` : ""}`;
+  return [st.sets > 0 && `${st.sets} подх.`, st.vol > 0 && fmtKg(st.vol), cardio].filter(Boolean).join(", ") || "0 подх.";
 }
 
 export const fmtWDur = (st) => fmtDur(st.dur) + (st.extra >= 60000 ? ` +${fmtDur(st.extra)}` : "");
@@ -155,14 +164,16 @@ export function setLoad(ex, s, bw) {
   return num(s.w);
 }
 
+// Totals of a workout: volume and sets of strength work, minutes and km of cardio, durations.
 export function stats(w, exMap, bwAt) {
-  let vol = 0, sets = 0;
+  let vol = 0, sets = 0, cardioMin = 0, cardioKm = 0;
   const bw = bwAt(w.startedAt);
   w.exercises.forEach((e) => {
     const exd = exMap[e.exerciseId];
     const kind = exd?.kind;
     e.sets.forEach((s, i) => {
       if (!s.done || s.t === "w") return; // warm-ups don't count
+      if (kind === "cardio") { cardioMin += num(s.r); cardioKm += num(s.w); return; } // cardio: r = minutes, w = km
       const cont = s.g && i > 0 && e.sets[i - 1].g === s.g && e.sets[i - 1].done;
       if (!cont) sets++; // a drop set / ladder is one set
       // partial reps count as 30% of a full rep
@@ -170,7 +181,7 @@ export function stats(w, exMap, bwAt) {
     });
   });
   const { main, extra, count } = durations(w);
-  return { vol, sets, dur: main, extra, segments: count };
+  return { vol, sets, cardioMin, cardioKm, dur: main, extra, segments: count };
 }
 
 export function columnConfig(settings) {
@@ -203,6 +214,7 @@ export function normalizeGroups(sets) {
 }
 
 export function fmtSets(sets, kind) {
+  if (kind === "cardio") return sets.map((s) => `${fmtNum(num(s.r))} мин${num(s.w) ? ` · ${fmtNum(num(s.w))} км` : ""}`).join(", ");
   const parts = sets
     .map((s) => {
       const base = kind === "time" ? `${num(s.w) ? num(s.w) + " кг × " : ""}${num(s.r)} с` : `${num(s.w)}×${num(s.r)}${num(s.p) ? `+${num(s.p)}` : ""}`;
@@ -228,7 +240,7 @@ export function weekAnalysis(workouts, exMap, ws) {
     const day = new Date(w.startedAt).toDateString();
     w.exercises.forEach((e) => {
       const g = exMap[e.exerciseId]?.group;
-      if (!g) return;
+      if (!g || exMap[e.exerciseId].kind === "cardio") return; // muscle growth targets are about strength sets
       let n = 0;
       e.sets.forEach((s, i) => {
         if (!s.done || s.t === "w") return;

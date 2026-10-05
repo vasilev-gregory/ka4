@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { Pencil } from "lucide-react";
 import { fmtDate, fmtKg, fmtNum, plural } from "../core/util.js";
-import { GROUPS } from "../model/catalog.js";
+import { EX_KINDS, GROUPS } from "../model/catalog.js";
 import { fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
@@ -25,14 +25,16 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   if (!ex) return <div className="p-4"><Header title="Упражнение удалено" back={back} /></div>;
 
   const isTime = ex.kind === "time";
+  const isCardio = ex.kind === "cardio";
   const isBody = !!(ex.bw || ex.assist);
   const maxSeries = exerciseSeries(data.workouts, id, ex, bwAt, "max");
   const best = maxSeries.length ? Math.max(...maxSeries.map((p) => p.v)) : 0;
-  const shownMetric = isTime ? "max" : metric;
+  const shownMetric = isTime || (isCardio && metric === "e1rm") ? "max" : metric;
   const series = shownMetric === "max" ? maxSeries : exerciseSeries(data.workouts, id, ex, bwAt, shownMetric);
-  const unit = isTime ? "сек" : "кг";
+  const unit = isCardio ? (shownMetric === "vol" ? "км" : "мин") : isTime ? "сек" : "кг";
   const times = (n) => `${n} ${plural(n, "тренировка", "тренировки", "тренировок")}`;
-  const fmtV = (v) => (shownMetric === "vol" ? fmtKg(v) : `${fmtNum(v)} ${unit}`);
+  const fmtV = (v) => (shownMetric === "vol" && !isCardio ? fmtKg(v) : `${fmtNum(v)} ${unit}`);
+  const metrics = isCardio ? [["max", "время"], ["vol", "дистанция"]] : [["max", "макс. вес"], ["e1rm", "≈1ПМ"], ["vol", "объём"]];
   const oneRm = bestE1rm(data.workouts, id, ex, bwAt);
   const mut = (fn) => up((d) => { const e = d.exercises.find((x) => x.id === id); if (e) fn(e); });
 
@@ -54,14 +56,15 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
                 className={`rounded-full px-3 py-1 text-xs ${ex.group === g ? "bg-accent-400 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{g}</button>
             ))}
           </div>
-          <div className="flex gap-1.5">
-            {[["reps", "вес и повторы"], ["time", "вес и время"]].map(([k, l]) => (
+          <div className="flex flex-wrap gap-1.5">
+            {EX_KINDS.map(([k, l]) => (
               <button key={k} onClick={() => mut((x) => { x.kind = k; })}
                 className={`rounded-full px-3 py-1 text-xs ${ex.kind === k ? "bg-neutral-100 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
             ))}
           </div>
           <div className="mb-1.5 mt-3 text-xs text-neutral-400">Фото</div>
           <PhotoPicker ex={ex} onChange={(v) => mut((x) => { if (v) x.photo = v; else delete x.photo; })} />
+          {!isCardio && <>
           <div className="mb-1.5 mt-3 text-xs text-neutral-400">Вес тела в нагрузке</div>
           <div className="flex flex-wrap gap-1.5">
             {[["нет", 0, false], ["100%", 1, false], ["95%", 0.95, false], ["85%", 0.85, false], ["65%", 0.65, false], ["55%", 0.55, false], ["гравитрон", 0, true]].map(([l, f, as]) => {
@@ -75,6 +78,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
           <p className="mt-1.5 text-[11px] text-neutral-500">
             Доля веса тела, которую реально поднимаешь. В «кг» тогда пишется дополнительный вес, а у гравитрона — помощь.
           </p>
+          </>}
         </div>
       )}
 
@@ -82,8 +86,8 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
         <ExImg ex={ex} size={64} />
         <div><div className="text-2xl font-bold tabular-nums">{sessions.length}</div><div className="text-xs text-neutral-400">тренировок</div></div>
         <div>
-          <div className="text-2xl font-bold tabular-nums text-accent-400">{best || "—"}</div>
-          <div className="text-xs text-neutral-400">{isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div>
+          <div className="text-2xl font-bold tabular-nums text-accent-400">{best ? fmtNum(best) : "—"}</div>
+          <div className="text-xs text-neutral-400">{isCardio ? "дольше всего, мин" : isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div>
         </div>
         {oneRm != null && (
           <div>
@@ -97,7 +101,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
         <div className="mb-4 rounded-xl bg-neutral-900 p-2">
           {!isTime && (
             <div className="mb-1.5">
-              <Segmented options={[["max", "макс. вес"], ["e1rm", "≈1ПМ"], ["vol", "объём"]]} value={metric} onChange={setMetric} />
+              <Segmented options={metrics} value={shownMetric} onChange={setMetric} />
             </div>
           )}
           <Trend points={series} unit={unit}

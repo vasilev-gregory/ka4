@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { X, RefreshCw, GripVertical } from "lucide-react";
 import { startWorkout } from "../model/workoutActions.js";
+import { defaultSets } from "../model/workout.js";
 import { Picker } from "./ExerciseList.jsx";
 import { Button, DeleteButton, ExImg, Header, Stepper, useApp, useUndo } from "../ui/kit.jsx";
 import { moveItem, useSortable } from "../ui/sortable.js";
@@ -24,7 +25,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
     const rep = picker.replace;
     change((pp) => {
       if (rep !== undefined) { if (pp.items[rep]) pp.items[rep].exerciseId = ex.id; }
-      else pp.items.push({ exerciseId: ex.id, sets: 3 });
+      else pp.items.push({ exerciseId: ex.id, sets: defaultSets(ex) });
     });
     setPicker(false);
   };
@@ -69,7 +70,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
         <Picker data={data} up={up} onClose={() => setPicker(false)} onPick={pick}
           title={picker.replace !== undefined ? "Заменить упражнение" : undefined}
           onPickMany={picker.replace !== undefined ? undefined : (list) => {
-            change((pp) => { list.forEach((ex) => pp.items.push({ exerciseId: ex.id, sets: 3 })); });
+            change((pp) => { list.forEach((ex) => pp.items.push({ exerciseId: ex.id, sets: defaultSets(ex) })); });
             setPicker(false);
           }} />
       )}

@@ -28,8 +28,8 @@ function Cell({ col, s, ex, edit }) {
       onChange={(e) => edit({ w: numericInput(e.target.value, true) })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
   );
   if (col === "r") return (
-    <input value={s.r} placeholder={s.hr || ""} inputMode="numeric" onFocus={takeHint(s.r, s.hr, "r", edit)}
-      onChange={(e) => edit({ r: numericInput(e.target.value, false) })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
+    <input value={s.r} placeholder={s.hr || ""} inputMode={ex.kind === "cardio" ? "decimal" : "numeric"} onFocus={takeHint(s.r, s.hr, "r", edit)}
+      onChange={(e) => edit({ r: numericInput(e.target.value, ex.kind === "cardio") })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
   );
   if (col === "p") return ex.kind === "time" ? <span className="w-9" /> : (
     <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"

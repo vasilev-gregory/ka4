@@ -1,20 +1,25 @@
 // Strength actions: every change to a workout the UI can make. Each takes the app data (an immer draft
 // inside up()) and mutates it; time comes in as `now` so the rules are testable.
 import { num, progTitle, uid } from "../core/util.js";
-import { buildSets, closeSegment, columnConfig, normalizeGroups, setColumns } from "./workout.js";
+import { buildSets, closeSegment, columnConfig, defaultSets, normalizeGroups, setColumns } from "./workout.js";
 
 const exAt = (d, ei) => d.active && d.active.exercises[ei];
 
+export const CARDIO_WORKOUT = "Кардио";
+
+// program: start from it; null = an empty workout; "cardio" = an empty cardio-only workout (no warm-up block)
 export function startWorkout(d, program, now = Date.now()) {
+  const cardio = program === "cardio";
+  if (cardio) program = null;
   d.active = {
     id: uid(),
     programId: program?.id || null,
-    name: program ? progTitle(program) : "Свободная тренировка",
+    name: program ? progTitle(program) : cardio ? CARDIO_WORKOUT : "Свободная тренировка",
     startedAt: now,
     segments: [{ start: now }],
     paused: false,
     restEndsAt: null,
-    warmup: { doneAt: null }, // every workout opens with a warm-up block (no exercises in it yet)
+    ...(cardio ? {} : { warmup: { doneAt: null } }), // a strength workout opens with a warm-up block (no exercises in it yet)
     exercises: (program?.items || []).map((it) => ({ exerciseId: it.exerciseId, sets: buildSets(d, it.exerciseId, it.sets) })),
   };
 }
@@ -72,7 +77,8 @@ export function toggleSet(d, ei, si, now = Date.now()) {
   const next = a.exercises[ei].sets[si + 1];
   const midGroup = s.g && next && next.g === s.g && !next.done;
   const countdown = d.settings.countdown !== false;
-  a.restEndsAt = midGroup || !countdown ? null : now + d.settings.restSec * 1000;
+  const cardio = d.exercises.find((x) => x.id === a.exercises[ei].exerciseId)?.kind === "cardio"; // no rest after cardio
+  a.restEndsAt = midGroup || !countdown || cardio ? null : now + d.settings.restSec * 1000;
 }
 
 // a new set takes its hints from the last one
@@ -120,13 +126,13 @@ export function unmergeSets(d, ei, indexes) {
 }
 
 export function addExercises(d, list) {
-  list.forEach((ex) => d.active.exercises.push({ exerciseId: ex.id, sets: buildSets(d, ex.id, 3) }));
+  list.forEach((ex) => d.active.exercises.push({ exerciseId: ex.id, sets: buildSets(d, ex.id, defaultSets(ex)) }));
 }
 
 // swap an exercise in place, keeping the number of sets
 export function replaceExercise(d, ei, ex) {
   const e = exAt(d, ei);
-  if (e) { e.exerciseId = ex.id; e.sets = buildSets(d, ex.id, e.sets.length || 3); }
+  if (e) { e.exerciseId = ex.id; e.sets = buildSets(d, ex.id, ex.kind === "cardio" ? 1 : e.sets.length || 3); }
 }
 
 export function removeExercise(d, ei) {

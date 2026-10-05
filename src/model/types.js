@@ -36,7 +36,7 @@
  * @property {string} name                English name
  * @property {string} [ru]                Russian name
  * @property {string} group               main muscle group (GROUPS)
- * @property {"reps"|"time"} kind         "time": r holds seconds
+ * @property {"reps"|"time"|"cardio"} kind  "time": r holds seconds; "cardio": r = minutes, w = km (optional)
  * @property {number} [bw]                share of body weight lifted (push-ups ≈ 0.65); w is then extra weight
  * @property {boolean} [assist]           assisted machine: w is the assistance, load = body weight − w
  * @property {string} [photo]             own picture, a JPEG data URL
