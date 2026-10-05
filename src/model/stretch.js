@@ -54,7 +54,7 @@ export function stretchWeek(data, ws) {
 }
 
 export function stretchVerdict(sec) {
-  if (sec >= ST_WEEK_MAX) return ["максимум", "bg-teal-400 text-black", "дальше прирост почти не растёт"];
+  if (sec >= ST_WEEK_MAX) return ["максимум", "bg-accent-400 text-black", "дальше прирост почти не растёт"];
   if (sec >= ST_WEEK_MIN) return ["есть эффект", "bg-teal-900 text-teal-200", `до максимума эффекта ещё ${fmtDur((ST_WEEK_MAX - sec) * 1000)}`];
   return ["мало", "bg-neutral-800 text-neutral-400", `до минимума ещё ${fmtDur((ST_WEEK_MIN - sec) * 1000)}`];
 }

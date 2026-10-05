@@ -9,7 +9,7 @@ export const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
 
 export function useNow(ms, on = true) {
-  const [n, setN] = useState(Date.now());
+  const [n, setN] = useState(() => Date.now());
   useEffect(() => {
     if (!on) return;
     const t = setInterval(() => setN(Date.now()), ms);
@@ -33,7 +33,7 @@ export function ExImg({ ex, size = 40 }) {
 
 // Pick a picture from the phone, crop it to a square and shrink it (~10 KB) so it can live
 // inside the saved data (and therefore in backups).
-export function PhotoPicker({ ex, onChange, accent = "bg-amber-400" }) {
+export function PhotoPicker({ ex, onChange, accent = "bg-accent-400" }) {
   const ref = useRef(null);
   const pick = (e) => {
     const f = e.target.files && e.target.files[0];

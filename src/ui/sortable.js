@@ -22,7 +22,7 @@ export function useSortable(onMove) {
   const st = useRef(null);
   const raf = useRef(0);
   const onMoveRef = useRef(onMove);
-  onMoveRef.current = onMove;
+  useLayoutEffect(() => { onMoveRef.current = onMove; });
 
   const update = () => {
     const s = st.current;

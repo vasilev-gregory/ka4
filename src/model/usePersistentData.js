@@ -21,8 +21,8 @@ export function usePersistentData() {
   const [err, setErr] = useState("");
   const [saved, setSaved] = useState({ state: "idle", at: 0, msg: "" });
   const [loadKey, setLoadKey] = useState(0);
-  const dataRef = useRef(null);
-  dataRef.current = data;
+  const dataRef = useRef(null); // for the hide/close flush, which runs outside render
+  useEffect(() => { dataRef.current = data; }, [data]);
   const persisted = useRef(null); // the data object last read from / written to storage
   const lastSavedAt = useRef(0); // savedAt of the newest data this instance has seen or written
   const saveT = useRef(null);

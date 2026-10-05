@@ -12,7 +12,7 @@ import { ProgramEditor } from "./strength/ProgramEditor.jsx";
 import { RestBar, WorkoutTab } from "./strength/Workout.jsx";
 import { StretchEditor, StretchHistory, StretchHome, StretchPlayer } from "./stretch/Stretch.jsx";
 import { useFlick } from "./ui/gestures.js";
-import { AppCtx, ConfirmButton } from "./ui/kit.jsx";
+import { AppCtx, ConfirmButton, useNow } from "./ui/kit.jsx";
 
 // App shell: tabs, a stack of detail screens on top, strength/stretch mode, global overlays.
 export const TABS = [
@@ -41,10 +41,12 @@ export default function App() {
     window.addEventListener("kach-persist-changed", check);
     return () => window.removeEventListener("kach-persist-changed", check);
   }, []);
-  const appCtx = useMemo(() => (data ? {
-    bwAt: makeBodyWeightAt(data.measurements || [], data.settings.bodyWeight || 0),
-    ...makeNames(!!data.settings.namesRu),
-  } : null), [data && data.measurements, data && data.settings.bodyWeight, data && data.settings.namesRu]);
+  const measurements = data?.measurements, bodyWeight = data?.settings.bodyWeight, namesRu = data?.settings.namesRu;
+  const appCtx = useMemo(() => ({
+    bwAt: makeBodyWeightAt(measurements || [], bodyWeight || 0),
+    ...makeNames(!!namesRu),
+  }), [measurements, bodyWeight, namesRu]);
+  const now = useNow(60e3);
   const [modeToast, setModeToast] = useState(false);
   useEffect(() => { if (!modeToast) return; const t = setTimeout(() => setModeToast(false), 700); return () => clearTimeout(t); }, [modeToast]);
   const switchMode = (to) => {
@@ -53,7 +55,8 @@ export default function App() {
     setModeToast(true);
   };
 
-  const exMap = useMemo(() => (data ? Object.fromEntries(data.exercises.map((e) => [e.id, e])) : {}), [data?.exercises]);
+  const exercises = data?.exercises;
+  const exMap = useMemo(() => (exercises ? Object.fromEntries(exercises.map((e) => [e.id, e])) : {}), [exercises]);
   // swipe the tab bar sideways to switch strength <-> stretching
   const navSwipe = useFlick(() => switchMode());
   const restore = (d) => { replace(d); setStack([]); };
@@ -63,7 +66,7 @@ export default function App() {
   if (err) return (
     <div className="min-h-screen bg-black p-6 text-neutral-100">
       <p className="mb-4 whitespace-pre-wrap text-xs text-neutral-400">{err}</p>
-      <button onClick={reload} className="w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Попробовать ещё раз</button>
+      <button onClick={reload} className="w-full rounded-xl bg-accent-400 py-3 font-semibold text-black">Попробовать ещё раз</button>
       <ConfirmButton onConfirm={startFresh} confirmText="Старые данные будут перезаписаны"
         className="mt-3 w-full py-3 text-neutral-500" armedClassName="mt-3 w-full rounded-xl bg-red-600 py-3 text-white">
         Начать с чистого листа
@@ -109,10 +112,10 @@ export default function App() {
           <div className="flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900 p-3">
             <div className="min-w-0 flex-1 text-xs text-neutral-300">
               {data.settings.lastBackupAt
-                ? `Копии не было ${Math.floor((Date.now() - data.settings.lastBackupAt) / 864e5)} дн.`
+                ? `Копии не было ${Math.floor((now - data.settings.lastBackupAt) / 864e5)} дн.`
                 : "Ещё не было ни одной копии данных."} Отправь файл себе в Telegram.
             </div>
-            <button onClick={nagShare} className="shrink-0 rounded-lg bg-amber-400 px-3 py-2 text-xs font-semibold text-black">Отправить</button>
+            <button onClick={nagShare} className="shrink-0 rounded-lg bg-accent-400 px-3 py-2 text-xs font-semibold text-black">Отправить</button>
             <button onClick={() => up((d) => { d.settings.lastBackupAt = Date.now() - BACKUP_EVERY + 864e5; })}
               className="shrink-0 p-1 text-neutral-500" aria-label="Напомнить завтра"><X size={16} /></button>
           </div>
@@ -124,7 +127,7 @@ export default function App() {
 
       {modeToast && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
-          <div className={`rounded-2xl px-6 py-4 text-lg font-bold shadow-xl ${stretchMode ? "bg-teal-400 text-black" : "bg-amber-400 text-black"}`}>
+          <div className={`rounded-2xl px-6 py-4 text-lg font-bold shadow-xl bg-accent-400 text-black`}>
             {stretchMode ? "Растяжка" : "Сила"}
           </div>
         </div>
@@ -133,10 +136,10 @@ export default function App() {
         <div className="mx-auto flex max-w-md">
           {TABS.map(([k, l, I0]) => { const I = k === "workout" && stretchMode ? PersonStanding : I0; return (
             <button key={k} onClick={() => { setTab(k); setStack([]); }}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs ${tab === k && !view ? (stretchMode ? "text-teal-400" : "text-amber-400") : "text-neutral-500"}`}>
+              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs ${tab === k && !view ? "text-accent-400" : "text-neutral-500"}`}>
               <I size={20} />
               {l}
-              {k === "workout" && data.active && <span className="absolute right-1/4 top-1.5 h-2 w-2 rounded-full bg-amber-400" />}
+              {k === "workout" && data.active && <span className="absolute right-1/4 top-1.5 h-2 w-2 rounded-full bg-accent-400" />}
             </button>
           ); })}
         </div>

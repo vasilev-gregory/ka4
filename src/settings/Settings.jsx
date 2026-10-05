@@ -1,25 +1,30 @@
 // Settings: app update, mode, storage protection, strength/stretch preferences, backups.
 import { useState, useEffect, useRef } from "react";
 import { GripVertical } from "lucide-react";
-import { storage } from "../storage.js";
 import { beep, unlockAudio } from "../core/sound.js";
 import { fmtDate, fmtDur, fmtNum, num } from "../core/util.js";
 import { hardRefresh, shareBackup } from "../model/backup.js";
 import { COLUMNS, ST_DEFAULTS, ST_FIELDS } from "../model/catalog.js";
 import { migrate } from "../model/state.js";
 import { columnConfig } from "../model/workout.js";
-import { ConfirmButton, Header, SecStepper, Stepper, useApp } from "../ui/kit.jsx";
+import { ConfirmButton, Header, SecStepper, Stepper, useApp, useNow } from "../ui/kit.jsx";
 import { moveItem, useSortable } from "../ui/sortable.js";
+
+async function readStorageStatus() {
+  const out = { persisted: null, usage: null, quota: null };
+  try { if (navigator.storage && navigator.storage.persisted) out.persisted = await navigator.storage.persisted(); } catch (e) {}
+  try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); out.usage = e.usage; out.quota = e.quota; } } catch (e) {}
+  return out;
+}
 
 export function StorageStatus() {
   const [st, setSt] = useState(null);
-  const refresh = async () => {
-    const out = { persisted: null, usage: null, quota: null };
-    try { if (navigator.storage && navigator.storage.persisted) out.persisted = await navigator.storage.persisted(); } catch (e) {}
-    try { if (navigator.storage && navigator.storage.estimate) { const e = await navigator.storage.estimate(); out.usage = e.usage; out.quota = e.quota; } } catch (e) {}
-    setSt(out);
-  };
-  useEffect(() => { refresh(); }, []);
+  const refresh = async () => setSt(await readStorageStatus());
+  useEffect(() => {
+    let live = true;
+    readStorageStatus().then((s) => { if (live) setSt(s); });
+    return () => { live = false; };
+  }, []);
   const [asked, setAsked] = useState(false);
   const ask = async () => {
     let ok = false;
@@ -35,7 +40,7 @@ export function StorageStatus() {
     <div className="mb-3 rounded-xl bg-neutral-900 p-4">
       <div className="flex items-center justify-between">
         <div className="font-semibold">Хранилище</div>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${st.persisted ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-400"}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${st.persisted ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-400"}`}>
           {st.persisted ? "защищено" : st.persisted === false ? "не защищено" : "неизвестно"}
         </span>
       </div>
@@ -45,7 +50,7 @@ export function StorageStatus() {
           <p className="mt-2 text-xs text-neutral-500">
             «Защищено» — браузер обещает не удалять данные приложения сам. Пока защиты нет, раз в неделю приходит напоминание о бэкапе.
           </p>
-          <button onClick={ask} className="mt-2 w-full rounded-lg bg-amber-400 py-2.5 text-sm font-semibold text-black">Запросить защиту хранилища</button>
+          <button onClick={ask} className="mt-2 w-full rounded-lg bg-accent-400 py-2.5 text-sm font-semibold text-black">Запросить защиту хранилища</button>
           {asked && !st.persisted && (
             <p className="mt-2 text-xs text-neutral-400">
               {navigator.storage && navigator.storage.persist
@@ -108,7 +113,7 @@ export function ColumnsSettings({ data, up }) {
               <span className={`flex-1 ${c.on || fixed ? "" : "text-neutral-500"}`}>{COLUMNS[c.key]}</span>
               {fixed ? <span className="px-3 text-xs text-neutral-600">всегда</span> : (
                 <button onClick={() => toggleCol(c.key)}
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${c.on ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-400"}`}>
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${c.on ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-400"}`}>
                   {c.on ? "вкл" : "выкл"}
                 </button>
               )}
@@ -122,6 +127,7 @@ export function ColumnsSettings({ data, up }) {
 
 export function SettingsTab({ data, up, replace, saved, back, setMode }) {
   const { bwAt } = useApp();
+  const now = useNow(60e3);
   const [exp, setExp] = useState("");
   const [imp, setImp] = useState("");
   const [msg, setMsg] = useState("");
@@ -168,7 +174,7 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
       <div className="mb-3 rounded-xl bg-neutral-900 p-4">
         <div className="mb-2 font-semibold">Режим</div>
         <div className="flex gap-1.5">
-          {[["strength", "Сила", "bg-amber-400"], ["stretch", "Растяжка", "bg-teal-400"]].map(([k, l, c]) => (
+          {[["strength", "Сила", "bg-accent-400"], ["stretch", "Растяжка", "bg-accent-400"]].map(([k, l, c]) => (
             <button key={k} onClick={() => setMode(k)}
               className={`flex-1 rounded-lg py-2 text-xs font-semibold ${(data.settings.mode || "strength") === k ? `${c} text-black` : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
           ))}
@@ -198,7 +204,7 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
         <div className="flex gap-1.5">
           {[[true, "сначала русские"], [false, "сначала английские"]].map(([v, l]) => (
             <button key={l} onClick={() => up((d) => { d.settings.namesRu = v; })}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${!!data.settings.namesRu === v ? "bg-amber-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${!!data.settings.namesRu === v ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
           ))}
         </div>
       </div>
@@ -213,11 +219,11 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
               </div>
             </div>
             {measured ? (
-              <span className="shrink-0 text-base font-semibold tabular-nums">{fmtNum(bwAt(Date.now()))} кг</span>
+              <span className="shrink-0 text-base font-semibold tabular-nums">{fmtNum(bwAt(now))} кг</span>
             ) : (
               <input value={data.settings.bodyWeight || ""} inputMode="decimal" placeholder="кг"
                 onChange={(e) => up((d) => { d.settings.bodyWeight = e.target.value; })}
-                className="w-20 rounded-lg bg-black px-2 py-2 text-right tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400" />
+                className="w-20 rounded-lg bg-black px-2 py-2 text-right tabular-nums outline-hidden placeholder:text-neutral-600 focus:ring-2 focus:ring-accent-400" />
             )}
           </div>
         );
@@ -228,7 +234,7 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
           <div className="font-semibold">Обратный отсчёт после подхода</div>
           <div className="text-xs text-neutral-400">Секундомер отдыха живёт в колонке «отдых», включается вместе с ней</div>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.settings.countdown === false ? "bg-neutral-800 text-neutral-400" : "bg-amber-400 text-black"}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.settings.countdown === false ? "bg-neutral-800 text-neutral-400" : "bg-accent-400 text-black"}`}>
           {data.settings.countdown === false ? "выкл" : "вкл"}
         </span>
       </button>
@@ -244,7 +250,7 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
           <div className="font-semibold">Звук таймера</div>
           <div className="text-xs text-neutral-400">Щелчки 3-2-1 и сигналы{data.settings.mode === "stretch" ? " в плеере растяжки" : " в конце отдыха"}</div>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.settings.sound === false ? "bg-neutral-800 text-neutral-400" : "bg-amber-400 text-black"}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${data.settings.sound === false ? "bg-neutral-800 text-neutral-400" : "bg-accent-400 text-black"}`}>
           {data.settings.sound === false ? "выкл" : "вкл"}
         </span>
       </button>
@@ -256,7 +262,7 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
       <p className="mb-2 text-xs text-neutral-500">
         {data.settings.lastBackupAt ? `Последняя копия: ${fmtDate(data.settings.lastBackupAt)}` : "Копий ещё не было"}
       </p>
-      <button onClick={shareFile} className="mb-2 w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Отправить копию файлом</button>
+      <button onClick={shareFile} className="mb-2 w-full rounded-xl bg-accent-400 py-3 font-semibold text-black">Отправить копию файлом</button>
       <button onClick={() => fileRef.current && fileRef.current.click()} className="mb-2 w-full rounded-xl bg-neutral-900 py-3 active:bg-neutral-800">
         Загрузить копию из файла
       </button>
@@ -279,14 +285,14 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
       {exp && <textarea readOnly value={exp} onFocus={(e) => e.target.select()} className="mt-2 h-24 w-full rounded-xl bg-neutral-900 p-3 text-xs text-neutral-400" />}
 
       <textarea value={imp} onChange={(e) => setImp(e.target.value)} placeholder="Вставь сюда сохранённую копию"
-        className="mt-4 h-24 w-full rounded-xl bg-neutral-900 p-3 text-xs outline-none placeholder-neutral-500 focus:ring-2 focus:ring-amber-400" />
+        className="mt-4 h-24 w-full rounded-xl bg-neutral-900 p-3 text-xs outline-hidden placeholder:text-neutral-500 focus:ring-2 focus:ring-accent-400" />
       {imp && (
         <ConfirmButton onConfirm={doImport} confirmText="Заменить всё текущее?"
           className="mt-2 w-full rounded-xl bg-neutral-800 py-3" armedClassName="mt-2 w-full rounded-xl bg-red-600 py-3 text-white">
           Загрузить копию
         </ConfirmButton>
       )}
-      {msg && <p className="mt-3 text-xs text-amber-400">{msg}</p>}
+      {msg && <p className="mt-3 text-xs text-accent-400">{msg}</p>}
     </div>
   );
 }

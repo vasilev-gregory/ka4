@@ -2,7 +2,7 @@
 # Full check before every push: lint, unit, build, browser tests against the production build.
 set -e
 cd "$(dirname "$0")/.."
-npx eslint src
+npx eslint .
 node scripts/unit.mjs
 npm run build >/dev/null
 npx vite preview --port 4173 --strictPort >/tmp/kach-preview.log 2>&1 & PREV=$!

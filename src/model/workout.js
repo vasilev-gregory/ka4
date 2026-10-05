@@ -242,8 +242,8 @@ export function weekAnalysis(workouts, exMap, ws) {
 export function growthStatus(sets, freq) {
   if (sets < 4) return ["мало", "bg-neutral-800 text-neutral-400"];
   if (sets > 20) return ["очень много", "bg-red-950 text-red-300"];
-  if (sets >= 10 && freq >= 2) return ["оптимум", "bg-amber-400 text-black"];
-  return ["рост", "bg-amber-950 text-amber-300"];
+  if (sets >= 10 && freq >= 2) return ["оптимум", "bg-accent-400 text-black"];
+  return ["рост", "bg-accent-950 text-accent-300"];
 }
 
 // Latest moment anything happened in a workout: a segment start/end or a confirmed set.

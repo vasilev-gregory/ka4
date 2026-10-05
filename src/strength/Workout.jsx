@@ -1,5 +1,5 @@
 // Active strength workout (and the program list when none is running) + rest countdown bar.
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useEffectEvent, useRef } from "react";
 import { Check, Trash2, RefreshCw, GripVertical, Play } from "lucide-react";
 import { beep, blip, tick, unlockAudio } from "../core/sound.js";
 import { fmtDate, fmtDur, fmtKg, num, progTitle, uid } from "../core/util.js";
@@ -75,7 +75,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
                 const pp = pu && d.programs.find((x) => x.id === pu.programId);
                 if (pp) pp.items = pu.items;
                 delete d.pendingProgramUpdate;
-              })} className="flex-1 rounded-xl bg-amber-400 py-2.5 font-semibold text-black">Обновить программу</button>
+              })} className="flex-1 rounded-xl bg-accent-400 py-2.5 font-semibold text-black">Обновить программу</button>
             </div>
           </div>
         )}
@@ -89,7 +89,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
                 </div>
               </button>
               <button onClick={() => startWorkout(up, p)} aria-label="Начать"
-                className="flex w-14 shrink-0 items-center justify-center rounded-lg bg-amber-400 text-black">
+                className="flex w-14 shrink-0 items-center justify-center rounded-lg bg-accent-400 text-black">
                 <Play size={22} />
               </button>
             </div>
@@ -238,7 +238,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
           <h1 className="text-lg font-bold">{a.name}</h1>
         </div>
         <div className="text-right">
-          <div className={`text-2xl font-bold tabular-nums ${a.paused ? "text-neutral-500" : "text-amber-400"}`}>
+          <div className={`text-2xl font-bold tabular-nums ${a.paused ? "text-neutral-500" : "text-accent-400"}`}>
             {a.paused ? fmtDur(dur.main) : fmtDur(now - cur.start)}
           </div>
           <div className="text-xs text-neutral-400 tabular-nums">
@@ -249,7 +249,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
       </div>
 
       {a.paused && (
-        <button onClick={resume} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 py-3 font-semibold text-black">
+        <button onClick={resume} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-accent-400 py-3 font-semibold text-black">
           <Play size={18} /> Продолжить тренировку
         </button>
       )}
@@ -280,8 +280,8 @@ export function WorkoutTab({ data, up, exMap, open }) {
               <span className="w-7" />
               {cols.map((c) => (
                 <span key={c} {...headerProps(ei, c, cols)}
-                  className={`${c === "w" || c === "r" ? "flex-1" : "w-9"} rounded py-1 text-center ${
-                    colDrag && colDrag.group === ei ? (colDrag.key === c ? "bg-amber-400 text-black" : cols[colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
+                  className={`${c === "w" || c === "r" ? "flex-1" : "w-9"} rounded-sm py-1 text-center ${
+                    colDrag && colDrag.group === ei ? (colDrag.key === c ? "bg-accent-400 text-black" : cols[colDrag.to] === c ? "bg-neutral-700 text-neutral-200" : "") : ""}`}>
                   {c === "w" ? (ex.assist ? "помощь" : ex.bw ? "+кг" : "кг") : c === "r" ? (ex.kind === "time" ? "сек" : "повт.") : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR"}
                 </span>
               ))}
@@ -293,21 +293,21 @@ export function WorkoutTab({ data, up, exMap, open }) {
                 const inSel = sel && sel.ei === ei && sel.set.has(si);
                 const pulled = swipe && swipe.key === `${ei}:${si}`;
                 const cont = s.g && si > 0 && e.sets[si - 1].g === s.g;
-                const box = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-none placeholder-neutral-600 focus:ring-2 focus:ring-amber-400";
+                const box = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-hidden placeholder:text-neutral-600 focus:ring-2 focus:ring-accent-400";
                 const rirShown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
                 const cell = (c) => {
                   if (c === "w") return (
                     <input key={c} value={s.w} placeholder={s.hw || ""} inputMode="decimal" onChange={(ev) => setSet(ei, si, { w: ev.target.value })}
-                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
+                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-accent-300" : ""}`} />
                   );
                   if (c === "r") return (
                     <input key={c} value={s.r} placeholder={s.hr || ""} inputMode="numeric" onChange={(ev) => setSet(ei, si, { r: ev.target.value })}
-                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-amber-300" : ""}`} />
+                      className={`min-w-0 flex-1 ${box} ${s.done ? "text-accent-300" : ""}`} />
                   );
                   if (c === "p") return ex.kind === "time" ? <span key={c} className="w-9" /> : (
                     <input key={c} value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
                       onChange={(ev) => setSet(ei, si, { p: ev.target.value, ...(num(ev.target.value) > 0 && s.t !== "w" ? { rir: 0 } : {}) })}
-                      className={`w-9 ${box} ${s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                      className={`w-9 ${box} ${s.done ? "text-accent-300" : "text-neutral-300"}`} />
                   );
                   return (
                     <input key={c} value={rirShown} inputMode="numeric" placeholder="–" aria-label="RIR, повторов в запасе" disabled={s.t === "w"}
@@ -317,13 +317,13 @@ export function WorkoutTab({ data, up, exMap, open }) {
                         const dg = raw.replace(/\D/g, "").slice(-1);
                         setSet(ei, si, { rir: dg === "" ? null : Math.min(4, parseInt(dg, 10)) });
                       }}
-                      className={`w-9 ${box} disabled:opacity-30 ${s.rir === 0 ? "text-red-400" : s.done ? "text-amber-300" : "text-neutral-300"}`} />
+                      className={`w-9 ${box} disabled:opacity-30 ${s.rir === 0 ? "text-red-400" : s.done ? "text-accent-300" : "text-neutral-300"}`} />
                   );
                 };
                 return (
                   <div key={si} className={`relative overflow-hidden rounded-lg ${cont ? "mt-0.5" : "mt-1.5"}`}>
                   {pulled && (
-                    <div className={`absolute inset-0 flex items-center px-4 text-xs font-semibold ${swipe.dx > 0 ? "justify-start bg-amber-400 text-black" : "justify-end bg-red-600 text-white"}`}>
+                    <div className={`absolute inset-0 flex items-center px-4 text-xs font-semibold ${swipe.dx > 0 ? "justify-start bg-accent-400 text-black" : "justify-end bg-red-600 text-white"}`}>
                       {swipe.dx > 0 ? (s.done ? "Снять отметку" : "Сделано") : "Удалить"}
                     </div>
                   )}
@@ -333,12 +333,12 @@ export function WorkoutTab({ data, up, exMap, open }) {
                       transform: pulled ? `translateX(${swipe.dx}px)` : undefined,
                       transition: pulled ? "none" : "transform 150ms",
                     }}
-                    className={`relative flex items-center gap-1 rounded-lg border-l-2 px-1 ${s.g ? "border-amber-400" : "border-transparent"} ${
+                    className={`relative flex items-center gap-1 rounded-lg border-l-2 px-1 ${s.g ? "border-accent-400" : "border-transparent"} ${
                       inSel ? "bg-neutral-700" : "bg-neutral-900"}`}>
                     <button {...pressProps(ei, si)} aria-label="Подход: тап — разминка, удержание — выбрать"
                       style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
-                      className={`flex h-11 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${inSel ? "bg-amber-400 text-black" : "bg-black"}`}>
-                      <span className={inSel ? "" : s.t === "w" ? "text-sky-400" : s.done ? "text-amber-400" : "text-neutral-500"}>{s.t === "w" ? "Р" : labels[si]}</span>
+                      className={`flex h-11 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${inSel ? "bg-accent-400 text-black" : "bg-black"}`}>
+                      <span className={inSel ? "" : s.t === "w" ? "text-sky-400" : s.done ? "text-accent-400" : "text-neutral-500"}>{s.t === "w" ? "Р" : labels[si]}</span>
                     </button>
                     {cols.map(cell)}
                     {(() => {
@@ -348,7 +348,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
                       return (
                         <button onClick={() => toggle(ei, si)} aria-label="Подход сделан"
                           className={`flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg leading-none ${
-                            s.done ? "bg-amber-400 text-neutral-900" : live ? "bg-neutral-800 text-amber-400" : "bg-neutral-800 text-neutral-400"}`}>
+                            s.done ? "bg-accent-400 text-neutral-900" : live ? "bg-neutral-800 text-accent-400" : "bg-neutral-800 text-neutral-400"}`}>
                           {live ? (
                             <span className="text-xs font-semibold tabular-nums">{fmtDur(now - a.lastSetAt)}</span>
                           ) : (
@@ -368,7 +368,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
             {sel && sel.ei === ei ? (
               <div className="mt-2 flex items-center gap-1.5 rounded-lg bg-neutral-800 p-2 text-xs">
                 <span className="flex-1 text-neutral-300">{sel.set.size}</span>
-                <button disabled={sel.set.size < 2} onClick={mergeSel} className="rounded-md bg-amber-400 px-3 py-2 font-semibold text-black disabled:opacity-40">Объединить</button>
+                <button disabled={sel.set.size < 2} onClick={mergeSel} className="rounded-md bg-accent-400 px-3 py-2 font-semibold text-black disabled:opacity-40">Объединить</button>
                 <button onClick={unmergeSel} className="rounded-md bg-neutral-700 px-3 py-2">Разъед.</button>
                 <button onClick={delSel} className="rounded-md bg-red-600 px-3 py-2 text-white">Удалить</button>
                 <button onClick={() => setSel(null)} className="px-2 py-2 text-neutral-400">Отмена</button>
@@ -394,13 +394,13 @@ export function WorkoutTab({ data, up, exMap, open }) {
         </ConfirmButton>
         {a.paused ? (
           <>
-            <button onClick={resume} className="flex-1 rounded-xl bg-amber-400 py-3 font-semibold text-black">Продолжить</button>
+            <button onClick={resume} className="flex-1 rounded-xl bg-accent-400 py-3 font-semibold text-black">Продолжить</button>
             <button onClick={finish} className="rounded-xl bg-neutral-800 px-4 py-3">Завершить</button>
           </>
         ) : (
           <>
             <button onClick={pause} className="rounded-xl bg-neutral-800 px-4 py-3">Пауза</button>
-            <button onClick={finish} className="flex-1 rounded-xl bg-amber-400 py-3 font-semibold text-black">Завершить</button>
+            <button onClick={finish} className="flex-1 rounded-xl bg-accent-400 py-3 font-semibold text-black">Завершить</button>
           </>
         )}
       </div>
@@ -412,7 +412,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
             <p className="mb-4 text-xs text-neutral-400">
               Состав или подходы отличаются от «{program?.name}». Можно записать в программу то, как ты тренировался сегодня.
             </p>
-            <button onClick={() => doFinish(true)} className="mb-2 w-full rounded-xl bg-amber-400 py-3 font-semibold text-black">Обновить программу</button>
+            <button onClick={() => doFinish(true)} className="mb-2 w-full rounded-xl bg-accent-400 py-3 font-semibold text-black">Обновить программу</button>
             <button onClick={() => doFinish(false)} className="w-full rounded-xl bg-neutral-800 py-3 text-neutral-300">Оставить программу как была</button>
           </div>
         </div>
@@ -422,7 +422,7 @@ export function WorkoutTab({ data, up, exMap, open }) {
         <div className="fixed inset-x-0 top-0 z-50 px-3" style={{ paddingTop: "calc(env(safe-area-inset-top) + 8px)" }}>
           <div className="mx-auto flex max-w-md items-center gap-3 rounded-xl bg-neutral-100 px-4 py-3 text-sm text-black shadow-lg">
             <span className="flex-1">Подход удалён</span>
-            <button onClick={undoDelete} className="font-semibold text-amber-700">Вернуть</button>
+            <button onClick={undoDelete} className="font-semibold text-accent-700">Вернуть</button>
           </div>
         </div>
       )}
@@ -440,23 +440,29 @@ export function RestBar({ endsAt, total, up, sound }) {
   const done = left <= 0;
   const fired = useRef(null);
   const ticked = useRef(new Set());
-  useEffect(() => { if (sound && endsAt - Date.now() > total * 1000 - 1500) blip(); }, []);
+  // a bar that just appeared for a fresh rest (not one restored after a reload) gives a short blip
+  const onShow = useEffectEvent(() => { if (sound && endsAt - Date.now() > total * 1000 - 1500) blip(); });
+  useEffect(() => { onShow(); }, []);
   const secLeft = Math.ceil(left / 1000);
-  useEffect(() => {
-    if (!sound || done || secLeft > 3 || ticked.current.has(secLeft)) return;
-    ticked.current.add(secLeft);
+  const onSecond = useEffectEvent((sec) => {
+    if (!sound || sec > 3 || ticked.current.has(sec)) return;
+    ticked.current.add(sec);
     tick();
-  }, [secLeft, done]);
+  });
+  useEffect(() => { if (!done) onSecond(secLeft); }, [secLeft, done]);
+  const onDone = useEffectEvent(() => {
+    if (fired.current === endsAt) return;
+    fired.current = endsAt;
+    if (Date.now() - endsAt < 5000) {
+      if (sound) beep();
+      try { navigator.vibrate && navigator.vibrate([300, 150, 300]); } catch (e) {}
+    }
+  });
+  const dismiss = useEffectEvent(() => up((d) => { if (d.active) d.active.restEndsAt = null; }));
   useEffect(() => {
     if (!done) return;
-    if (fired.current !== endsAt) {
-      fired.current = endsAt;
-      if (Date.now() - endsAt < 5000) {
-        if (sound) beep();
-        try { navigator.vibrate && navigator.vibrate([300, 150, 300]); } catch (e) {}
-      }
-    }
-    const t = setTimeout(() => up((d) => { if (d.active) d.active.restEndsAt = null; }), 2500);
+    onDone();
+    const t = setTimeout(dismiss, 2500);
     return () => clearTimeout(t);
   }, [done, endsAt]);
   const adjust = (sec) => up((d) => { if (d.active?.restEndsAt) d.active.restEndsAt += sec * 1000; });
@@ -464,8 +470,8 @@ export function RestBar({ endsAt, total, up, sound }) {
 
   return (
     <div className="above-nav fixed inset-x-0 z-40 px-3">
-      <div className={`mx-auto max-w-md overflow-hidden rounded-2xl shadow-lg ${done ? "bg-amber-400 text-neutral-900" : "bg-neutral-100 text-neutral-900"}`}>
-        <div className="h-1.5 bg-neutral-300"><div className="h-full bg-amber-500" style={{ width: `${pct}%`, transition: "width 250ms linear" }} /></div>
+      <div className={`mx-auto max-w-md overflow-hidden rounded-2xl shadow-lg ${done ? "bg-accent-400 text-neutral-900" : "bg-neutral-100 text-neutral-900"}`}>
+        <div className="h-1.5 bg-neutral-300"><div className="h-full bg-accent-500" style={{ width: `${pct}%`, transition: "width 250ms linear" }} /></div>
         <div className="flex items-center gap-2 p-3">
           <div className="flex-1">
             <div className="text-xs text-neutral-600">{done ? "Время подхода" : "Отдых"}</div>

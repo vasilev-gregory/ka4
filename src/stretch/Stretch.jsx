@@ -1,11 +1,11 @@
 // Stretching mode screens: programs, editor, picker, interval player, history.
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useEffectEvent, useRef } from "react";
 import { X, Check, Trash2, ChevronLeft, GripVertical, Search, Play, Settings } from "lucide-react";
 import { beep, blip, tick } from "../core/sound.js";
 import { DAY, fmtDate, fmtDur, progTitle, uid, weekStartOf } from "../core/util.js";
 import { ST_AREAS, ST_FIELDS, ST_WEEK_MAX } from "../model/catalog.js";
 import { PHASE, buildTimeline, stExMap, stTiming, stretchVerdict, stretchWeek } from "../model/stretch.js";
-import { ConfirmButton, ExImg, Header, PhotoPicker, SecStepper, exPhoto, useNow } from "../ui/kit.jsx";
+import { ConfirmButton, ExImg, Header, PhotoPicker, SecStepper, exPhoto } from "../ui/kit.jsx";
 import { moveItem, useSortable } from "../ui/sortable.js";
 
 export function StretchWeekPanel({ data, ws, only }) {
@@ -27,7 +27,7 @@ export function StretchWeekPanel({ data, ws, only }) {
               <div className="flex items-center gap-2 text-xs">
                 <span className="w-28 shrink-0 text-neutral-300">{k}</span>
                 <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-neutral-800">
-                  <div className="absolute inset-y-0 left-0 rounded-full bg-teal-400" style={{ width: `${Math.min(100, (sec / ST_WEEK_MAX) * 100)}%` }} />
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-accent-400" style={{ width: `${Math.min(100, (sec / ST_WEEK_MAX) * 100)}%` }} />
                   <div className="absolute inset-y-0 w-px bg-neutral-400" style={{ left: "50%" }} />
                 </div>
                 <span className="w-10 shrink-0 text-right tabular-nums text-neutral-400">{fmtDur(sec * 1000)}</span>
@@ -71,7 +71,7 @@ export function StretchHome({ data, up, open }) {
                 </div>
               </button>
               <button disabled={!tl.length} onClick={() => open({ type: "stretchPlay", id: p.id })} aria-label="Начать"
-                className="flex w-14 shrink-0 items-center justify-center rounded-lg bg-teal-400 text-black disabled:opacity-30">
+                className="flex w-14 shrink-0 items-center justify-center rounded-lg bg-accent-400 text-black disabled:opacity-30">
                 <Play size={22} />
               </button>
             </div>
@@ -107,7 +107,7 @@ export function StretchPicker({ data, up, onPick, onClose, already = [] }) {
         <div className="flex items-center gap-2 rounded-xl bg-neutral-900 px-3">
           <Search size={18} className="text-neutral-500" />
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск или новая растяжка"
-            className="flex-1 bg-transparent py-3 outline-none placeholder-neutral-500" />
+            className="flex-1 bg-transparent py-3 outline-hidden placeholder:text-neutral-500" />
           {q && <button onClick={() => setQ("")} className="-mr-2 p-2 text-neutral-400" aria-label="Очистить поиск"><X size={20} /></button>}
         </div>
         <div className="mt-3 divide-y divide-neutral-800 rounded-xl bg-neutral-900">
@@ -118,9 +118,9 @@ export function StretchPicker({ data, up, onPick, onClose, already = [] }) {
                 <span className="block">{e.ru || e.name}</span>
                 {e.ru && <span className="block text-xs text-neutral-500">{e.name}</span>}
               </span>
-              {already.includes(e.id) && <span className="text-[11px] text-teal-300">уже в программе</span>}
+              {already.includes(e.id) && <span className="text-[11px] text-accent-300">уже в программе</span>}
               {e.sides && <span className="text-[11px] text-neutral-500">2 стороны</span>}
-              <span className={`ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${chosen.some((x) => x.id === e.id) ? "bg-teal-400 text-black" : "border border-neutral-700"}`}>
+              <span className={`ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${chosen.some((x) => x.id === e.id) ? "bg-accent-400 text-black" : "border border-neutral-700"}`}>
                 {chosen.some((x) => x.id === e.id) && <Check size={14} />}
               </span>
             </button>
@@ -132,17 +132,17 @@ export function StretchPicker({ data, up, onPick, onClose, already = [] }) {
             <div className="mb-3 flex gap-1.5">
               {[[true, "на обе стороны"], [false, "одна сторона"]].map(([v, l]) => (
                 <button key={l} onClick={() => setSides(v)}
-                  className={`rounded-full px-3 py-1 text-xs ${sides === v ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+                  className={`rounded-full px-3 py-1 text-xs ${sides === v ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
               ))}
             </div>
-            <button onClick={create} className="w-full rounded-lg bg-teal-400 py-2.5 font-semibold text-black">Создать</button>
+            <button onClick={create} className="w-full rounded-lg bg-accent-400 py-2.5 font-semibold text-black">Создать</button>
           </div>
         )}
       </div>
       {chosen.length > 0 && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 bg-black/90 px-4 pt-3">
           <div className="mx-auto max-w-md pb-3">
-            <button onClick={() => onPick(chosen)} className="w-full rounded-xl bg-teal-400 py-3 font-semibold text-black">Добавить ({chosen.length})</button>
+            <button onClick={() => onPick(chosen)} className="w-full rounded-xl bg-accent-400 py-3 font-semibold text-black">Добавить ({chosen.length})</button>
           </div>
         </div>
       )}
@@ -168,7 +168,7 @@ export function StretchEditor({ data, up, id, back, open }) {
       <Header title="Программа растяжки" back={back} />
       <input value={p.name} placeholder="Название программы" autoFocus={!p.name}
         onChange={(e) => mutP((pp) => { pp.name = e.target.value; })}
-        className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-none focus:ring-2 focus:ring-teal-400" />
+        className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-hidden focus:ring-2 focus:ring-accent-400" />
 
       <div className="mb-4 rounded-xl bg-neutral-900 p-3">
         <div className="mb-2 text-xs text-neutral-400">Таймер программы</div>
@@ -180,7 +180,7 @@ export function StretchEditor({ data, up, id, back, open }) {
         <div className="mt-3 flex gap-1.5">
           {[["circuit", "по кругу"], ["sequence", "по порядку"]].map(([k, l]) => (
             <button key={k} onClick={() => setT("mode", k)}
-              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${T.mode === k ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold ${T.mode === k ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
           ))}
         </div>
         <div className="mt-2 flex items-center justify-between">
@@ -208,7 +208,7 @@ export function StretchEditor({ data, up, id, back, open }) {
                 {ex && exPhoto(ex) && <ExImg ex={ex} size={34} />}
                 <button onClick={() => setOpenItem(isOpen ? null : i)} className="ml-1 min-w-0 flex-1 py-1 text-left">
                   <div className="truncate">{ex ? ex.ru || ex.name : "Удалённая растяжка"}</div>
-                  <div className={`truncate text-xs ${it.over && Object.keys(it.over).length ? "text-teal-300" : "text-neutral-500"}`}>
+                  <div className={`truncate text-xs ${it.over && Object.keys(it.over).length ? "text-accent-300" : "text-neutral-500"}`}>
                     {ex && ex.area ? `${ex.area} · ` : ""}{t.work} с{ex && ex.sides ? " × 2 стороны" : ""}, отдых {t.rest} с
                   </div>
                 </button>
@@ -232,14 +232,14 @@ export function StretchEditor({ data, up, id, back, open }) {
                   <div className="flex flex-wrap gap-1.5">
                     {ST_AREAS.map((ar) => (
                       <button key={ar} onClick={() => up((d) => { const e = d.stretch.exercises.find((x) => x.id === ex.id); if (e) e.area = ar; })}
-                        className={`rounded-full px-2.5 py-1 text-[11px] ${ex.area === ar ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{ar}</button>
+                        className={`rounded-full px-2.5 py-1 text-[11px] ${ex.area === ar ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{ar}</button>
                     ))}
                   </div>
                   <div className="mt-1 text-xs text-neutral-400">Фото</div>
-                  <PhotoPicker ex={ex} accent="bg-teal-400"
+                  <PhotoPicker ex={ex} accent="bg-accent-400"
                     onChange={(v) => up((d) => { const e = d.stretch.exercises.find((x) => x.id === ex.id); if (e) { if (v) e.photo = v; else delete e.photo; } })} />
                   <button onClick={() => up((d) => { const e = d.stretch.exercises.find((x) => x.id === ex.id); if (e) e.sides = !e.sides; })}
-                    className={`mt-1 rounded-full px-3 py-1 text-xs ${ex.sides ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
+                    className={`mt-1 rounded-full px-3 py-1 text-xs ${ex.sides ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
                     на обе стороны: {ex.sides ? "да" : "нет"}
                   </button>
                 </div>
@@ -254,7 +254,7 @@ export function StretchEditor({ data, up, id, back, open }) {
       <p className="mt-2 text-xs text-neutral-500">Тап по растяжке — своё время для неё. Серым — как в программе.</p>
 
       <button disabled={!tl.length} onClick={() => open({ type: "stretchPlay", id })}
-        className="mt-6 w-full rounded-xl bg-teal-400 py-3 font-semibold text-black disabled:opacity-40">
+        className="mt-6 w-full rounded-xl bg-accent-400 py-3 font-semibold text-black disabled:opacity-40">
         Начать{total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}
       </button>
       <ConfirmButton onConfirm={() => { up((d) => { d.stretch.programs = d.stretch.programs.filter((x) => x.id !== id); }); back(); }}
@@ -280,13 +280,17 @@ export function StretchPlayer({ data, up, id, back, settings }) {
   // the run's timeline; can grow (+ round) and change (durations edited on the fly)
   const [tl, setTl] = useState(() => (p ? buildTimeline(p, exMap) : []));
   const [showSettings, setShowSettings] = useState(false);
-  const [st, setSt] = useState(() => ({ idx: 0, end: Date.now() + ((tl[0] && tl[0].dur) || 0) * 1000, pausedLeft: null, startedAt: Date.now(), done: tl.length === 0 }));
-  const now = useNow(200, !st.done && st.pausedLeft == null);
+  const [st, setSt] = useState(() => {
+    const t0 = Date.now();
+    return { idx: 0, end: t0 + ((tl[0] && tl[0].dur) || 0) * 1000, pausedLeft: null, startedAt: t0, done: tl.length === 0, finishedAt: t0 };
+  });
+  const [now, setNow] = useState(() => Date.now());
+  const running = !st.done && st.pausedLeft == null;
   const left = st.pausedLeft != null ? st.pausedLeft : st.end - now;
   const ticked = useRef(new Set());
   const saved = useRef(false);
   const workDone = useRef({}); // exerciseId -> seconds held (per side)
-  const phaseStart = useRef(Date.now());
+  const phaseStart = useRef(st.startedAt);
   const pausedMs = useRef(0);
   // credit the time actually spent in the current work phase before leaving it
   const creditPhase = () => {
@@ -308,7 +312,8 @@ export function StretchPlayer({ data, up, id, back, settings }) {
 
   const sound = data.settings.sound !== false;
   const phaseSound = (ph) => { if (!sound || !ph) return; if (ph.k === "work") beep(); else blip(); };
-  useEffect(() => { phaseSound(tl[0]); }, []);
+  const onStart = useEffectEvent(() => phaseSound(tl[0]));
+  useEffect(() => { onStart(); }, []);
 
   const save = (complete) => {
     if (saved.current) return;
@@ -323,19 +328,26 @@ export function StretchPlayer({ data, up, id, back, settings }) {
     creditPhase();
     phaseStart.current = Date.now();
     pausedMs.current = 0;
-    if (i >= tl.length) { save(true); setSt((s) => ({ ...s, done: true })); if (sound) beep(); return; }
+    if (i >= tl.length) { save(true); setSt((s) => ({ ...s, done: true, finishedAt: Date.now() })); if (sound) beep(); return; }
     setSt((s) => ({ ...s, idx: i, end: Date.now() + tl[i].dur * 1000, pausedLeft: null }));
     phaseSound(tl[i]);
   };
-  useEffect(() => { if (!st.done && st.pausedLeft == null && left <= 0) go(st.idx + 1); }, [left <= 0, st.idx, st.done, st.pausedLeft]);
-  const secLeft = Math.ceil(left / 1000);
-  useEffect(() => {
-    if (!sound || st.done || st.pausedLeft != null || secLeft > 3 || secLeft < 1) return;
-    const k = `${st.idx}:${secLeft}`;
-    if (ticked.current.has(k)) return;
+  // the clock: moves to the next phase when the current one runs out, clicks 3-2-1 before that
+  const onTick = useEffectEvent(() => {
+    const n = Date.now();
+    setNow(n);
+    if (n >= st.end) { go(st.idx + 1); return; }
+    const sec = Math.ceil((st.end - n) / 1000);
+    const k = `${st.idx}:${sec}`;
+    if (!sound || sec > 3 || ticked.current.has(k)) return;
     ticked.current.add(k);
     tick();
-  }, [secLeft, st.idx]);
+  });
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(onTick, 200);
+    return () => clearInterval(t);
+  }, [running]);
   const pauseAt = useRef(0);
   const togglePause = () => {
     if (st.pausedLeft != null) pausedMs.current += Date.now() - pauseAt.current; else pauseAt.current = Date.now();
@@ -379,7 +391,7 @@ export function StretchPlayer({ data, up, id, back, settings }) {
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       {showSettings && settings && (
-        <div className="fixed inset-0 z-[60] overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+        <div className="fixed inset-0 z-60 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
           <div className="mx-auto max-w-md">{settings(() => setShowSettings(false))}</div>
         </div>
       )}
@@ -397,27 +409,27 @@ export function StretchPlayer({ data, up, id, back, settings }) {
 
       {st.done ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto p-6 text-center">
-          <div className="text-3xl font-bold text-teal-300">Готово</div>
-          <div className="text-neutral-400">{fmtDur(Date.now() - st.startedAt)}</div>
+          <div className="text-3xl font-bold text-accent-300">Готово</div>
+          <div className="text-neutral-400">{fmtDur(st.finishedAt - st.startedAt)}</div>
           <div className="w-full max-w-md text-left">
-            <StretchWeekPanel data={data} ws={weekStartOf(Date.now())}
+            <StretchWeekPanel data={data} ws={weekStartOf(st.finishedAt)}
               only={[...new Set(tl.filter((x) => x.ex).map((x) => (x.ex.area || "без группы")))]} />
           </div>
-          <button onClick={back} className="mt-2 rounded-xl bg-teal-400 px-8 py-3 font-semibold text-black">Закрыть</button>
+          <button onClick={back} className="mt-2 rounded-xl bg-accent-400 px-8 py-3 font-semibold text-black">Закрыть</button>
         </div>
       ) : (
         <>
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-            <div className={`mb-3 rounded-full px-4 py-1 text-sm font-semibold ${isWork ? "bg-teal-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
+            <div className={`mb-3 rounded-full px-4 py-1 text-sm font-semibold ${isWork ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
               {PHASE[ph.k]}
             </div>
             {resting && shownEx && <div className="mb-1 text-sm text-neutral-500">Следующая</div>}
             {shownEx && exPhoto(shownEx) && <ExImg ex={shownEx} size={140} />}
             {shownEx && <div className="mt-2 text-2xl font-bold">{shownEx.ru || shownEx.name}</div>}
-            {ph.side && <div className="mt-1 text-base text-teal-300">{ph.side}</div>}
+            {ph.side && <div className="mt-1 text-base text-accent-300">{ph.side}</div>}
             <div className="mt-6 flex items-center gap-4">
               <button onClick={() => adjust(-5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">−5</button>
-              <div className={`text-8xl font-bold tabular-nums ${isWork ? "text-teal-300" : "text-neutral-200"}`}>
+              <div className={`text-8xl font-bold tabular-nums ${isWork ? "text-accent-300" : "text-neutral-200"}`}>
                 {st.pausedLeft != null ? fmtDur(left + 999) : fmtDur(Math.max(0, left) + 999)}
               </div>
               <button onClick={() => adjust(5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">+5</button>
@@ -426,13 +438,13 @@ export function StretchPlayer({ data, up, id, back, settings }) {
               {ph.k === "roundRest" ? "±5 — отдых между кругами в программе" : `±5 — ${PHASE[ph.k].toLowerCase()} для этой растяжки, сохранится в программе`}
             </div>
             <div className="mt-6 h-2 w-full max-w-sm overflow-hidden rounded-full bg-neutral-800">
-              <div className={`h-full ${isWork ? "bg-teal-400" : "bg-neutral-500"}`} style={{ width: `${pct}%`, transition: "width 200ms linear" }} />
+              <div className={`h-full ${isWork ? "bg-accent-400" : "bg-neutral-500"}`} style={{ width: `${pct}%`, transition: "width 200ms linear" }} />
             </div>
             {next && next.ex && <div className="mt-4 text-sm text-neutral-500">Дальше: {next.ex.ru || next.ex.name}</div>}
           </div>
           <div className="flex items-center justify-center gap-6 p-6">
             <button onClick={() => go(st.idx - 1)} className="rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Назад"><ChevronLeft size={28} /></button>
-            <button onClick={togglePause} className="rounded-full bg-teal-400 px-8 py-5 text-lg font-semibold text-black">
+            <button onClick={togglePause} className="rounded-full bg-accent-400 px-8 py-5 text-lg font-semibold text-black">
               {st.pausedLeft != null ? "Дальше" : "Пауза"}
             </button>
             <button onClick={() => go(st.idx + 1)} className="rotate-180 rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Пропустить"><ChevronLeft size={28} /></button>

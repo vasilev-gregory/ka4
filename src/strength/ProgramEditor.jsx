@@ -26,7 +26,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
       <Header title="Программа" back={tryBack} />
       <input value={p.name} placeholder="Название программы" autoFocus={!saved.name}
         onChange={(e) => mut((pp) => { pp.name = e.target.value; })}
-        className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-none focus:ring-2 focus:ring-amber-400" />
+        className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-hidden focus:ring-2 focus:ring-accent-400" />
       <div className="space-y-2">
         {p.items.map((it, i) => (
           <div key={i + it.exerciseId} ref={(el) => { sort.refs.current[i] = el; }} style={sort.itemStyle(i)}
@@ -71,7 +71,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
                 {leaveAsk ? "Не сохранять" : "Отменить"}
               </button>
               <button onClick={() => { save(); if (leaveAsk) back(); setLeaveAsk(false); }}
-                className="flex-1 rounded-xl bg-amber-400 py-3 font-semibold text-black">
+                className="flex-1 rounded-xl bg-accent-400 py-3 font-semibold text-black">
                 Сохранить
               </button>
             </div>
