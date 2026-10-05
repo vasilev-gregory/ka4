@@ -49,29 +49,31 @@ export function ImportFlow({ file, data, up, replace, onDone, onClose }) {
   }
 
   const plan = planImport(data, r.workouts, r.measurements);
-  const created = [...plan.exercises.values()].filter((x) => !x.ex).map((x) => x.name);
-  const found = plan.exercises.size - created.length;
   const first = plan.add[0], last = plan.add[plan.add.length - 1];
   const n = plan.add.length, nm = plan.measures.length;
   return (
     <Sheet title={`Импорт из ${SOURCES[r.source]}`} onClose={onClose}>
-      {n === 0 && nm === 0 ? (
-        <p className="mb-4 text-sm text-neutral-300">Все {r.workouts.length} {plural(r.workouts.length, "тренировка", "тренировки", "тренировок")} из файла уже есть в истории.</p>
-      ) : (
-        <div className="mb-4 space-y-2 text-sm text-neutral-300">
-          {n > 0 && (
-            <p>
-              Добавится {n} {plural(n, "тренировка", "тренировки", "тренировок")}
-              {n > 1 ? `: ${dmy(first.startedAt)} – ${dmy(last.startedAt)}` : `, ${dmy(first.startedAt)}`}
-              {plan.skipped ? ` (ещё ${plan.skipped} уже есть)` : ""}.
+      <div className="mb-4 space-y-2 text-sm text-neutral-300">
+        {n > 0 ? (
+          <p>
+            Добавится {n} {plural(n, "тренировка", "тренировки", "тренировок")}
+            {n > 1 ? `: ${dmy(first.startedAt)} – ${dmy(last.startedAt)}` : `, ${dmy(first.startedAt)}`}
+            {plan.already ? ` (ещё ${plan.already} уже есть в истории)` : ""}.
+          </p>
+        ) : (
+          <p>Новых тренировок нет{plan.already ? ` — ${plan.already} уже есть в истории` : ""}.</p>
+        )}
+        {nm > 0 && <p>Замеров: {nm}.</p>}
+        {plan.missing.size > 0 && (
+          <div>
+            <p>Нет в Каче — эти подходы не импортируются:</p>
+            <p className="text-xs text-neutral-400">
+              {[...plan.missing].map(([name, sets]) => `${name} (${sets} ${plural(sets, "подход", "подхода", "подходов")})`).join(", ")}
             </p>
-          )}
-          {nm > 0 && <p>Замеров: {nm}.</p>}
-          {n > 0 && <p>Упражнения: {found} нашлись в Каче{created.length ? `, ${created.length} будут созданы:` : "."}</p>}
-          {created.length > 0 && <p className="text-xs text-neutral-400">{created.join(", ")}</p>}
-          <p className="text-xs text-neutral-500">Всё добавляется к тому, что уже есть, ничего не заменяется. Группу мышц новых упражнений можно поправить на их экране.</p>
-        </div>
-      )}
+          </div>
+        )}
+        {(n > 0 || nm > 0) && <p className="text-xs text-neutral-500">Всё добавляется к тому, что уже есть, ничего не заменяется.</p>}
+      </div>
       {(n > 0 || nm > 0) && (
         <Button block className="mb-2" onClick={() => {
           up((d) => applyImport(d, planImport(d, r.workouts, r.measurements), r.source));

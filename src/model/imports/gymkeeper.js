@@ -2,13 +2,14 @@
 // Unit_2, Comment. Type: 📅 a day (Comment "57 min"), 🏋️‍♂️ an exercise, 🔹 a set (weight kg / lb,
 // reps; Comment = WarmUp / Easy / Normal / Hard / Drop + an optional "(note)"), 📏 a measurement.
 // There is no start time: a workout is put at noon of its day. A note like "(1рук)", "(1h)", "(single)" or
-// "(1 нога)" marks a one-arm / one-leg set: such sets go to the exercise's one-sided variation.
+// "(1 нога)" marks a one-arm / one-leg set: such sets become "<exercise> одной рукой / ногой".
 import { parseCsv } from "./csv.js";
 
 const HEADERS = ["Date", "Type", "Name", "Val_1", "Unit_1", "Val_2", "Unit_2", "Comment"];
 // GymKeeper measurement names → ours (MEASURES)
 const MEASURE = { weight: "weight", waist: "waist", hips: "glutes", chest: "chest", thigh: "thigh", biceps: "biceps", arm: "biceps", calf: "calf", neck: "neck", "body fat": "fat", fat: "fat" };
 const LB = 0.45359237;
+const SIDE = { arm: "одной рукой", leg: "одной ногой" };
 
 export const isGymKeeper = (headers) => HEADERS.every((h) => headers.includes(h));
 
@@ -46,8 +47,7 @@ export function oneSided(note) {
   return null;
 }
 
-// -> { workouts: [{ name, startedAt, finishedAt, exercises: [{ name, uni?, time, sets }] }], measurements: [{ date, values }] }
-// uni: "arm" / "leg" — the sets were done one-sided
+// -> { workouts: [{ name, startedAt, finishedAt, exercises: [{ name, time, sets }] }], measurements: [{ date, values }] }
 export function parseGymKeeper(text) {
   const { rows } = parseCsv(text);
   const workouts = [], measurements = new Map();
@@ -58,7 +58,7 @@ export function parseGymKeeper(text) {
       for (const uni of [null, "arm", "leg"]) {
         const idx = ex.sets.map((_, i) => i).filter((i) => sides[i] === uni);
         if (!idx.length) continue;
-        const part = { name: ex.name, ...(uni ? { uni } : {}), time: false, sets: idx.map((i) => ex.sets[i]) };
+        const part = { name: uni ? `${ex.name} ${SIDE[uni]}` : ex.name, time: false, sets: idx.map((i) => ex.sets[i]) };
         groupDrops(part.sets, idx.map((i) => labels[i]), `${w.startedAt}-${w.exercises.length}`);
         w.exercises.push(part);
       }

@@ -6,7 +6,7 @@ import { parseCsv } from "../../src/model/imports/csv.js";
 import { parseHevy, parseHevyDate } from "../../src/model/imports/hevy.js";
 import { readImport } from "../../src/model/imports/index.js";
 import { oneSided } from "../../src/model/imports/gymkeeper.js";
-import { applyImport, guessGroup, matchExercise, planImport } from "../../src/model/importActions.js";
+import { applyImport, matchExercise, planImport } from "../../src/model/importActions.js";
 import { seed } from "../../src/model/state.js";
 
 const HEVY = [
@@ -40,30 +40,37 @@ test("Hevy: workouts, warm-ups, drop sets, failure, RPE, timed exercises", () =>
   assert.equal(readImport("workouts.csv", HEVY).source, "hevy");
 });
 
-test("exercise names from other apps find ours; unknown ones get a guessed group", () => {
+test("exercise names from other apps find ours, never ignoring the equipment", () => {
   const ex = seed().exercises;
   assert.equal(matchExercise(ex, "Bench Press (Barbell)").id, "barbell-bench-press");
   assert.equal(matchExercise(ex, "Squat (Barbell)").id, "squat");
-  assert.equal(matchExercise(ex, "Lateral Raise (Cable)"), null, "not our dumbbell lateral raise");
+  assert.equal(matchExercise(ex, "Lateral Raise (Cable)").id, "cable-lateral-raise", "not our dumbbell lateral raise");
   assert.equal(matchExercise(ex, "приседания со штангой").id, "squat");
   assert.equal(matchExercise(ex, "Zercher Squat"), null);
-  assert.equal(guessGroup("Zercher Squat"), "ноги");
-  assert.equal(guessGroup("Подъёмы на носки сидя"), "икры");
 });
 
-test("import adds missing workouts in date order, creates unknown exercises, skips duplicates", () => {
+test("every exercise from the imported histories (Hevy, GymKeeper) is in the catalog", () => {
+  const names = JSON.parse(readFileSync(new URL("../fixtures/imported-exercise-names.json", import.meta.url), "utf8"));
+  const ex = seed().exercises;
+  assert.deepEqual(names.filter((n) => !matchExercise(ex, n)), []);
+});
+
+test("import adds workouts in date order with the exercises we have; unknown ones are listed, not created", () => {
   const d = seed();
   d.workouts.push({ id: "mine", startedAt: new Date(2024, 0, 27).getTime(), finishedAt: new Date(2024, 0, 27, 1).getTime(), exercises: [] });
   const workouts = parseHevy(HEVY);
+  const exercisesBefore = d.exercises.length;
   const plan = planImport(d, workouts);
   assert.equal(plan.add.length, 2);
-  assert.equal([...plan.exercises.values()].filter((x) => !x.ex).length, 2); // Plank, Zercher Squat
+  assert.deepEqual([...plan.missing], [["Plank", 1], ["Zercher Squat", 1]]);
   applyImport(d, plan, "hevy");
+  assert.equal(d.exercises.length, exercisesBefore, "nothing created");
   assert.deepEqual(d.workouts.map((w) => (w.id === "mine" ? "mine" : w.name)), ["Legs", "mine", "Push"]);
+  assert.deepEqual(d.workouts[0].exercises.map((e) => e.exerciseId), ["squat"]); // Plank and Zercher Squat left out
   assert.equal(d.workouts[0].source, "hevy");
-  assert.equal(d.exercises.find((e) => e.name === "Plank").kind, "time");
   assert.ok(d.workouts[0].exercises[0].sets.every((s) => s.done));
   assert.equal(planImport(d, workouts).add.length, 0, "the same file twice adds nothing");
+  assert.equal(planImport(d, workouts).already, 2);
 });
 
 test("a Кач backup is recognised as such; an unknown file says what is supported", () => {
@@ -117,7 +124,7 @@ test("a real GymKeeper export: days, warm-ups, drop sets, measurements; added, n
   const d = seed();
   d.measurements = [{ id: "m", date: r.measurements[0].date + 3600e3, values: { weight: "121" } }]; // same day: kept, not doubled
   const plan = planImport(d, r.workouts, r.measurements);
-  assert.equal(plan.exercises.get("Squat (Barbell)").ex.id, "squat");
+  assert.equal(plan.matched.get("Squat (Barbell)").id, "squat");
   applyImport(d, plan, "gymkeeper");
   assert.deepEqual(d.measurements.map((m) => m.values.weight), ["121", "112.5"]);
   assert.equal(d.workouts.length, 2);
@@ -148,20 +155,13 @@ test("one-arm / one-leg notes put the sets into the one-sided variation", () => 
   assert.equal(oneSided("cbl1h"), "arm"); assert.equal(oneSided("single"), "arm"); assert.equal(oneSided("1dumb"), null); assert.equal(oneSided("2h"), null);
   const { workouts } = readImport("gk.csv", csv);
   const ex = workouts[0].exercises;
-  assert.deepEqual(ex.map((e) => [e.name, e.uni || "", e.sets.map((s) => s.w).join(" ")]), [
-    ["Seated Row (Cable)", "", "50 50"], ["Seated Row (Cable)", "arm", "25 20"],
-    ["Lateral Raise (Cable)", "arm", "5"], ["Leg Press (Machine)", "leg", "80"], ["Hip Thrust", "", "20"]]);
+  assert.deepEqual(ex.map((e) => [e.name, e.sets.map((s) => s.w).join(" ")]), [
+    ["Seated Row (Cable)", "50 50"], ["Seated Row (Cable) одной рукой", "25 20"],
+    ["Lateral Raise (Cable) одной рукой", "5"], ["Leg Press (Machine) одной ногой", "80"], ["Hip Thrust", "20"]]);
   assert.ok(ex[1].sets[0].g && ex[1].sets[0].g === ex[1].sets[1].g, "a drop set within the one-arm sets");
 
   const d = seed();
   applyImport(d, planImport(d, workouts), "gymkeeper");
-  const used = d.workouts[0].exercises.map((e) => d.exercises.find((x) => x.id === e.exerciseId));
-  assert.deepEqual(used.map((x) => x.id.length > 20 ? x.name : x.id).slice(0, 2), ["seated-row", "one-arm-seated-row"]);
-  assert.equal(used[2].name, "Lateral Raise (Cable) · одной рукой"); // no cable lateral raise of ours: made, not mixed with dumbbells
-  assert.equal(used[2].group, "плечи");
-  assert.equal(used[3].name, "Leg Press (Machine) · одной ногой");
-  assert.equal(used[4].id, "hip-thrust"); // "1dumb" is one dumbbell, not one arm
-  // the next import of the same kind reuses the one-sided exercise it made
-  const again = planImport(d, workouts.map((w) => ({ ...w, startedAt: w.startedAt + 864e5 })));
-  assert.equal(again.exercises.get("Lateral Raise (Cable)|arm").ex.name, "Lateral Raise (Cable) · одной рукой");
+  assert.deepEqual(d.workouts[0].exercises.map((e) => e.exerciseId),
+    ["seated-row", "one-arm-seated-row", "one-arm-cable-lateral-raise", "single-leg-leg-press", "hip-thrust"]); // "1dumb": one dumbbell, not one arm
 });
