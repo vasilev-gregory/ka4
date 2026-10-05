@@ -91,7 +91,10 @@ export default function App() {
   let content;
   const stretchMode = data.settings.mode === "stretch";
   if (view?.type === "stretchProgram") content = <StretchEditor {...common} id={view.id} />;
-  else if (view?.type === "stretchPlay") content = <StretchPlayer {...common} id={view.id} />;
+  else if (view?.type === "stretchPlay") content = (
+    <StretchPlayer {...common} id={view.id}
+      settings={(close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={(d) => { setData(d); setStack([]); }} />} />
+  );
   else if (view?.type === "settings") content = <SettingsTab data={data} up={up} saved={saved} back={back} setMode={switchMode} replace={(d) => { setData(d); setStack([]); }} />;
   else if (view?.type === "measure") content = <MeasureEditor {...common} id={view.id} />;
   else if (view?.type === "exercise") content = <ExerciseDetail {...common} id={view.id} />;

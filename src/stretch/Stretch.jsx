@@ -1,6 +1,6 @@
 // Stretching mode screens: programs, editor, picker, interval player, history.
-import { useState, useEffect, useRef, useMemo } from "react";
-import { X, Check, Trash2, ChevronLeft, GripVertical, Search, Play } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, Check, Trash2, ChevronLeft, GripVertical, Search, Play, Settings } from "lucide-react";
 import { beep, blip, tick } from "../core/sound.js";
 import { DAY, fmtDate, fmtDur, uid, weekStartOf } from "../core/util.js";
 import { ST_AREAS, ST_FIELDS, ST_WEEK_MAX } from "../model/catalog.js";
@@ -271,10 +271,12 @@ export function StretchEditor({ data, up, id, back, open }) {
   );
 }
 
-export function StretchPlayer({ data, up, id, back }) {
+export function StretchPlayer({ data, up, id, back, settings }) {
   const p = data.stretch.programs.find((x) => x.id === id);
   const exMap = stExMap(data);
-  const tl = useMemo(() => (p ? buildTimeline(p, exMap) : []), []); // fixed for this run
+  // the run's timeline; can grow (+ round) and change (durations edited on the fly)
+  const [tl, setTl] = useState(() => (p ? buildTimeline(p, exMap) : []));
+  const [showSettings, setShowSettings] = useState(false);
   const [st, setSt] = useState(() => ({ idx: 0, end: Date.now() + ((tl[0] && tl[0].dur) || 0) * 1000, pausedLeft: null, startedAt: Date.now(), done: tl.length === 0 }));
   const now = useNow(200, !st.done && st.pausedLeft == null);
   const left = st.pausedLeft != null ? st.pausedLeft : st.end - now;
@@ -338,6 +340,30 @@ export function StretchPlayer({ data, up, id, back }) {
   };
   const close = () => { if (!st.done) { creditPhase(); save(false); } back(); };
 
+  const mutProgram = (fn) => up((d) => { const pp = d.stretch.programs.find((x) => x.id === id); if (pp) fn(pp); });
+  const FIELD = { work: "work", rest: "rest", prep: "prep", switch: "sw", roundRest: "roundRest" };
+  // change the current phase's length; saved at the lowest level: this stretch's own time in the program
+  // (between-rounds rest is a program setting). Applies to the rest of this run as well.
+  const adjust = (delta) => {
+    const cur = tl[st.idx];
+    if (!cur) return;
+    const newDur = Math.max(5, cur.dur + delta);
+    const dd = newDur - cur.dur;
+    if (!dd) return;
+    const field = FIELD[cur.k];
+    if (cur.k === "roundRest") mutProgram((pp) => { pp.timing = { ...stTiming(pp), roundRest: newDur }; });
+    else mutProgram((pp) => { pp.items.forEach((it) => { if (it.exerciseId === cur.ex.id) it.over = { ...(it.over || {}), [field]: newDur }; }); });
+    setTl((t) => t.map((x, i) => (i >= st.idx && x.k === cur.k && (cur.k === "roundRest" || x.ex === cur.ex) ? { ...x, dur: newDur } : x)));
+    setSt((s0) => (s0.pausedLeft != null ? { ...s0, pausedLeft: Math.max(0, s0.pausedLeft + dd * 1000) } : { ...s0, end: s0.end + dd * 1000 }));
+  };
+  // one more full round at the end, for this run only
+  const addRound = () => {
+    if (!p) return;
+    const T = stTiming(p);
+    const round = buildTimeline({ ...p, timing: { ...T, rounds: 1, mode: "circuit" } }, exMap);
+    setTl((t) => [...t, ...(T.roundRest > 0 ? [{ k: "roundRest", dur: T.roundRest }] : []), ...round]);
+  };
+
   const ph = tl[st.idx];
   // during rest the screen is about what's coming, not what just ended
   const resting = ph && (ph.k === "rest" || ph.k === "roundRest");
@@ -349,12 +375,21 @@ export function StretchPlayer({ data, up, id, back }) {
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {showSettings && settings && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+          <div className="mx-auto max-w-md">{settings(() => setShowSettings(false))}</div>
+        </div>
+      )}
       <div className="flex items-center justify-between p-4">
         <div className="min-w-0">
           <div className="truncate text-sm text-neutral-400">{p ? p.name : ""}</div>
           {!st.done && <div className="text-xs text-neutral-600">{st.idx + 1} / {tl.length}</div>}
         </div>
-        <button onClick={close} className="p-2 text-neutral-400" aria-label="Закрыть"><X size={24} /></button>
+        <div className="flex items-center gap-1">
+          {!st.done && <button onClick={addRound} className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-300">+ круг</button>}
+          <button onClick={() => setShowSettings(true)} className="p-2 text-neutral-400" aria-label="Настройки"><Settings size={22} /></button>
+          <button onClick={close} className="p-2 text-neutral-400" aria-label="Закрыть"><X size={24} /></button>
+        </div>
       </div>
 
       {st.done ? (
@@ -377,8 +412,15 @@ export function StretchPlayer({ data, up, id, back }) {
             {shownEx && exPhoto(shownEx) && <ExImg ex={shownEx} size={140} />}
             {shownEx && <div className="mt-2 text-2xl font-bold">{shownEx.ru || shownEx.name}</div>}
             {ph.side && <div className="mt-1 text-base text-teal-300">{ph.side}</div>}
-            <div className={`mt-6 text-8xl font-bold tabular-nums ${isWork ? "text-teal-300" : "text-neutral-200"}`}>
-              {st.pausedLeft != null ? fmtDur(left + 999) : fmtDur(Math.max(0, left) + 999)}
+            <div className="mt-6 flex items-center gap-4">
+              <button onClick={() => adjust(-5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">−5</button>
+              <div className={`text-8xl font-bold tabular-nums ${isWork ? "text-teal-300" : "text-neutral-200"}`}>
+                {st.pausedLeft != null ? fmtDur(left + 999) : fmtDur(Math.max(0, left) + 999)}
+              </div>
+              <button onClick={() => adjust(5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">+5</button>
+            </div>
+            <div className="mt-1 text-[11px] text-neutral-600">
+              {ph.k === "roundRest" ? "±5 — отдых между кругами в программе" : `±5 — ${PHASE[ph.k].toLowerCase()} для этой растяжки, сохранится в программе`}
             </div>
             <div className="mt-6 h-2 w-full max-w-sm overflow-hidden rounded-full bg-neutral-800">
               <div className={`h-full ${isWork ? "bg-teal-400" : "bg-neutral-500"}`} style={{ width: `${pct}%`, transition: "width 200ms linear" }} />
