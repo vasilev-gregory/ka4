@@ -35,17 +35,19 @@ export function itemsOf(w, program) {
 
 // The sets an exercise starts with: last time's warm-ups (as warm-ups), then n working sets (default: as many as
 // last time, at least 3) — warm-ups never take a planned set. Last time's values are hints (shown gray), not entries.
-export function buildSets(d, exId, n) {
+// next: a progression step (model/progression.js nextStep().next) — the working sets' hints are that instead.
+export function buildSets(d, exId, n, next = null) {
   const last = lastSession(d.workouts, exId);
   const prev = last ? last.sets : [];
   const warm = prev.filter((s) => s.t === "w");
   const work = prev.filter((s) => s.t !== "w");
   const hint = (s) => ({ hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "" });
+  const stepHint = next && { hw: next.w ? fmtNum(next.w) : "", hr: String(next.r), hp: "" };
   return [
     ...warm.map((s) => ({ w: "", r: "", p: "", t: "w", ...hint(s), done: false })),
     ...Array.from({ length: n || Math.max(work.length, 3) }, (_, i) => {
       const s = work[i] || work[work.length - 1];
-      return { w: "", r: "", p: "", t: "", ...(work[i] && work[i].g ? { g: work[i].g } : {}), ...hint(s), done: false };
+      return { w: "", r: "", p: "", t: "", ...(work[i] && work[i].g ? { g: work[i].g } : {}), ...(stepHint || hint(s)), done: false };
     }),
   ];
 }

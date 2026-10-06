@@ -5,6 +5,10 @@ import {
   buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, itemsOf, lastActivity, normalizeGroups, programDiff, programItem, runningSession, segmentsOf, setColumns,
 } from "./workout.js";
 import { moveItem } from "../core/util.js";
+import { nextStep } from "./progression.js";
+
+// an exercise's starting sets, with a progression step in the hints when it has stalled
+const setsFor = (d, exId, n) => buildSets(d, exId, n, nextStep(d.workouts, d.exercises.find((e) => e.id === exId))?.next);
 
 const exAt = (d, ei) => d.active && d.active.exercises[ei];
 
@@ -29,7 +33,7 @@ export function startWorkout(d, program, now = Date.now()) {
     paused: false,
     restEndsAt: null,
     ...(cardioOnly ? {} : { warmup: { doneAt: null } }), // a strength workout opens with a warm-up block (no exercises in it yet)
-    exercises: items.map((it) => ({ exerciseId: it.exerciseId, sets: withPlan(buildSets(d, it.exerciseId, it.sets), planOf(d, it)) })),
+    exercises: items.map((it) => ({ exerciseId: it.exerciseId, sets: withPlan(setsFor(d, it.exerciseId, it.sets), planOf(d, it)) })),
   };
 }
 
@@ -141,13 +145,13 @@ export function unmergeSets(d, ei, indexes) {
 }
 
 export function addExercises(d, list) {
-  list.forEach((ex) => d.active.exercises.push({ exerciseId: ex.id, sets: buildSets(d, ex.id, defaultSets(ex)) }));
+  list.forEach((ex) => d.active.exercises.push({ exerciseId: ex.id, sets: setsFor(d, ex.id, defaultSets(ex)) }));
 }
 
 // swap an exercise in place, keeping the number of sets
 export function replaceExercise(d, ei, ex) {
   const e = exAt(d, ei);
-  if (e) { e.exerciseId = ex.id; e.sets = buildSets(d, ex.id, ex.kind === "cardio" ? 1 : e.sets.length || 3); }
+  if (e) { e.exerciseId = ex.id; e.sets = setsFor(d, ex.id, ex.kind === "cardio" ? 1 : e.sets.length || 3); }
 }
 
 export function removeExercise(d, ei) {

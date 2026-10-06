@@ -161,3 +161,17 @@ test("a bad day: finished «не в зачёт», marked in history, switched ba
   await off.click();
   await expect.poll(async () => (await stored(page)).workouts[0]?.off).toBeUndefined();
 });
+
+test("an exercise done the same three times gets a next step: a note and the step in the hints", async ({ page }) => {
+  await openApp(page);
+  await seedStorage(page, (d) => {
+    d.workouts = [1, 2, 3].map((k) => {
+      const t = Date.now() - k * 3 * 864e5;
+      return { id: "w" + k, programId: null, name: "Ноги", startedAt: t, finishedAt: t + 3600e3, segments: [{ start: t, end: t + 3600e3 }],
+        exercises: [{ exerciseId: "squat", sets: [8, 8, 8].map((r) => ({ w: "100", r: String(r), p: "", done: true })) }] };
+    }).reverse();
+  });
+  await startWorkout(page);
+  await expect(page.getByTestId("progress-step").first()).toHaveText(/3 тренировки подряд 100 кг × 8 — сегодня 100 кг × 9/);
+  await expect(page.locator("input[inputmode=numeric][placeholder='9']").first()).toBeVisible();
+});
