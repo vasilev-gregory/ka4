@@ -151,6 +151,8 @@ test("a bad day: finished «не в зачёт», marked in history, switched ba
   await page.getByRole("dialog", { name: "Завершить тренировку?" }).getByRole("button", { name: /Плохой день/ }).click();
   const off = page.getByRole("button", { name: /Не в зачёт/ });
   await expect(off).toBeVisible(); // the workout's card opens
+  await expect(page.getByText("Всё равно не зря")).toBeVisible(); // what it still gave
+  await expect(page.getByText(/1 тяжёлый подход/)).toBeVisible();
   await expect.poll(async () => (await stored(page)).workouts[0]?.off).toBe(true);
   await page.goBack();
   await tab(page, "История");

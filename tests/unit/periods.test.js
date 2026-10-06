@@ -68,3 +68,14 @@ test("a workout «не в зачёт» counts as a workout and in the muscles, n
   setWorkoutOff(d, "bad", false);
   assert.equal(d.workouts[1].off, undefined);
 });
+
+test("a workout «не в зачёт» still counted: its hard sets, the muscles they went to with the week's, its number in the month", async () => {
+  const { stillCounted } = await import("../../src/model/muscles.js");
+  const exMap = { sq: { id: "squat", kind: "reps", group: "ноги" } };
+  const w = (t, n) => ({ startedAt: t, exercises: [{ exerciseId: "sq", sets: Array.from({ length: n }, () => ({ w: "100", r: "5", done: true })) }] });
+  const workouts = [w(at(2026, 9, 1), 3), w(at(2026, 9, 5), 4), w(at(2026, 9, 7), 2)]; // Mon 5 and Wed 7 Oct: one week
+  const c = stillCounted(workouts, workouts[2], exMap);
+  assert.equal(c.sets, 2);
+  assert.deepEqual(c.muscles, [["квадрицепс", 2, 6], ["ягодицы", 1, 3]]);
+  assert.equal(c.nth, 3);
+});

@@ -7,7 +7,8 @@ import { SessionHeader, StatTiles } from "../ui/Session.jsx";
 import { ExerciseRow } from "../ui/ExerciseCard.jsx";
 import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
-import { DeleteButton, Header, SwitchRow, useApp } from "../ui/kit.jsx";
+import { Card, DeleteButton, Header, SwitchRow, useApp } from "../ui/kit.jsx";
+import { stillCounted } from "../model/muscles.js";
 import { removeWorkout, setWorkoutOff } from "../model/workoutActions.js";
 
 // "+2,5 кг", "−1 кг", "так же"
@@ -65,11 +66,34 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
           );
         })}
       </div>
-      <SwitchRow title="Не в зачёт" className="mt-6" on={!!w.off} onClick={() => up((d) => setWorkoutOff(d, id, !w.off))}
+      {w.off && <NotForNothing data={data} w={w} exMap={exMap} />}
+      <SwitchRow title="Не в зачёт" className={w.off ? "mt-3" : "mt-6"} on={!!w.off} onClick={() => up((d) => setWorkoutOff(d, id, !w.off))}
         hint="Плохой день: остаётся в истории и в счёте тренировок, но не в графиках упражнений, рекордах и «прошлом разе»" />
       <DeleteButton onConfirm={() => { up((d) => removeWorkout(d, id)); back(); }} confirmText="Удалить из истории?" className="mt-3">
         Удалить тренировку
       </DeleteButton>
     </div>
+  );
+}
+
+// a workout «не в зачёт»: out of the progress, but it still counted — say so
+function NotForNothing({ data, w, exMap }) {
+  const { sets, muscles, nth } = stillCounted(data.workouts, w, exMap);
+  return (
+    <Card className="mt-6">
+      <div className="font-semibold text-accent-400">Всё равно не зря</div>
+      <p className="mt-1 text-xs text-neutral-300">Пришёл и сделал, что смог, — это лучше пропуска. Графики и рекорды этот день не тянет вниз, а сделанное засчиталось.</p>
+      {sets > 0 && (
+        <>
+          <p className="mt-2 text-xs text-neutral-400">{sets} {plural(sets, "тяжёлый подход", "тяжёлых подхода", "тяжёлых подходов")} — в неделю мышц:</p>
+          <ul className="mt-1 space-y-0.5 text-xs">
+            {muscles.slice(0, 4).map(([name, n, week]) => (
+              <li key={name}><span className="text-accent-300">+{fmtNum(n)}</span> {name} <span className="text-neutral-500">· за неделю {fmtNum(week)}</span></li>
+            ))}
+          </ul>
+        </>
+      )}
+      <p className="mt-2 text-xs text-neutral-400">{nth}-я тренировка за {new Date(w.startedAt).toLocaleString("ru", { month: "long" })}.</p>
+    </Card>
   );
 }

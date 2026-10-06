@@ -1,7 +1,7 @@
 // Muscles: which muscles an exercise works (main = 1, helping = 0.5), hard sets per muscle over a period,
 // and the growth status of a weekly amount. Pure data and queries; the body picture lives in ui/BodyMap.
 import { fmtNum, slug } from "../core/util.js";
-import { weekEnd } from "./calendar.js";
+import { periodOf, weekEnd } from "./calendar.js";
 
 // [id, name, coarse group (catalog GROUPS)]; this order is the order of lists
 export const MUSCLES = [
@@ -140,6 +140,20 @@ export function programLoad(programs, exMap) {
 
 // one calendar week from its Monday
 export const weekLoad = (workouts, exMap, ws) => muscleLoad(workouts, exMap, ws, weekEnd(ws));
+
+// What a workout «не в зачёт» still gave, to say it wasn't for nothing: its hard sets, the muscles they went to (most
+// first, [name, sets, the week's sets of that muscle]) and which workout of its month it was.
+export function stillCounted(workouts, w, exMap) {
+  const own = muscleLoad([w], exMap, -Infinity, Infinity).muscles;
+  const ws = periodOf("week", w.startedAt).from;
+  const week = weekLoad(workouts, exMap, ws).muscles;
+  const muscles = MUSCLES.filter(([m]) => own[m]).map(([m, name]) => [name, own[m].sets, week[m] ? week[m].sets : own[m].sets])
+    .sort((a, b) => b[1] - a[1]);
+  const sets = w.exercises.reduce((n, e) => n + hardSets(e.sets), 0);
+  const month = periodOf("month", w.startedAt);
+  const nth = workouts.filter((x) => x.startedAt >= month.from && x.startedAt <= w.startedAt).length;
+  return { sets, muscles, nth };
+}
 
 // Rough evidence-based weekly targets per muscle (Schoenfeld et al. meta-analyses, RP volume landmarks): hard sets
 // taken close to failure; 10+ sets and 2+ sessions a week is the sweet spot, ~4–9 sets still grows, under 4 is
