@@ -9,6 +9,7 @@ import {
 } from "../../model/workout.js";
 import { bestE1rm, recordSets } from "../../model/records.js";
 import * as A from "../../model/workoutActions.js";
+import { nextStep } from "../../model/progression.js";
 import { useHoldReorder, useLongPress, useSwipeRows } from "../../ui/gestures.js";
 import { Button, DeleteButton, Sheet, useApp, useNow, useUndo } from "../../ui/kit.jsx";
 import { useRestorable } from "../../ui/navigation.js";
@@ -144,7 +145,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
 
       {a.exercises.map((e, ei) => (
         <ExerciseCard key={ei + e.exerciseId} e={e} ei={ei} ex={exMap[e.exerciseId] || UNKNOWN_EXERCISE} exData={exMap[e.exerciseId]}
-          last={lastSession(data.workouts, e.exerciseId)}
+          last={lastSession(data.workouts, e.exerciseId)} step={nextStep(data.workouts, exMap[e.exerciseId])}
           records={recordSets(e.sets, exMap[e.exerciseId], bwAt(a.startedAt), bestE1rm(data.workouts, e.exerciseId, exMap[e.exerciseId], bwAt))}
           cols={cols} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
           g={{ swipe, swipeBind, exSwipe, exSwipeBind, headerProps, colDrag, numberProps: numberProps(ei) }}

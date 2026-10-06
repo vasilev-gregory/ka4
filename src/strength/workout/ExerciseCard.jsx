@@ -1,7 +1,8 @@
 // One exercise of the running workout: title with last time's sets, column titles, set rows,
 // and either "add set" or the bar for the selected sets.
-import { GripVertical, RefreshCw, Trash2 } from "lucide-react";
+import { GripVertical, RefreshCw, Trash2, TrendingUp } from "lucide-react";
 import { fmtSets, setLabels } from "../../model/workout.js";
+import { stepText } from "../../model/progression.js";
 import { ExImg, useApp } from "../../ui/kit.jsx";
 import { SetRow } from "./SetRow.jsx";
 
@@ -11,8 +12,9 @@ const colTitle = (c, ex) =>
     : c === "r" ? (ex.kind === "time" ? "сек" : "повт.")
       : c === "p" ? (ex.kind === "time" ? "" : "частич.") : "RIR";
 
-// g: gesture bindings from ActiveWorkout; sel: {ei, set} while selecting sets; act: the card's actions
-export function ExerciseCard({ e, ei, ex, exData, last, records, cols, compact, sort, sortCount, g, sel, rests, liveKey, liveMs, act, open }) {
+// g: gesture bindings from ActiveWorkout; sel: {ei, set} while selecting sets; act: the card's actions;
+// step: the progression step when the exercise has stalled (model/progression nextStep)
+export function ExerciseCard({ e, ei, ex, exData, last, step, records, cols, compact, sort, sortCount, g, sel, rests, liveKey, liveMs, act, open }) {
   const { nm1, nm2 } = useApp();
   const labels = setLabels(e.sets);
   const cardio = ex.kind === "cardio";
@@ -40,6 +42,7 @@ export function ExerciseCard({ e, ei, ex, exData, last, records, cols, compact, 
             <div className="font-semibold">{nm1(ex)}</div>
             {nm2(ex) && <div className="truncate text-xs text-neutral-500">{nm2(ex)}</div>}
             {last && !compact && <div className="truncate text-xs text-neutral-400">Прошлый раз: {fmtSets(last.sets, ex.kind)}</div>}
+            {step && !compact && <StepNote t={stepText(step, ex)} />}
           </button>
           <button onClick={act.replace} className="p-1.5 text-neutral-500" aria-label="Заменить"><RefreshCw size={18} /></button>
           <button onClick={act.remove} className="p-1.5 text-neutral-500" aria-label="Убрать упражнение"><Trash2 size={18} /></button>
@@ -89,6 +92,16 @@ export function ExerciseCard({ e, ei, ex, exData, last, records, cols, compact, 
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+// a stalled exercise: how long the same, and today's step (already in the grey hints)
+function StepNote({ t }) {
+  return (
+    <div className="mt-0.5 text-xs text-accent-300" data-testid="progress-step">
+      <TrendingUp size={12} className="mr-1 inline -mt-0.5" />
+      {t.was} — сегодня {t.now} ({t.why})
     </div>
   );
 }
