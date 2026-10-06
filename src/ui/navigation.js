@@ -1,15 +1,31 @@
 // Tabs plus a stack of detail screens on top, mirrored into the browser history so the system back
 // gesture / button closes the top screen instead of leaving the app. Each pushed screen is one history
 // entry carrying its depth ({ kach: n }); popstate trims the stack to that depth.
+// The place (tab, screens, what useRestorable keeps) is saved as it changes: when the system closes the app in the
+// background (switching to a messenger), it opens where it was left, if that was less than RESTORE_MS ago.
 import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { uiPlace } from "../storage.js";
+
+const RESTORE_MS = 2 * 3600e3;
+const left = uiPlace.get();
+const place = left && Date.now() - left.at < RESTORE_MS ? { tab: left.tab, stack: left.stack || [], keep: left.keep || {} }
+  : { tab: null, stack: [], keep: {} };
+const savePlace = () => uiPlace.set({ ...place, at: Date.now() });
+if (typeof document !== "undefined") document.addEventListener("visibilitychange", savePlace); // "left" counts from hiding
 
 export function useNavigation(initialTab = "workout") {
-  const [tab, setTabState] = useState(initialTab);
-  const [stack, setStack] = useState([]);
-  const depth = useRef(0); // history entries above the base one, kept in step with the stack
+  const [tab, setTabState] = useState(place.tab || initialTab);
+  const [stack, setStack] = useState(place.stack);
+  const depth = useRef(place.stack.length); // history entries above the base one, kept in step with the stack
+  useEffect(() => { place.tab = tab; place.stack = stack; savePlace(); }, [tab, stack]);
 
   useEffect(() => {
-    if (!history.state || history.state.kach == null) history.replaceState({ kach: 0 }, "");
+    const n = depth.current;
+    if (!history.state || history.state.kach == null || (n && history.state.kach !== n)) {
+      // a fresh start with screens to restore: one entry each, so back walks them down
+      history.replaceState({ kach: 0 }, "");
+      for (let i = 1; i <= n; i++) history.pushState({ kach: i }, "");
+    }
     const onPop = (e) => {
       const to = (e.state && e.state.kach) || 0;
       depth.current = to;
@@ -62,4 +78,13 @@ export function useBackCloses(onBack, on = true) {
       setTimeout(() => { if (shown < level && history.state && history.state.overlay === level) history.back(); }, 0);
     };
   }, [on]);
+}
+
+// useState that survives the app being closed in the background (an open picker, its picks): kept with the place
+// while the component is shown, dropped when it closes. The value must be plain JSON.
+export function useRestorable(key, init) {
+  const [v, setV] = useState(() => (key in place.keep ? place.keep[key] : init));
+  useEffect(() => { place.keep[key] = v; savePlace(); }, [key, v]);
+  useEffect(() => () => { delete place.keep[key]; savePlace(); }, [key]);
+  return [v, setV];
 }

@@ -1,6 +1,5 @@
 // Strength program editor on the shared parts (ui/ProgramEdit): exercises with how many sets to prefill (cardio: a
 // plan), replace, the muscles they plan for, start, delete. Saved as you go.
-import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { addProgramItems, dropEmptyProgram, removeProgram, replaceProgramItem, startWorkout } from "../model/workoutActions.js";
 import { CARDIO_PLAN, runningSession } from "../model/workout.js";
@@ -8,11 +7,12 @@ import { fmtNum } from "../core/util.js";
 import { Picker } from "./ExerciseList.jsx";
 import { ProgramMuscles } from "./ProgramMuscles.jsx";
 import { Button, ExImg, Header, SecStepper, Stepper, useApp } from "../ui/kit.jsx";
+import { useRestorable } from "../ui/navigation.js";
 import { ProgramFooter, ProgramItems, ProgramName, useDropIfEmpty } from "../ui/ProgramEdit.jsx";
 
 export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
   const { nm1, nm2 } = useApp();
-  const [picker, setPicker] = useState(false);
+  const [picker, setPicker] = useRestorable(`program-picker:${id}`, false);
   const change = (fn) => up((d) => { const p = d.programs.find((x) => x.id === id); if (p) fn(p); });
   useDropIfEmpty(() => up((d) => dropEmptyProgram(d, id)));
   const p = data.programs.find((x) => x.id === id);

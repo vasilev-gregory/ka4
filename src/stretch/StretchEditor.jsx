@@ -8,6 +8,7 @@ import { buildTimeline, stExMap, stTiming, stretchPlan } from "../model/stretch.
 import * as S from "../model/stretchActions.js";
 import { Button, ExImg, Header, SecStepper, Segmented, useApp } from "../ui/kit.jsx";
 import { ProgramFooter, ProgramItems, ProgramName, useDropIfEmpty } from "../ui/ProgramEdit.jsx";
+import { useRestorable } from "../ui/navigation.js";
 import { StretchPicker } from "./StretchPicker.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
@@ -15,7 +16,7 @@ import { StretchBreakdown } from "./StretchBreakdown.jsx";
 // busy: why it can't start (the strength workout goes on), or null
 export function StretchEditor({ stretch, upStretch, id, back, open, play, busy, inRun = false, onAppSettings }) {
   const { nm1 } = useApp();
-  const [picker, setPicker] = useState(false);
+  const [picker, setPicker] = useRestorable(`stretch-picker:${id}`, false);
   const [openItem, setOpenItem] = useState(null);
   const [timerOpen, setTimerOpen] = useState(false);
   const change = (fn) => upStretch((s) => { const p = S.findProgram(s, id); if (p) fn(p); });

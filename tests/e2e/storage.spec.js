@@ -17,6 +17,8 @@ test("a stale second instance doesn't overwrite newer data when it goes to backg
   await b.close({ runBeforeUnload: true });
   await a.evaluate(() => window.dispatchEvent(new Event("pagehide")));
   const c = await context.newPage(); await openApp(c);
+  await expect(c.locator("input").first()).toHaveValue("Моя программа"); // opens where b was left: the program
+  await c.goBack();
   await expect(c.getByText("Моя программа")).toBeVisible();
 });
 

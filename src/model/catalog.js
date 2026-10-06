@@ -48,7 +48,7 @@ export const SEED_EX = [
   // from GymKeeper list
   ["Duck press", "Жим «уточка»", "плечи"],
   ["Rear delt dumbbell raise", "Гантель на заднюю дельту", "плечи"],
-  ["Reverse pec deck", "Пекдек на заднюю дельту", "плечи"],
+  ["Reverse pec deck", "Обратные разведения в тренажёре на заднюю дельту (пекдек)", "плечи"],
   ["Plate overhead press", "Жим блина над головой", "плечи"],
   ["Dumbbell shoulder press", "Жим гантелей над головой", "плечи"],
   ["Cable shoulder press", "Жим над головой в нижнем блоке", "плечи"],
@@ -76,7 +76,7 @@ export const SEED_EX = [
   ["Incline Smith press", "Жим на наклонной в Смите", "грудь"],
   ["One-arm cable shoulder press", "Жим над головой одной рукой в блоке", "плечи"],
   ["One-arm machine shoulder press", "Жим над головой одной рукой в тренажёре", "плечи"],
-  ["One-arm reverse pec deck", "Пекдек на заднюю дельту одной рукой", "плечи"],
+  ["One-arm reverse pec deck", "Обратные разведения в тренажёре одной рукой (пекдек)", "плечи"],
   ["One-arm rear delt row", "Тяга на заднюю дельту одной рукой", "плечи"],
   ["Single-leg leg press", "Жим одной ногой", "ноги"],
   ["One-arm cable row", "Тяга одной рукой в кроссовере", "спина"],
@@ -239,6 +239,12 @@ export const ST_OLD_NAMES = {
 // Russian name is still the old one (the user didn't touch it)
 export const ST_FIXES = [
   ["st-lat", "Широчайшие: на коленях, руки вперёд и в сторону", { ru: "Широчайшие: на коленях, руки вперёд, таз к пяткам" }],
+];
+
+// built-in exercises renamed later, the same way: [id, the old Russian name, the new one]
+export const EX_RENAMES = [
+  ["reverse-pec-deck", "Пекдек на заднюю дельту", "Обратные разведения в тренажёре на заднюю дельту (пекдек)"],
+  ["one-arm-reverse-pec-deck", "Пекдек на заднюю дельту одной рукой", "Обратные разведения в тренажёре одной рукой (пекдек)"],
 ];
 
 // Thomas et al. 2018 (Int J Sports Med): ≥5 min of static stretching per muscle group per week for ROM gains,
