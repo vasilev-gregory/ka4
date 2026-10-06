@@ -193,10 +193,11 @@ export function moveColumn(settings, from, to) {
 }
 
 // Ends the workout: optionally writes its exercises back into its program, keeps only done sets, files it into
-// history (if anything was done). Returns its id.
-export function finishWorkout(d, updateProgram, now = Date.now()) {
+// history (if anything was done), «не в зачёт» if off (a bad day). Returns its id.
+export function finishWorkout(d, updateProgram, now = Date.now(), off = false) {
   const w = d.active;
   if (!w) return null;
+  if (off) w.off = true;
   if (updateProgram) {
     const p = d.programs.find((x) => x.id === w.programId);
     if (p) p.items = itemsOf(w, p);
@@ -218,6 +219,13 @@ export function finishWorkout(d, updateProgram, now = Date.now()) {
 // the running workout dropped without a trace
 export function discardWorkout(d) {
   d.active = null;
+}
+
+// «не в зачёт» on / off (model/workout.js counts)
+export function setWorkoutOff(d, id, off) {
+  const w = d.workouts.find((x) => x.id === id);
+  if (!w) return;
+  if (off) w.off = true; else delete w.off;
 }
 
 export function removeWorkout(d, id) {

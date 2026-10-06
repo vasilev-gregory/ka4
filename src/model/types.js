@@ -58,6 +58,7 @@
  * @property {{ exerciseId: string, sets: WorkoutSet[] }[]} exercises
  * @property {{ doneAt: number|null }} [warmup]  the warm-up block (workouts started before it existed have none)
  * @property {"hevy"|"gymkeeper"} [source]  imported from another app
+ * @property {boolean} [off]              «не в зачёт» (a bad day): counted as a workout, not in progress (workout.js counts)
  */
 
 /**

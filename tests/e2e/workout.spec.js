@@ -140,3 +140,24 @@ test("warm-up first, then the rest before the first set; swipe an exercise away 
   await swipeTitle(140);
   await expect(page.getByText("Заменить упражнение")).toBeVisible();
 });
+
+test("a bad day: finished «не в зачёт», marked in history, switched back in its card", async ({ page }) => {
+  await openApp(page);
+  await startWorkout(page);
+  await page.locator("input[inputmode=decimal]").first().fill("60");
+  await page.locator("input[inputmode=numeric]").first().fill("5");
+  await page.getByRole("button", { name: "Подход сделан" }).first().click();
+  await page.getByRole("button", { name: "Завершить" }).last().click();
+  await page.getByRole("dialog", { name: "Завершить тренировку?" }).getByRole("button", { name: /Плохой день/ }).click();
+  const off = page.getByRole("button", { name: /Не в зачёт/ });
+  await expect(off).toBeVisible(); // the workout's card opens
+  await expect(page.getByText("Всё равно не зря")).toBeVisible(); // what it still gave
+  await expect(page.getByText(/1 тяжёлый подход/)).toBeVisible();
+  await expect.poll(async () => (await stored(page)).workouts[0]?.off).toBe(true);
+  await page.goBack();
+  await tab(page, "История");
+  await expect(page.getByText(/не в зачёт/)).toBeVisible();
+  await page.getByText(/не в зачёт/).click();
+  await off.click();
+  await expect.poll(async () => (await stored(page)).workouts[0]?.off).toBeUndefined();
+});

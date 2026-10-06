@@ -145,6 +145,12 @@ test("finishing a workout: only done sets, at the given time, into history; prog
   assert.equal(p.items.length, before); // not asked: the program stays
 });
 
+test("finishing as a bad day files the workout «не в зачёт»", () => {
+  const d = withWorkout([blank({ w: "80", r: "5", done: true }), blank()]);
+  const id = A.finishWorkout(d, false, T0 + 60e3, true);
+  assert.equal(d.workouts.find((x) => x.id === id).off, true);
+});
+
 test("programs: create, items added with their kind's plan, replaced keeping sets within a kind, removed", () => {
   const d = seed();
   const exMap = Object.fromEntries(d.exercises.map((e) => [e.id, e]));

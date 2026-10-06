@@ -2,7 +2,7 @@
 // The calendar itself (periods, paging, weekly averages) is in calendar.js.
 import { num } from "../core/util.js";
 import { averageWeeks, inPeriod } from "./calendar.js";
-import { setLoad, stats } from "./workout.js";
+import { counts, setLoad, stats } from "./workout.js";
 import { weekLoad } from "./muscles.js";
 import { sessionE1rm } from "./records.js";
 import { PARTIAL_WEIGHT } from "./catalog.js";
@@ -27,11 +27,11 @@ export function periodSummary(workouts, exMap, bwAt, range, now = Date.now()) {
 // Exercise progress, one point per session: { t, v }. metric: "max" (heaviest working set; seconds for
 // timed exercises), "e1rm" (best estimated 1RM), "vol" (load × reps of the working sets, partials 30%).
 // Cardio: "max" = minutes, "vol" = km of the session.
-// since: only sessions from then on. Sessions without a value for the metric are left out.
+// since: only sessions from then on. Sessions without a value for the metric, and workouts «не в зачёт», are left out.
 export function exerciseSeries(workouts, exId, ex, bwAt, metric, since = -Infinity) {
   const out = [];
   workouts.forEach((w) => {
-    if (w.startedAt < since) return;
+    if (w.startedAt < since || !counts(w)) return;
     const e = w.exercises.find((x) => x.exerciseId === exId);
     if (!e) return;
     const bw = bwAt(w.startedAt);

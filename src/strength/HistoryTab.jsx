@@ -56,7 +56,7 @@ export function HistoryTab({ data, exMap, open }) {
           const kcal = workoutKcal(w, exMap, bwAt);
           return (
             <HistoryRow key={w.id} startedAt={w.startedAt} name={w.name} onClick={() => open({ type: "workout", id: w.id })}
-              summary={`${fmtWDur(st)}, ${fmtTotals(st)}${kcal != null ? `, ≈${kcal} ккал` : ""}`} />
+              summary={`${fmtWDur(st)}, ${fmtTotals(st)}${kcal != null ? `, ≈${kcal} ккал` : ""}${w.off ? ", не в зачёт" : ""}`} />
           );
         })}
       </div>

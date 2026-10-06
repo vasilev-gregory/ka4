@@ -1,6 +1,7 @@
-// Progress and records: estimated one-rep max, best so far, the previous session of an exercise.
+// Progress and records: estimated one-rep max, best so far, the previous session of an exercise. A workout «не в
+// зачёт» (counts) is neither a record to beat nor the previous session, and gets no progress note itself.
 import { num } from "../core/util.js";
-import { setLoad } from "./workout.js";
+import { counts, setLoad } from "./workout.js";
 
 // Estimated one-rep max (Epley). Null outside 1–12 reps, where the estimate means little.
 export function e1rm(load, reps) {
@@ -24,7 +25,7 @@ export function sessionE1rm(sets, ex, bw) {
 export function bestE1rm(workouts, exId, ex, bwAt, before = Infinity) {
   let best = null;
   workouts.forEach((w) => {
-    if (w.startedAt >= before) return;
+    if (w.startedAt >= before || !counts(w)) return;
     const e = w.exercises.find((x) => x.exerciseId === exId);
     const v = e && sessionE1rm(e.sets, ex, bwAt(w.startedAt));
     if (v != null && (best == null || v > best)) best = v;
@@ -36,7 +37,7 @@ export function bestE1rm(workouts, exId, ex, bwAt, before = Infinity) {
 export function previousSession(workouts, exId, before) {
   for (let i = workouts.length - 1; i >= 0; i--) {
     const w = workouts[i];
-    if (w.startedAt >= before) continue;
+    if (w.startedAt >= before || !counts(w)) continue;
     const e = w.exercises.find((x) => x.exerciseId === exId);
     if (e && e.sets.length) return { workout: w, sets: e.sets };
   }
@@ -59,6 +60,7 @@ export function recordSets(sets, ex, bw, bestBefore) {
 // How an exercise of workout w went against its previous session: { record: true } (best estimated 1RM so far),
 // { delta: kg of estimated 1RM against last time }, or null (nothing to compare)
 export function sessionProgress(workouts, w, e, ex, bwAt) {
+  if (!counts(w)) return null;
   const cur = sessionE1rm(e.sets, ex, bwAt(w.startedAt));
   if (cur == null) return null;
   const best = bestE1rm(workouts, e.exerciseId, ex, bwAt, w.startedAt);

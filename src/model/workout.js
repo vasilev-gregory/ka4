@@ -3,8 +3,13 @@ import { usageOf } from "./picker.js";
 import { fmtDur, fmtKg, fmtNum, num } from "../core/util.js";
 import { COLUMNS, DEFAULT_COLUMNS, PARTIAL_WEIGHT } from "./catalog.js";
 
+// A workout marked «не в зачёт» (a bad day: felt sick, went home): it stays in history, the workouts count, the
+// calendar and the muscles' weekly sets, but not in what measures progress — exercise charts, records, "last time".
+export const counts = (w) => !w.off;
+
 export function lastSession(workouts, exId) {
   for (let i = workouts.length - 1; i >= 0; i--) {
+    if (!counts(workouts[i])) continue;
     const e = workouts[i].exercises.find((x) => x.exerciseId === exId);
     if (e && e.sets.length) return { workout: workouts[i], sets: e.sets };
   }
@@ -248,7 +253,7 @@ export const exerciseUsage = (workouts, programs) =>
 
 // the previous workout of the same program, or null
 export const previousOfProgram = (workouts, w) =>
-  (w.programId && [...workouts].reverse().find((x) => x.programId === w.programId && x.startedAt < w.startedAt)) || null;
+  (w.programId && [...workouts].reverse().find((x) => x.programId === w.programId && x.startedAt < w.startedAt && counts(x))) || null;
 
 // an exercise's sessions, newest first: [{ w, sets }]
 export function exerciseSessions(workouts, id) {

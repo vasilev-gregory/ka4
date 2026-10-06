@@ -49,15 +49,17 @@ export function ActiveWorkout({ data, up, exMap, open }) {
 
   // sets not ticked are dropped on finishing: with some left, ask first
   const unticked = a.exercises.reduce((n, e) => n + e.sets.filter((x) => !x.done && x.t !== "w").length, 0);
-  const finish = () => {
+  // off: «не в зачёт» (a bad day, the rest dropped): no program update either, that's not how the program goes
+  const finish = (off = false) => {
     if (unticked && !askFinish) { setAskFinish(true); return; }
     setAskFinish(false);
-    if (programDiff(a, data.programs)) setAskUpdate(true); else doFinish(false);
+    if (off === true) doFinish(false, true);
+    else if (programDiff(a, data.programs)) setAskUpdate(true); else doFinish(false);
   };
-  const doFinish = (updateProgram) => {
+  const doFinish = (updateProgram, off = false) => {
     setAskUpdate(false);
     const id = a.id;
-    up((d) => A.finishWorkout(d, updateProgram, Date.now()));
+    up((d) => A.finishWorkout(d, updateProgram, Date.now(), off));
     if (hasDone) open({ type: "workout", id });
   };
   const pick = (ex) => {
@@ -159,12 +161,12 @@ export function ActiveWorkout({ data, up, exMap, open }) {
         {a.paused ? (
           <>
             <Button className="flex-1" onClick={() => up((d) => A.resumeWorkout(d))}>Продолжить</Button>
-            <Button variant="quiet" className="px-4" onClick={finish}>Завершить</Button>
+            <Button variant="quiet" className="px-4" onClick={() => finish()}>Завершить</Button>
           </>
         ) : (
           <>
             <Button variant="quiet" className="px-4" onClick={() => up((d) => A.pauseWorkout(d))}>Пауза</Button>
-            <Button className="flex-1" onClick={finish}>Завершить</Button>
+            <Button className="flex-1" onClick={() => finish()}>Завершить</Button>
           </>
         )}
       </div>
@@ -174,7 +176,9 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           <p className="mb-4 text-xs text-neutral-400">
             Не отмечено {unticked} {plural(unticked, "подход", "подхода", "подходов")} — они не сохранятся. Отмеченные останутся в истории.
           </p>
-          <Button block onClick={finish} className="mb-2">Завершить</Button>
+          <Button block onClick={() => finish()} className="mb-2">Завершить</Button>
+          <Button variant="secondary" block onClick={() => finish(true)} className="mb-1">Плохой день, не в зачёт</Button>
+          <p className="mb-3 text-xs text-neutral-500">Тренировка будет в истории и в счёте тренировок, но не в графиках, рекордах и «прошлом разе».</p>
           <Button variant="quiet" block onClick={() => setAskFinish(false)}>Продолжить тренировку</Button>
         </Sheet>
       )}

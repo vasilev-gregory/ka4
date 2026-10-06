@@ -45,3 +45,37 @@ test("exercise series: max, estimated 1RM, volume; warm-ups out; window", () => 
   assert.equal(windowStart(0), -Infinity);
   assert.deepEqual(exerciseSeries(workouts, "sq", { id: "sq", kind: "time" }, bwAt, "e1rm"), []);
 });
+
+test("a workout «не в зачёт» counts as a workout and in the muscles, not in progress: charts, records, last time", async () => {
+  const { bestE1rm, previousSession, sessionProgress } = await import("../../src/model/records.js");
+  const { buildSets, previousOfProgram } = await import("../../src/model/workout.js");
+  const { setWorkoutOff } = await import("../../src/model/workoutActions.js");
+  const ex = { id: "sq", kind: "reps", group: "ноги" };
+  const w = (id, t, kg) => ({ id, programId: "p", startedAt: t, segments: [{ start: t, end: t + 3600e3 }],
+    exercises: [{ exerciseId: "sq", sets: [{ w: String(kg), r: "5", done: true }] }] });
+  const d = { workouts: [w("a", at(2026, 9, 1), 100), w("bad", at(2026, 9, 3), 40), w("c", at(2026, 9, 5), 102)] };
+  setWorkoutOff(d, "bad", true);
+  const [a, bad, c] = d.workouts;
+  assert.deepEqual(exerciseSeries(d.workouts, "sq", ex, bwAt, "max").map((p) => p.v), [100, 102]);
+  assert.equal(previousSession(d.workouts, "sq", c.startedAt).workout, a);
+  assert.equal(previousOfProgram(d.workouts, c), a);
+  assert.deepEqual(sessionProgress(d.workouts, c, c.exercises[0], ex, bwAt), { record: true });
+  assert.equal(sessionProgress(d.workouts, bad, bad.exercises[0], ex, bwAt), null); // no "−60 кг" under it
+  assert.equal(buildSets({ workouts: d.workouts.slice(0, 2) }, "sq")[0].hw, "100"); // hints from the last good day
+  assert.ok(bestE1rm(d.workouts, "sq", ex, bwAt) > 110);
+  const s = periodSummary(d.workouts, { sq: ex }, bwAt, periodOf("month", at(2026, 9, 1)), at(2026, 9, 7));
+  assert.equal(s.workouts, 3); // still a workout
+  setWorkoutOff(d, "bad", false);
+  assert.equal(d.workouts[1].off, undefined);
+});
+
+test("a workout «не в зачёт» still counted: its hard sets, the muscles they went to with the week's, its number in the month", async () => {
+  const { stillCounted } = await import("../../src/model/muscles.js");
+  const exMap = { sq: { id: "squat", kind: "reps", group: "ноги" } };
+  const w = (t, n) => ({ startedAt: t, exercises: [{ exerciseId: "sq", sets: Array.from({ length: n }, () => ({ w: "100", r: "5", done: true })) }] });
+  const workouts = [w(at(2026, 9, 1), 3), w(at(2026, 9, 5), 4), w(at(2026, 9, 7), 2)]; // Mon 5 and Wed 7 Oct: one week
+  const c = stillCounted(workouts, workouts[2], exMap);
+  assert.equal(c.sets, 2);
+  assert.deepEqual(c.muscles, [["квадрицепс", 2, 6], ["ягодицы", 1, 3]]);
+  assert.equal(c.nth, 3);
+});
