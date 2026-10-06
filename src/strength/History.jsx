@@ -1,9 +1,8 @@
-// One finished workout: totals, what it added to the week, rest, exercises with progress notes.
+// One finished workout: totals, the muscles it worked (and its week), rest, exercises with progress notes.
 import { Trophy } from "lucide-react";
-import { fmtDate, fmtDur, fmtKg, fmtNum, weekStartOf } from "../core/util.js";
+import { fmtDate, fmtDur, fmtKg, fmtNum } from "../core/util.js";
 import { fmtSets, restStats, stats } from "../model/workout.js";
-import { musclesOf, weekHint, weekLoad } from "../model/muscles.js";
-import { MuscleBreakdown } from "./MuscleBreakdown.jsx";
+import { WorkoutMuscles } from "./WorkoutMuscles.jsx";
 import { bestE1rm, previousSession, sessionE1rm } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
 import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
@@ -53,18 +52,7 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
           </div>
         ))}
       </div>
-      {(() => {
-        // the week of this workout for the muscles it worked as a main one
-        const worked = [...new Set(w.exercises.flatMap((e) => Object.entries(musclesOf(exMap[e.exerciseId])).filter(([, k]) => k >= 1).map(([m]) => m)))];
-        const week = weekLoad(data.workouts, exMap, weekStartOf(w.startedAt)).muscles;
-        if (!worked.some((m) => week[m])) return null;
-        return (
-          <div className="-mt-3 mb-5 rounded-xl bg-neutral-900 p-3">
-            <div className="font-semibold">Неделя по мышцам</div>
-            <MuscleBreakdown load={week} map={false} only={worked} note={(r) => weekHint(r.sets, r.freq)} />
-          </div>
-        );
-      })()}
+      <WorkoutMuscles data={data} w={w} exMap={exMap} open={open} />
       {(() => {
         const rs = restStats(w);
         if (!rs.nSets && !rs.nEx) return null;

@@ -26,8 +26,8 @@ test("period summary: workouts, sets and hard sets per group per started week", 
   assert.equal(s.sets, 10);
   assert.equal(s.vol, 10 * 500);
   assert.equal(s.weeks, 2); // weeks of 28 Sep and 5 Oct; the rest of October has not started yet
-  assert.deepEqual(s.perWeek.quads, { sets: 5, freq: 1 });
-  assert.deepEqual(s.perWeek.glutes, { sets: 2.5, freq: 0 }); // helping muscle: half a set, no session
+  assert.deepEqual(s.perWeek.quads, { sets: 5, freq: 1, by: { sq: 10 } }); // by: the whole period's sets per exercise
+  assert.deepEqual(s.perWeek.glutes, { sets: 2.5, freq: 0, by: { sq: 5 } }); // helping muscle: half a set, no session
   assert.equal(s.days, 2);
 });
 

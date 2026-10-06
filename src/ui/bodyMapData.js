@@ -1,6 +1,6 @@
 // Outline of the body for the muscle map, front and back, in a 100 × 200 box: [muscle ids, polygons as x, y, …].
-// A region with no ids (head, neck, knees, inner thigh) is drawn in the body colour. The lateral delt shows on
-// both views' shoulder caps. Polygons from react-body-highlighter by GV79 (MIT License, Copyright (c) 2020 GV79),
+// A region with no ids (knees, inner thigh) and the head ("head", not a muscle) are drawn in the body colour. The lateral delt is the
+// outer cap of the shoulder on both views. Polygons from react-body-highlighter by GV79 (MIT License, Copyright (c) 2020 GV79),
 // https://github.com/GV79/react-body-highlighter; coordinates rounded to 0.1.
 export const FRONT = [
   // chest
@@ -28,18 +28,28 @@ export const FRONT = [
     [69.4, 55.5, 69.4, 61.6, 75.9, 72.7, 77.6, 70.2, 75.5, 67.3],
     [22.4, 69.4, 29.8, 55.5, 29.8, 60.8, 22.9, 73.1],
   ]],
-  // neck
-  [[], [
+  // upper trapezius, the slope from the neck to the shoulder
+  [["traps"], [
     [55.5, 23.7, 50.6, 33.5, 50.6, 39.2, 61.6, 40, 70.6, 44.9, 69.4, 36.7, 63.3, 35.1, 58.4, 30.6],
     [29, 44.9, 30.2, 37.1, 36.3, 35.1, 41.2, 30.2, 44.5, 24.5, 49, 33.9, 48.6, 39.2, 38, 39.6],
   ]],
-  // front deltoids
-  [["frontdelt", "sidedelt"], [
-    [78.4, 53.1, 79.6, 47.8, 79.2, 41.2, 75.9, 38, 71, 36.3, 72.2, 42.9, 71.4, 47.3],
-    [28.2, 47.3, 21.2, 53.1, 20, 47.8, 20.4, 40.8, 24.5, 37.1, 28.6, 37.1, 26.9, 43.3],
+  // lats peeking out under the armpit, between the chest and the triceps (drawn here, not in the source)
+  [["lats"], [
+    [70.6, 47.3, 69.4, 55.5, 69.4, 61.6, 68.6, 63.3, 67.3, 57.1, 67.8, 55.5],
+    [29.8, 46.5, 29.8, 55.5, 29.8, 60.8, 31, 63.3, 32.2, 57.1, 31.4, 55.5],
+  ]],
+  // front deltoids, without the outer cap
+  [["frontdelt"], [
+    [78.4, 53.1, 75, 45, 75.9, 38, 71, 36.3, 72.2, 42.9, 71.4, 47.3],
+    [21.2, 53.1, 25, 45, 24.5, 37.1, 28.6, 37.1, 26.9, 43.3, 28.2, 47.3],
+  ]],
+  // lateral deltoids: the outer cap of the shoulder (cut out of the source's deltoid)
+  [["sidedelt"], [
+    [75.9, 38, 79.2, 41.2, 79.6, 47.8, 78.4, 53.1, 75, 45],
+    [24.5, 37.1, 20.4, 40.8, 20, 47.8, 21.2, 53.1, 25, 45],
   ]],
   // head
-  [[], [
+  [["head"], [
     [42.4, 2.9, 40, 11.8, 42, 19.6, 46.1, 23.3, 49.8, 25.3, 54.7, 22.4, 57.6, 19.2, 59.2, 10.2, 57.1, 2.4, 49.8, 0],
   ]],
   // abductors
@@ -79,7 +89,7 @@ export const FRONT = [
 
 export const BACK = [
   // head
-  [[], [
+  [["head"], [
     [50.6, 0, 46, 0.9, 40.9, 5.5, 40.4, 12.8, 45.1, 20, 55.7, 20, 59.1, 13.6, 59.6, 4.7, 55.7, 1.3],
   ]],
   // trapezius
@@ -87,10 +97,15 @@ export const BACK = [
     [44.7, 21.7, 47.7, 21.7, 47.2, 38.3, 47.7, 64.7, 38.3, 53.2, 35.3, 40.9, 31.1, 36.6, 39.1, 33.2, 43.8, 27.2],
     [52.3, 21.7, 55.7, 21.7, 56.6, 27.2, 60.9, 32.8, 68.9, 36.6, 64.7, 40.4, 61.7, 53.2, 52.3, 64.7, 53.2, 38.3],
   ]],
-  // back deltoids
-  [["reardelt", "sidedelt"], [
-    [29.4, 37, 23, 39.1, 17.4, 44.3, 18.3, 53.6, 24.3, 49.4, 27.2, 46.4],
-    [71.1, 37, 78.3, 39.6, 82.6, 44.7, 81.7, 53.6, 74.9, 48.9, 72.3, 45.1],
+  // rear deltoids, without the outer cap
+  [["reardelt"], [
+    [29.4, 37, 23, 39.1, 22.5, 46, 18.3, 53.6, 24.3, 49.4, 27.2, 46.4],
+    [71.1, 37, 78.3, 39.6, 77.5, 46, 81.7, 53.6, 74.9, 48.9, 72.3, 45.1],
+  ]],
+  // lateral deltoids from behind
+  [["sidedelt"], [
+    [23, 39.1, 17.4, 44.3, 18.3, 53.6, 22.5, 46],
+    [78.3, 39.6, 82.6, 44.7, 81.7, 53.6, 77.5, 46],
   ]],
   // upper back
   [["lats"], [

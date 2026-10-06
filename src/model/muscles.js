@@ -86,8 +86,9 @@ export function hardSets(sets) {
   return n;
 }
 
-// Hard sets per muscle for workouts started in [from, to): { days: training days, muscles: { id: { sets, freq } } }.
+// Hard sets per muscle for workouts started in [from, to): { days: training days, muscles: { id: { sets, freq, by } } }.
 // A helping muscle gets half a set; a day counts towards a muscle's freq when it was a main one that day.
+// by: { exerciseId: sets it gave the muscle } — which exercises the sets came from.
 export function muscleLoad(workouts, exMap, from, to) {
   const muscles = {};
   const days = new Set();
@@ -99,14 +100,15 @@ export function muscleLoad(workouts, exMap, from, to) {
       if (!n || !share.length) return;
       days.add(day);
       share.forEach(([m, k]) => {
-        const p = muscles[m] || (muscles[m] = { sets: 0, days: new Set() });
+        const p = muscles[m] || (muscles[m] = { sets: 0, days: new Set(), by: {} });
         p.sets += n * k;
+        p.by[e.exerciseId] = (p.by[e.exerciseId] || 0) + n * k;
         if (k >= 1) p.days.add(day);
       });
     });
   });
   const out = {};
-  Object.entries(muscles).forEach(([m, p]) => { out[m] = { sets: p.sets, freq: p.days.size }; });
+  Object.entries(muscles).forEach(([m, p]) => { out[m] = { sets: p.sets, freq: p.days.size, by: p.by }; });
   return { days: days.size, muscles: out };
 }
 

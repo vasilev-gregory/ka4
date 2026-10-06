@@ -13,6 +13,8 @@ import { MuscleBreakdown, MusclesWhy, WhyButton } from "./MuscleBreakdown.jsx";
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const dayMonth = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 const ZOOMS = [["week", "Неделя"], ["month", "Месяц"], ["year", "Год"]];
+// what the sets of a muscle's exercises cover: a month / year shows totals, not the average week
+const BY_NOTE = { week: "за неделю", month: "за месяц, всего", year: "за год, всего" };
 
 // survives leaving the tab for a workout card and coming back
 let remembered = { zoom: "month", at: null };
@@ -80,7 +82,7 @@ function YearGrid({ year, workouts, onMonth }) {
 }
 
 // week: hard sets per muscle. month / year: totals and the average week per muscle.
-function PeriodPanel({ zoom, range, workouts, exMap }) {
+function PeriodPanel({ zoom, range, workouts, exMap, open }) {
   const { bwAt } = useApp();
   const [why, setWhy] = useState(false);
   let title, load, empty;
@@ -104,7 +106,7 @@ function PeriodPanel({ zoom, range, workouts, exMap }) {
         <span className="flex items-center gap-2">{zoom !== "week" && any && "в среднем за неделю"}<WhyButton on={why} toggle={() => setWhy((x) => !x)} /></span>
       </div>
       {why && <MusclesWhy />}
-      {any ? <MuscleBreakdown load={load} /> : <p className="text-xs text-neutral-500">{empty}</p>}
+      {any ? <MuscleBreakdown load={load} exMap={exMap} open={open} byNote={BY_NOTE[zoom]} /> : <p className="text-xs text-neutral-500">{empty}</p>}
     </div>
   );
 }
@@ -143,7 +145,7 @@ export function HistoryTab({ data, exMap, open }) {
         {zoom === "year" && <YearGrid year={new Date(range.from).getFullYear()} workouts={all} onMonth={(t) => go("month", t)} />}
         {zoom !== "week" && <p className="mt-1 text-center text-[11px] text-neutral-500">{zoom === "month" ? "Тап по неделе — её разбор" : "Тап по месяцу — его календарь"}</p>}
         {/* the running workout counts in the week's sets, but not in the totals of a month / year */}
-        <PeriodPanel zoom={zoom} range={range} workouts={zoom === "week" ? all : data.workouts} exMap={exMap} />
+        <PeriodPanel zoom={zoom} range={range} workouts={zoom === "week" ? all : data.workouts} exMap={exMap} open={open} />
       </div>
       {data.workouts.length === 0 && <p className="text-neutral-400">Здесь появятся завершённые тренировки.</p>}
       <div className="space-y-2">

@@ -53,9 +53,9 @@ test("hard sets per muscle: helping muscles get half, sessions count only as a m
     { startedAt: day(7), exercises: [{ exerciseId: "hip-thrust", sets: [...sets(3), { w: "60", r: "10", done: true, t: "w" }] }] },
   ], exMap, day(5) - 864e5, day(12));
   assert.equal(load.days, 2);
-  assert.deepEqual(load.muscles.quads, { sets: 4, freq: 1 });
-  assert.deepEqual(load.muscles.glutes, { sets: 2 + 3, freq: 1 });
-  assert.deepEqual(load.muscles.hams, { sets: 1.5, freq: 0 });
+  assert.deepEqual(load.muscles.quads, { sets: 4, freq: 1, by: { squat: 4 } });
+  assert.deepEqual(load.muscles.glutes, { sets: 2 + 3, freq: 1, by: { squat: 2, "hip-thrust": 3 } }); // which exercises gave the sets
+  assert.deepEqual(load.muscles.hams, { sets: 1.5, freq: 0, by: { "hip-thrust": 1.5 } });
   assert.equal(hardSets([{ done: true }, { done: true, rir: 4 }, { done: true, t: "w" }, { done: true, g: "a" }, { done: true, g: "a" }]), 2);
 });
 
