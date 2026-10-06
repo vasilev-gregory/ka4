@@ -5,7 +5,8 @@ import { uid } from "../core/util.js";
 import { createExercise } from "../model/stretchActions.js";
 import { Button, Header, Segmented } from "../ui/kit.jsx";
 
-export function StretchPicker({ stretch, upStretch, onPick, onClose, already = [] }) {
+// title / action: the screen's title and the button's word (adding to a program by default)
+export function StretchPicker({ stretch, upStretch, onPick, onClose, already = [], title = "Добавить растяжку", action = "Добавить" }) {
   const [q, setQ] = useState("");
   const [chosen, setChosen] = useState([]);
   const [sides, setSides] = useState(true);
@@ -24,7 +25,7 @@ export function StretchPicker({ stretch, upStretch, onPick, onClose, already = [
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <div className="mx-auto max-w-md p-4 pb-32">
-        <Header title="Добавить растяжку" right={<button onClick={onClose} className="p-2 text-neutral-400"><X size={22} /></button>} />
+        <Header title={title} right={<button onClick={onClose} className="p-2 text-neutral-400"><X size={22} /></button>} />
         <div className="flex items-center gap-2 rounded-xl bg-neutral-900 px-3">
           <Search size={18} className="text-neutral-500" />
           <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск или новая растяжка"
@@ -58,7 +59,7 @@ export function StretchPicker({ stretch, upStretch, onPick, onClose, already = [
       {chosen.length > 0 && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 bg-black/90 px-4 pt-3">
           <div className="mx-auto max-w-md pb-3">
-            <Button block onClick={() => onPick(chosen)}>Добавить ({chosen.length})</Button>
+            <Button block onClick={() => onPick(chosen)}>{action} ({chosen.length})</Button>
           </div>
         </div>
       )}

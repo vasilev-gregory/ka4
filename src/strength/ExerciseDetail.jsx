@@ -8,6 +8,7 @@ import { fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
 import { Button, ExImg, Header, PhotoPicker, Segmented, Sheet, Trend, useApp } from "../ui/kit.jsx";
+import { BodyMap } from "../ui/BodyMap.jsx";
 
 // "Мышцы: квадрицепс; помогают: ягодицы"
 const fmtWorked = (w) => {
@@ -56,7 +57,11 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
         right={<button onClick={() => setEdit(!edit)} className="shrink-0 self-start p-2 text-neutral-400" aria-label="Изменить"><Pencil size={20} /></button>} />
       {nm2(ex) && <p className="-mt-3 mb-4 text-neutral-400">{nm2(ex)}</p>}
       {!isCardio && Object.keys(worked).length > 0 && (
-        <p className="-mt-2 mb-4 text-xs text-neutral-400">{fmtWorked(worked)}</p>
+        <div className="-mt-2 mb-4 flex items-center gap-3">
+          {/* what the exercise works: main muscles filled, helping ones half */}
+          <BodyMap parts={Object.keys(worked)} fill={worked} color="fill-rose-500" small title="Мышцы упражнения" />
+          <p className="min-w-0 flex-1 text-xs text-neutral-400">{fmtWorked(worked)}</p>
+        </div>
       )}
 
       {edit && (

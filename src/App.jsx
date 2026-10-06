@@ -18,7 +18,8 @@ import { WorkoutTab } from "./strength/workout/WorkoutTab.jsx";
 import { StretchEditor } from "./stretch/StretchEditor.jsx";
 import { StretchHistory } from "./stretch/StretchHistory.jsx";
 import { StretchHome } from "./stretch/StretchHome.jsx";
-import { StretchPlayer } from "./stretch/StretchPlayer.jsx";
+import { StretchRun } from "./stretch/StretchRun.jsx";
+import { playProgram, playQuick } from "./model/stretchRunActions.js";
 import { AppCtx, Button, ConfirmButton } from "./ui/kit.jsx";
 import { useNavigation } from "./ui/navigation.js";
 
@@ -65,12 +66,16 @@ function Shell({ data, up, replace, saved }) {
   };
   const restore = (d) => { replace(d); nav.reset(); };
 
+  // the stretching run lives in the data; the app only keeps whether its player is unfolded
+  const [runOpen, setRunOpen] = useState(true);
+  const play = (programId) => { upStretch((s) => playProgram(s, programId, Date.now())); setRunOpen(true); };
+  const playNow = (exerciseIds) => { upStretch((s) => playQuick(s, exerciseIds, Date.now())); setRunOpen(true); };
+
   const common = { data, up, exMap, open, back };
-  const stretchProps = { stretch: data.stretch, upStretch, open, back };
+  const stretchProps = { stretch: data.stretch, upStretch, open, back, play, playNow };
   const settings = (close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={restore} />;
   const SCREENS = {
     stretchProgram: (v) => <StretchEditor {...stretchProps} id={v.id} />,
-    stretchPlay: (v) => <StretchPlayer {...stretchProps} id={v.id} sound={data.settings.sound !== false} settings={settings} />,
     settings: () => settings(back),
     measure: (v) => <MeasureEditor {...common} id={v.id} />,
     exercise: (v) => <ExerciseDetail {...common} id={v.id} />,
@@ -93,13 +98,14 @@ function Shell({ data, up, replace, saved }) {
             Изменения не сохраняются. Сделай копию в настройках.
           </div>
         )}
-        <div className="mx-auto max-w-md pb-20">
+        <div className={`mx-auto max-w-md ${data.stretch.active && !runOpen ? "pb-40" : "pb-20"}`}>
           {content}
           {tab === "workout" && !view && !data.active && <BackupNag data={data} up={up} />}
         </div>
         {data.active?.restEndsAt && (
           <RestBar key={data.active.restEndsAt} endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={data.settings.sound !== false} />
         )}
+        <StretchRun stretch={data.stretch} upStretch={upStretch} sound={data.settings.sound !== false} open={runOpen} setOpen={setRunOpen} settings={settings} />
         {modeToast && (
           <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
             <div className="rounded-2xl bg-accent-400 px-6 py-4 text-lg font-bold text-black shadow-xl">{stretchMode ? "Растяжка" : "Сила"}</div>

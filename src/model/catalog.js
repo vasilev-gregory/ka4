@@ -238,7 +238,7 @@ export const ST_OLD_NAMES = {
 // built-in stretches corrected later: [id, the old Russian name, what changes]; applied once, only to a stretch whose
 // Russian name is still the old one (the user didn't touch it)
 export const ST_FIXES = [
-  ["st-lat", "Широчайшие: на коленях, руки вперёд и в сторону", { ru: "Широчайшие: на коленях, руки вперёд, таз к пяткам", sides: false }],
+  ["st-lat", "Широчайшие: на коленях, руки вперёд и в сторону", { ru: "Широчайшие: на коленях, руки вперёд, таз к пяткам" }],
 ];
 
 // Thomas et al. 2018 (Int J Sports Med): ≥5 min of static stretching per muscle group per week for ROM gains,
@@ -255,3 +255,4 @@ export const ST_SEED = [
   ["st-pizza", "Pizza (seated straddle fold)", "Пицца: сед ноги врозь, наклон вперёд", false],
   ["st-lat", "Kneeling lat stretch", "Широчайшие: на коленях, руки вперёд, таз к пяткам", false],
 ];
+export const isBuiltInStretch = (id) => ST_SEED.some((r) => r[0] === id);

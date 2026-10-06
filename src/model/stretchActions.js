@@ -3,7 +3,10 @@
 import { progTitle, uid } from "../core/util.js";
 import { stTiming } from "./stretch.js";
 
-export const findProgram = (s, id) => s.programs.find((x) => x.id === id);
+// a quick run's program: made up on the spot, lives in the run (s.active.program), not among the programs
+export const QUICK = "quick";
+
+export const findProgram = (s, id) => (id === QUICK ? s.active && s.active.program : s.programs.find((x) => x.id === id));
 
 export function createProgram(s, id) {
   s.programs.push({ id, name: "", timing: { ...s.defaults }, items: [] });

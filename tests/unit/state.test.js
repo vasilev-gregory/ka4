@@ -28,15 +28,24 @@ test("built-in stretch renamed only if the user kept the old name", () => {
   assert.equal(m.stretch.exercises.find((e) => e.id === "st-lat").name, "Моя широчайшая");
 });
 
-test("a corrected built-in stretch is fixed once, unless the user renamed it", () => {
+test("a corrected built-in stretch name is fixed once, unless the user renamed it", () => {
   const d = seed();
-  Object.assign(d.stretch.exercises.find((e) => e.id === "st-lat"), { ru: "Широчайшие: на коленях, руки вперёд и в сторону", sides: true });
-  const lat = migrate(d).stretch.exercises.find((e) => e.id === "st-lat");
-  assert.equal(lat.ru, "Широчайшие: на коленях, руки вперёд, таз к пяткам");
-  assert.equal(lat.sides, false);
+  d.stretch.exercises.find((e) => e.id === "st-lat").ru = "Широчайшие: на коленях, руки вперёд и в сторону";
+  assert.equal(migrate(d).stretch.exercises.find((e) => e.id === "st-lat").ru, "Широчайшие: на коленях, руки вперёд, таз к пяткам");
   const mine = seed();
-  Object.assign(mine.stretch.exercises.find((e) => e.id === "st-lat"), { ru: "Моя широчайшая", sides: true });
-  assert.equal(migrate(mine).stretch.exercises.find((e) => e.id === "st-lat").sides, true);
+  mine.stretch.exercises.find((e) => e.id === "st-lat").ru = "Моя широчайшая";
+  assert.equal(migrate(mine).stretch.exercises.find((e) => e.id === "st-lat").ru, "Моя широчайшая");
+});
+
+test("a built-in stretch's sides are always the catalog's; an own stretch keeps its own", () => {
+  const d = seed();
+  d.stretch.exercises.find((e) => e.id === "st-elephant-walk").sides = true;
+  d.stretch.exercises.find((e) => e.id === "st-figure-four").sides = false;
+  d.stretch.exercises.push({ id: "st-mine", name: "Моя", sides: true });
+  const m = migrate(d).stretch.exercises;
+  assert.equal(m.find((e) => e.id === "st-elephant-walk").sides, false);
+  assert.equal(m.find((e) => e.id === "st-figure-four").sides, true);
+  assert.equal(m.find((e) => e.id === "st-mine").sides, true);
 });
 
 test("duplicate stretches in a program are merged", () => {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { X, GripVertical, ChevronDown } from "lucide-react";
 import { fmtDur, plural } from "../core/util.js";
-import { ST_AREAS, ST_FIELDS } from "../model/catalog.js";
+import { ST_AREAS, ST_FIELDS, isBuiltInStretch } from "../model/catalog.js";
 import { buildTimeline, stExMap, stTiming, stretchPlan } from "../model/stretch.js";
 import * as S from "../model/stretchActions.js";
 import { Button, DeleteButton, ExImg, Header, PhotoPicker, SecStepper, Segmented, exPhoto } from "../ui/kit.jsx";
@@ -12,7 +12,7 @@ import { StretchPicker } from "./StretchPicker.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
 // inRun: opened over the player (its settings): no start / delete; onAppSettings opens the app's settings
-export function StretchEditor({ stretch, upStretch, id, back, open, inRun = false, onAppSettings }) {
+export function StretchEditor({ stretch, upStretch, id, back, play, inRun = false, onAppSettings }) {
   const [picker, setPicker] = useState(false);
   const [openItem, setOpenItem] = useState(null);
   const [timerOpen, setTimerOpen] = useState(false);
@@ -103,8 +103,8 @@ export function StretchEditor({ stretch, upStretch, id, back, open, inRun = fals
         <Button block onClick={back} className="mt-6">Продолжить растяжку</Button>
         {onAppSettings && <Button variant="quiet" block onClick={onAppSettings} className="mt-2">Общие настройки: звук и другое</Button>}
       </> : <>
-        <Button block disabled={!tl.length} onClick={() => open({ type: "stretchPlay", id })} className="mt-6">
-          Начать{total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}
+        <Button block disabled={!tl.length} onClick={() => play(id)} className="mt-6">
+          {stretch.active && !stretch.active.done ? "Вернуться к растяжке" : `Начать${total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}`}
         </Button>
         <DeleteButton onConfirm={() => { upStretch((s) => S.removeProgram(s, id)); back(); }} confirmText="Удалить программу?">
           Удалить программу
@@ -137,6 +137,7 @@ function ItemPanel({ it, t, ex, change, upStretch }) {
           </div>
         );
       })}
+      <div className="mt-2 border-t border-neutral-800 pt-2 text-[11px] text-neutral-500">Сама растяжка — меняется во всех программах</div>
       <div className="mt-1 text-xs text-neutral-400">Группа мышц</div>
       <div className="flex flex-wrap gap-1.5">
         {ST_AREAS.map((ar) => (
@@ -146,10 +147,13 @@ function ItemPanel({ it, t, ex, change, upStretch }) {
       </div>
       <div className="mt-1 text-xs text-neutral-400">Фото</div>
       <PhotoPicker ex={ex} onChange={(v) => updateEx({ photo: v || undefined })} />
-      <button onClick={() => updateEx({ sides: !ex.sides })}
-        className={`mt-1 rounded-full px-3 py-1 text-xs ${ex.sides ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
-        на обе стороны: {ex.sides ? "да" : "нет"}
-      </button>
+      {/* one side or two is what a stretch is: fixed for built-in ones, the user's own say it themselves */}
+      {!isBuiltInStretch(ex.id) && (
+        <button onClick={() => updateEx({ sides: !ex.sides })}
+          className={`mt-1 rounded-full px-3 py-1 text-xs ${ex.sides ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
+          на обе стороны: {ex.sides ? "да" : "нет"}
+        </button>
+      )}
     </div>
   );
 }

@@ -150,3 +150,20 @@ export function useFlick(onFlick) {
     onClickCapture: guard.onClickCapture,
   };
 }
+
+// A pull down over a whole screen (to fold it away): onDown once the finger went down far enough, mostly straight.
+// Starts only from a touch on the screen itself or text, not on a button.
+export function usePullDown(onDown) {
+  const st = useRef(null);
+  return {
+    onPointerDown: (e) => { st.current = e.target.closest && e.target.closest("button, input") ? null : { x: e.clientX, y: e.clientY }; },
+    onPointerUp: (e) => {
+      const s = st.current;
+      st.current = null;
+      if (!s) return;
+      const dy = e.clientY - s.y, dx = Math.abs(e.clientX - s.x);
+      if (dy > 90 && dy > dx * 2) onDown();
+    },
+    onPointerCancel: () => { st.current = null; },
+  };
+}

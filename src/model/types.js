@@ -87,6 +87,21 @@
  * @property {StretchProgram[]} programs
  * @property {StretchSession[]} sessions
  * @property {StretchTiming} defaults    copied into new programs
+ * @property {StretchRun} [active]       the run going on (or just finished, until closed)
+ */
+
+/**
+ * @typedef {object} StretchRun  a run of a program; its timeline is the program now plus extraRounds
+ * @property {string} programId
+ * @property {number} startedAt
+ * @property {number} extraRounds        rounds added in this run
+ * @property {Record<string, number>} held  seconds held so far per stretch, one side
+ * @property {{ k: string, exId: string|null, side: string|null, nth: number }} at  the phase it is in
+ * @property {number} dur                that phase's length, s (an edit of it moves `end`)
+ * @property {number} end                when that phase ends, ms
+ * @property {number|null} pausedLeft    paused: ms left of the phase
+ * @property {boolean} [done]            ran to the end (already in sessions); finishedAt then
+ * @property {number} [finishedAt]
  */
 
 /** @typedef {{ id: string, name: string, ru?: string, sides: boolean, area?: string, photo?: string }} StretchExercise  sides: done on both sides */

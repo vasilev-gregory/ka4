@@ -8,7 +8,7 @@ import "./index.css";
 protectStorage();
 
 // When a freshly deployed service worker takes over, reload once so the new version shows
-// on the first relaunch. All state (including a running workout) is saved on the device
+// on the first relaunch. All state (including a running workout or stretch) is saved on the device
 // (IndexedDB + localStorage) and flushed when the page hides, so the reload loses nothing.
 if ("serviceWorker" in navigator) {
   let reloaded = false;

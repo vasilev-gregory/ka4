@@ -1,116 +1,97 @@
-// Interval player for a stretching program: big countdown, what's now / next, ±5 s (saved in the
-// program), + round (this run only), pause / back / skip, the program's own settings over the player (edits
-// apply to the run going on), results at the end.
-import { useState, useEffect, useEffectEvent, useRef } from "react";
-import { X, ChevronLeft, Settings } from "lucide-react";
+// The stretching run on the whole screen: big countdown, what's now / next and what it stretches (a small body
+// map), ±5 s (saved in the program), + round (this run only), pause / back / skip, the program's settings over
+// the player, results at the end. A pull down (or the chevron) folds it away; the run itself lives in the data
+// (model/stretchRunActions) and its clock in StretchRun.
+import { useState } from "react";
+import { X, ChevronLeft, ChevronDown, Settings } from "lucide-react";
 import { fmtDur, progTitle, weekStartOf } from "../core/util.js";
-import { PHASE, areaOf, buildTimeline, stExMap, stTiming, stretchWeek } from "../model/stretch.js";
-import { findProgram, recordSession, savePhaseLength } from "../model/stretchActions.js";
+import { AREA_PARTS, PHASE, areaOf, stExMap, stretchWeek } from "../model/stretch.js";
+import { QUICK, findProgram } from "../model/stretchActions.js";
+import { BodyMap } from "../ui/BodyMap.jsx";
 import { Button, ExImg, exPhoto } from "../ui/kit.jsx";
-import { useWakeLock } from "../ui/useWakeLock.js";
+import { usePullDown } from "../ui/gestures.js";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 import { StretchEditor } from "./StretchEditor.jsx";
-import { useStretchRun } from "./useStretchRun.js";
 
-export function StretchPlayer({ stretch, upStretch, sound, id, back, settings }) {
-  const p = findProgram(stretch, id);
-  const exMap = stExMap(stretch);
+// run: runState(); act: { skip, back, pause, adjust(delta), addRound, close, keep (a quick run as a program), fold }
+export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
   const [overlay, setOverlay] = useState(null); // "program" | "app"
-  const [extraRounds, setExtraRounds] = useState(0);
-  const saved = useRef(false);
-  useWakeLock();
-
-  // a run is recorded once: when it ends, or when left early after at least a minute
-  const save = (complete, { work, startedAt, finishedAt }) => {
-    if (saved.current) return;
-    saved.current = true;
-    if (!complete && finishedAt - startedAt < 60e3) return;
-    upStretch((s) => recordSession(s, p, { programId: id, startedAt, finishedAt, complete, work }));
-  };
-  const run = useStretchRun(p ? buildTimeline(p, exMap) : [], { sound, onFinish: (r) => save(true, r) });
-  const { tl, st, left, phase: ph } = run;
-  // however the player is left (✕, system back, tab switch), an unfinished run is saved
-  const onLeave = useEffectEvent(() => { if (!run.st.done) save(false, run.stop()); });
-  useEffect(() => () => onLeave(), []);
-
-  const adjust = (delta) => {
-    if (!ph) return;
-    const seconds = Math.max(5, ph.dur + delta);
-    if (seconds === ph.dur) return;
-    upStretch((s) => { const pp = findProgram(s, id); if (pp) savePhaseLength(pp, ph, seconds); });
-    run.setPhaseLength(seconds);
-  };
-  // one more full round at the end, for this run only
-  const extraRound = () => {
-    const T = stTiming(p);
-    return [...(T.roundRest > 0 ? [{ k: "roundRest", dur: T.roundRest }] : []), ...buildTimeline({ ...p, timing: { ...T, rounds: 1, mode: "circuit" } }, exMap)];
-  };
-  const addRound = () => {
-    if (!p) return;
-    run.extend(extraRound());
-    setExtraRounds((n) => n + 1);
-  };
-  // leaving the program's settings: the run goes on in the edited program (with the rounds added in this run)
-  const closeProgram = () => {
-    setOverlay(null);
-    if (p) run.replace([...buildTimeline(p, exMap), ...Array.from({ length: extraRounds }, extraRound).flat()]);
-  };
+  const pull = usePullDown(act.fold);
+  const { a, tl, idx, phase: ph, left } = run;
+  const p = findProgram(stretch, a.programId);
+  const exMap = stExMap(stretch);
 
   // during rest the screen is about what's coming, not what just ended
   const resting = ph && (ph.k === "rest" || ph.k === "roundRest");
-  const shownIdx = resting ? tl.findIndex((x, i) => i > st.idx && x.ex) : st.idx;
+  const shownIdx = resting ? tl.findIndex((x, i) => i > idx && x.ex) : idx;
   const shownEx = shownIdx >= 0 && tl[shownIdx] ? tl[shownIdx].ex : null;
-  const next = shownEx ? tl.slice(Math.max(shownIdx, st.idx) + 1).find((x) => x.ex && x.ex !== shownEx) : null;
+  const next = shownEx ? tl.slice(Math.max(shownIdx, idx) + 1).find((x) => x.ex && x.ex.id !== shownEx.id) : null;
   const pct = ph ? Math.max(0, Math.min(100, 100 - (left / (ph.dur * 1000)) * 100)) : 100;
   const isWork = ph && ph.k === "work";
+  const parts = shownEx ? AREA_PARTS[areaOf(shownEx)] || [] : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <div className="fixed inset-0 z-50 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }} {...pull}>
       {overlay && (
         <div className="fixed inset-0 z-60 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
           <div className="mx-auto max-w-md">
             {overlay === "app" ? settings(() => setOverlay("program"))
-              : <StretchEditor stretch={stretch} upStretch={upStretch} id={id} back={closeProgram} inRun onAppSettings={settings && (() => setOverlay("app"))} />}
+              : <StretchEditor stretch={stretch} upStretch={upStretch} id={a.programId} back={() => setOverlay(null)} inRun onAppSettings={settings && (() => setOverlay("app"))} />}
           </div>
         </div>
       )}
       <div className="flex items-center justify-between p-4">
-        <div className="min-w-0">
-          <div className="truncate text-sm text-neutral-400">{progTitle(p, "Растяжка")}</div>
-          {!st.done && <div className="text-xs text-neutral-600">{st.idx + 1} / {tl.length}</div>}
+        <div className="flex min-w-0 items-center gap-1">
+          <button onClick={act.fold} className="-ml-2 p-2 text-neutral-400" aria-label="Свернуть"><ChevronDown size={24} /></button>
+          <div className="min-w-0">
+            <div className="truncate text-sm text-neutral-400">{progTitle(p || {}, "Растяжка")}</div>
+            {!a.done && <div className="text-xs text-neutral-600">{idx + 1} / {tl.length}</div>}
+          </div>
         </div>
         <div className="flex items-center gap-1">
-          {!st.done && <button onClick={addRound} className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-300">+ круг</button>}
-          <button onClick={() => setOverlay("program")} className="p-2 text-neutral-400" aria-label="Настройки"><Settings size={22} /></button>
-          <button onClick={back} className="p-2 text-neutral-400" aria-label="Закрыть"><X size={24} /></button>
+          {!a.done && <button onClick={act.addRound} className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-300">+ круг</button>}
+          {!a.done && p && <button onClick={() => setOverlay("program")} className="p-2 text-neutral-400" aria-label="Настройки"><Settings size={22} /></button>}
+          <button onClick={act.close} className="p-2 text-neutral-400" aria-label="Закрыть"><X size={24} /></button>
         </div>
       </div>
 
-      {st.done ? (
+      {a.done ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-4 overflow-y-auto p-6 text-center">
           <div className="text-3xl font-bold text-accent-300">Готово</div>
-          <div className="text-neutral-400">{fmtDur(st.finishedAt - st.startedAt)}</div>
+          <div className="text-neutral-400">{fmtDur(a.finishedAt - a.startedAt)}</div>
           <div className="w-full max-w-md text-left">
-            <RunWeek stretch={stretch} exMap={exMap} ws={weekStartOf(st.finishedAt)} only={[...new Set(tl.filter((x) => x.ex).map((x) => areaOf(x.ex)))]} />
+            <RunWeek stretch={stretch} exMap={exMap} ws={weekStartOf(a.finishedAt)} only={[...new Set(tl.filter((x) => x.ex).map((x) => areaOf(x.ex)))]} />
           </div>
-          <Button onClick={back} className="mt-2 px-8">Закрыть</Button>
+          {a.programId === QUICK && !a.savedAs && (
+            <Button variant="quiet" onClick={act.keep} className="px-6">Сохранить как программу</Button>
+          )}
+          {a.savedAs && <div className="text-sm text-accent-300">Сохранено в программах</div>}
+          <Button onClick={act.close} className="mt-2 px-8">Закрыть</Button>
         </div>
-      ) : (
+      ) : ph && (
         <>
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
             <div className={`mb-3 rounded-full px-4 py-1 text-sm font-semibold ${isWork ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
               {PHASE[ph.k]}
             </div>
             {resting && shownEx && <div className="mb-1 text-sm text-neutral-500">Следующая</div>}
-            {shownEx && exPhoto(shownEx) && <ExImg ex={shownEx} size={140} />}
+            <div className="flex items-center gap-3">
+              {shownEx && exPhoto(shownEx) && <ExImg ex={shownEx} size={140} />}
+              {parts.length > 0 && (
+                <div className="flex flex-col items-center">
+                  <BodyMap parts={parts} fill={Object.fromEntries(parts.map((m) => [m, 1]))} color="fill-accent-400" small title="Что тянется" />
+                  <div className="mt-1 text-[11px] text-accent-300">{areaOf(shownEx)}</div>
+                </div>
+              )}
+            </div>
             {shownEx && <div className="mt-2 text-2xl font-bold">{shownEx.ru || shownEx.name}</div>}
             {ph.side && <div className="mt-1 text-base text-accent-300">{ph.side}</div>}
             <div className="mt-6 flex items-center gap-4">
-              <button onClick={() => adjust(-5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">−5</button>
+              <button onClick={() => act.adjust(-5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">−5</button>
               <div className={`text-8xl font-bold tabular-nums ${isWork ? "text-accent-300" : "text-neutral-200"}`}>
                 {fmtDur(Math.max(0, left) + 999)}
               </div>
-              <button onClick={() => adjust(5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">+5</button>
+              <button onClick={() => act.adjust(5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">+5</button>
             </div>
             <div className="mt-1 text-[11px] text-neutral-600">
               {ph.k === "roundRest" ? "±5 — отдых между кругами в программе" : `±5 — ${PHASE[ph.k].toLowerCase()} для этой растяжки, сохранится в программе`}
@@ -119,14 +100,18 @@ export function StretchPlayer({ stretch, upStretch, sound, id, back, settings })
               <div className={`h-full ${isWork ? "bg-accent-400" : "bg-neutral-500"}`} style={{ width: `${pct}%`, transition: "width 200ms linear" }} />
             </div>
             {next && next.ex && <div className="mt-4 text-sm text-neutral-500">Дальше: {next.ex.ru || next.ex.name}</div>}
+            <div className="mt-3 text-[11px] text-neutral-700">Потяни вниз — свернуть</div>
           </div>
           <div className="flex items-center justify-center gap-6 p-6">
-            <button onClick={() => run.go(st.idx - 1)} className="rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Назад"><ChevronLeft size={28} /></button>
-            <button onClick={run.togglePause} className="rounded-full bg-accent-400 px-8 py-5 text-lg font-semibold text-black">
-              {st.pausedLeft != null ? "Продолжить" : "Пауза"}
+            <button onClick={act.back} className="rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Назад"><ChevronLeft size={28} /></button>
+            <button onClick={act.pause} className="rounded-full bg-accent-400 px-8 py-5 text-lg font-semibold text-black">
+              {a.pausedLeft != null ? "Продолжить" : "Пауза"}
             </button>
-            <button onClick={() => run.go(st.idx + 1)} className="rotate-180 rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Пропустить"><ChevronLeft size={28} /></button>
+            <button onClick={act.skip} className="rotate-180 rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Пропустить"><ChevronLeft size={28} /></button>
           </div>
+          {a.pausedLeft != null && (
+            <button onClick={act.close} className="-mt-3 pb-5 text-sm text-neutral-400">Закончить растяжку — сохранится то, что успел</button>
+          )}
         </>
       )}
     </div>
@@ -144,6 +129,27 @@ function RunWeek({ stretch, exMap, ws, only }) {
         <div className="text-xs text-neutral-400">дней с растяжкой: {days} из 5</div>
       </div>
       <StretchBreakdown areas={areas} only={only} week exMap={exMap} byNote="за неделю" />
+    </div>
+  );
+}
+
+// The folded run: a strip above the tab bar with the phase, the countdown and pause; a tap opens the player.
+export function StretchMiniBar({ run, act }) {
+  const { a, phase: ph, left } = run;
+  const ex = ph && ph.ex;
+  return (
+    <div className="above-nav fixed inset-x-0 z-40 px-3">
+      <div className="mx-auto flex max-w-md items-center gap-2 rounded-2xl bg-neutral-100 p-2 pl-3 text-neutral-900 shadow-lg">
+        <button onClick={act.unfold} className="min-w-0 flex-1 text-left" aria-label="Развернуть растяжку">
+          <div className="truncate text-xs text-neutral-600">{a.done ? "Растяжка закончена" : `${ph ? PHASE[ph.k] : ""}${ex ? ` · ${ex.ru || ex.name}` : ""}`}</div>
+          <div className="text-xl font-bold tabular-nums">{a.done ? "Готово" : fmtDur(Math.max(0, left) + 999)}</div>
+        </button>
+        {!a.done && (
+          <button onClick={act.pause} className="rounded-lg bg-accent-400 px-3 py-2 text-sm font-semibold text-black">
+            {a.pausedLeft != null ? "Продолжить" : "Пауза"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
