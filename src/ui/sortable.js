@@ -1,7 +1,8 @@
 // Drag to reorder (hold the grip and pull), robust to iOS scroll stealing.
+import { vibrate } from "../core/sound.js";
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 
-export function moveItem(xs, from, to) { const [x] = xs.splice(from, 1); xs.splice(to, 0, x); }
+export { moveItem } from "../core/util.js";
 
 // iOS WebKit can start a page scroll on a drag handle and then cancel our pointer stream.
 // Block scrolling from handles (and everywhere while a drag is active) with non-passive listeners.
@@ -94,7 +95,7 @@ export function useSortable(onMove) {
       window.addEventListener("pointerup", upH);
       window.addEventListener("pointercancel", upH);
       setDrag({ from: i, to: i, dy: 0 });
-      try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+      vibrate(15);
     },
   });
 

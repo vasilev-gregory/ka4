@@ -2,7 +2,11 @@
 
 Personal workout tracker, a PWA (React 19, Vite 8, Tailwind 4, immer). All data stays on the device.
 
-Read first: `SPEC.md` — requirements, data invariants, architecture and **conventions** (section «Конвенции»).
+Read first: `ARCHITECTURE.md` — **who owns what**: for every task the one function / component / file that does it.
+Find your task there and do it in that place; if it's missing, add the row first. Strength and stretching share every
+block they both have (one component in `src/ui/`, each section passes its data) — a behaviour in one and not the other is a bug.
+
+Then `SPEC.md` — requirements, data invariants, architecture and **conventions** (section «Конвенции»).
 `README.md` — development rules. `src/model/types.js` — the saved data shape.
 
 ## Commands

@@ -49,3 +49,6 @@ export const fmtNum = (v) => String(Math.round(v * 10) / 10).replace(".", ",");
 
 // Programs start without a name; wherever a name is shown, an empty one reads as this.
 export const progTitle = (p, fallback = "Без названия") => ((p && p.name && p.name.trim()) || fallback);
+
+// moves one element of an array to another position, in place (lists the user reorders)
+export function moveItem(xs, from, to) { const [x] = xs.splice(from, 1); xs.splice(to, 0, x); }

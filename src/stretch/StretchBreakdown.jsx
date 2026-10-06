@@ -1,7 +1,8 @@
 // Minutes of stretching per muscle area on the shared load breakdown (ui/LoadBreakdown): the stretching scale
 // (5 min a week gives an effect, 10 is the most that still adds), filled in the mode's accent, and the stretches
 // behind an area. Used by the history, the finished run and the program editor.
-import { fmtDur } from "../core/util.js";
+import { useApp } from "../ui/kit.jsx";
+import { fmtDur, fmtNum, plural } from "../core/util.js";
 import { ST_AREAS, ST_WEEK_MAX, ST_WEEK_MIN } from "../model/catalog.js";
 import { AREA_PARTS, NO_AREA, stretchHint, stretchVerdict } from "../model/stretch.js";
 import { ByList, LoadBreakdown } from "../ui/LoadBreakdown.jsx";
@@ -15,11 +16,13 @@ const SCALE = {
 const SINGLE = { ...SCALE, legend: [[0, "0"], [ST_WEEK_MAX, "10 мин — максимум недели"]] };
 
 const fmtSec = (sec) => fmtDur(Math.round(sec) * 1000);
-const fmtDays = (n) => (n ? ` · ${String(n).replace(".", ",")} дн.` : "");
+// how often a week: like strength, "N раз(а)"
+const fmtDays = (n) => (n ? ` · ${fmtNum(n)} ${Number.isInteger(n) ? plural(n, "раз", "раза", "раз") : "раза"}` : "");
 
 // areas: { area: { sec, freq?, by } }; single: one run / program (no verdicts); week: a line under an area saying
 // what the week still needs; exMap, byNote: the stretches behind a picked area
 export function StretchBreakdown({ areas, map = true, only, single = false, week = false, exMap, byNote }) {
+  const { nm1 } = useApp();
   const items = [...ST_AREAS, ...Object.keys(areas).filter((a) => !ST_AREAS.includes(a) && a !== NO_AREA), NO_AREA]
     .map((a) => ({ id: a, name: a, parts: AREA_PARTS[a] || [] }));
   const load = Object.fromEntries(Object.entries(areas).map(([a, l]) => [a, {
@@ -27,7 +30,7 @@ export function StretchBreakdown({ areas, map = true, only, single = false, week
   }]));
   const expand = exMap && ((a) => (
     <ByList title={`Растяжки${byNote ? ` ${byNote}` : ""}`} entries={Object.entries(areas[a].by).map(([id, sec]) => ({
-      id, value: sec, text: fmtSec(sec), name: exMap[id] ? exMap[id].ru || exMap[id].name : "Удалённая растяжка",
+      id, value: sec, text: fmtSec(sec), name: nm1(exMap[id], "Удалённая растяжка"),
     }))} />
   ));
   return <LoadBreakdown items={items} load={load} scale={single ? SINGLE : SCALE} map={map} only={only}

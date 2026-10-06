@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { beep, unlockAudio } from "../core/sound.js";
 import { fmtDur, fmtNum, num, numericInput } from "../core/util.js";
 import { ST_DEFAULTS, ST_FIELDS } from "../model/catalog.js";
+import { setCountdown } from "../model/workoutActions.js";
 import { Card, Header, SecStepper, Segmented, Stepper, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
 import { BackupSection } from "./BackupSection.jsx";
 import { ColumnsSettings } from "./ColumnsSettings.jsx";
@@ -72,7 +73,7 @@ function StrengthSettings({ data, up }) {
       <BodyWeight data={data} up={up} />
       <SwitchRow title="Обратный отсчёт после подхода" hint="Отсчёт внизу экрана. Секундомер в кнопке ✓ — колонка «Отдых» ниже"
         on={countdown} className="mb-3"
-        onClick={() => up((d) => { d.settings.countdown = d.settings.countdown === false; if (d.active && d.settings.countdown === false) d.active.restEndsAt = null; })} />
+        onClick={() => up((d) => setCountdown(d, d.settings.countdown === false))} />
       <Card className={`mb-2 flex items-center justify-between ${countdown ? "" : "opacity-40"}`}>
         <div><div className="font-semibold">Отдых между подходами</div><div className="text-xs text-neutral-400">Для обратного отсчёта</div></div>
         <Stepper value={s.restSec} step={15} min={15} fmt={(v) => fmtDur(v * 1000)} onChange={(v) => up((d) => { d.settings.restSec = v; })} />

@@ -128,3 +128,49 @@ test("a removed exercise comes back where it was", () => {
   A.restoreExercise(d, 0, removed);
   assert.deepEqual(d.active.exercises.map((e) => e.exerciseId), ["squat", "dips"]);
 });
+
+test("finishing a workout: only done sets, at the given time, into history; program updated only when asked", () => {
+  const d = seed();
+  const p = d.programs[0];
+  A.startWorkout(d, p, 1000);
+  d.active.exercises[0].sets[0].done = true;
+  d.active.exercises[0].sets.push({ w: "", r: "", p: "", done: false });
+  const before = p.items.length;
+  A.addExercises(d, [d.exercises.find((e) => e.id === "barbell-curl")], 1500);
+  const id = A.finishWorkout(d, false, 5000);
+  const w = d.workouts.find((x) => x.id === id);
+  assert.equal(d.active, null);
+  assert.equal(w.finishedAt, 5000);
+  assert.ok(w.exercises.every((e) => e.sets.every((s) => s.done)));
+  assert.equal(p.items.length, before); // not asked: the program stays
+});
+
+test("programs: create, items added with their kind's plan, replaced keeping sets within a kind, removed", () => {
+  const d = seed();
+  const exMap = Object.fromEntries(d.exercises.map((e) => [e.id, e]));
+  A.createProgram(d, "p1");
+  const p = d.programs.find((x) => x.id === "p1");
+  A.addProgramItems(p, [exMap.squat, exMap.elliptical]);
+  assert.equal(p.items[1].min, 20);
+  p.items[0].sets = 5;
+  A.replaceProgramItem(p, 0, exMap["leg-press"], exMap);
+  assert.deepEqual(p.items[0], { exerciseId: "leg-press", sets: 5 }); // the same kind keeps its sets
+  A.replaceProgramItem(p, 1, exMap.squat, exMap);
+  assert.equal(p.items[1].min, undefined); // cardio -> strength starts from the defaults
+  A.removeProgram(d, "p1");
+  assert.equal(d.programs.some((x) => x.id === "p1"), false);
+});
+
+test("turning the countdown off drops the one going on; workouts and the running one can be removed", () => {
+  const d = seed();
+  A.startWorkout(d, null, 1000);
+  d.active.restEndsAt = 5000;
+  A.setCountdown(d, false);
+  assert.equal(d.active.restEndsAt, null);
+  assert.equal(d.settings.countdown, false);
+  A.discardWorkout(d);
+  assert.equal(d.active, null);
+  d.workouts = [{ id: "a" }, { id: "b" }];
+  A.removeWorkout(d, "a");
+  assert.deepEqual(d.workouts.map((w) => w.id), ["b"]);
+});

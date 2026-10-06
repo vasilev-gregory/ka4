@@ -8,13 +8,14 @@ import { fmtDur, progTitle, weekStartOf } from "../core/util.js";
 import { AREA_PARTS, PHASE, areaOf, stExMap, stretchWeek } from "../model/stretch.js";
 import { QUICK, findProgram } from "../model/stretchActions.js";
 import { BodyMap } from "../ui/BodyMap.jsx";
-import { Button, ConfirmButton, ExImg, exPhoto } from "../ui/kit.jsx";
+import { Button, ConfirmButton, ExImg, FloatingBar, ProgressBar, exPhoto, useApp } from "../ui/kit.jsx";
 import { usePullDown } from "../ui/gestures.js";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 import { StretchEditor } from "./StretchEditor.jsx";
 
 // run: runState(); act: { skip, back, pause, adjust(delta), addRound, close, discard, keep (a quick run as a program), fold }
 export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
+  const { nm1 } = useApp();
   const [overlay, setOverlay] = useState(null); // "program" | "app"
   const pull = usePullDown(act.fold);
   const { a, tl, idx, phase: ph, left } = run;
@@ -84,7 +85,7 @@ export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
                 </div>
               )}
             </div>
-            {shownEx && <div className="mt-2 text-2xl font-bold">{shownEx.ru || shownEx.name}</div>}
+            {shownEx && <div className="mt-2 text-2xl font-bold">{nm1(shownEx)}</div>}
             {ph.side && <div className="mt-1 text-base text-accent-300">{ph.side}</div>}
             <div className="mt-6 flex items-center gap-4">
               <button onClick={() => act.adjust(-5)} className="rounded-full bg-neutral-900 px-3 py-2 text-sm font-semibold tabular-nums text-neutral-300">−5</button>
@@ -96,10 +97,8 @@ export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
             <div className="mt-1 text-[11px] text-neutral-600">
               {ph.k === "roundRest" ? "±5 — отдых между кругами в программе" : `±5 — ${PHASE[ph.k].toLowerCase()} для этой растяжки, сохранится в программе`}
             </div>
-            <div className="mt-6 h-2 w-full max-w-sm overflow-hidden rounded-full bg-neutral-800">
-              <div className={`h-full ${isWork ? "bg-accent-400" : "bg-neutral-500"}`} style={{ width: `${pct}%`, transition: "width 200ms linear" }} />
-            </div>
-            {next && next.ex && <div className="mt-4 text-sm text-neutral-500">Дальше: {next.ex.ru || next.ex.name}</div>}
+            <div className="mt-6 w-full max-w-sm"><ProgressBar pct={pct} barClassName={isWork ? "bg-accent-400" : "bg-neutral-500"} /></div>
+            {next && next.ex && <div className="mt-4 text-sm text-neutral-500">Дальше: {nm1(next.ex)}</div>}
             <div className="mt-3 text-[11px] text-neutral-700">Потяни вниз — свернуть</div>
           </div>
           <div className="flex items-center justify-center gap-6 p-6">
@@ -139,21 +138,16 @@ function RunWeek({ stretch, exMap, ws, only }) {
 
 // The folded run: a strip above the tab bar with the phase, the countdown and pause; a tap opens the player.
 export function StretchMiniBar({ run, act }) {
+  const { nm1 } = useApp();
   const { a, phase: ph, left } = run;
   const ex = ph && ph.ex;
   return (
-    <div className="above-nav fixed inset-x-0 z-40 px-3">
-      <div className="mx-auto flex max-w-md items-center gap-2 rounded-2xl bg-neutral-100 p-2 pl-3 text-neutral-900 shadow-lg">
-        <button onClick={act.unfold} className="min-w-0 flex-1 text-left" aria-label="Развернуть растяжку">
-          <div className="truncate text-xs text-neutral-600">{a.done ? "Растяжка закончена" : `${ph ? PHASE[ph.k] : ""}${ex ? ` · ${ex.ru || ex.name}` : ""}`}</div>
-          <div className="text-xl font-bold tabular-nums">{a.done ? "Готово" : fmtDur(Math.max(0, left) + 999)}</div>
-        </button>
-        {!a.done && (
-          <button onClick={act.pause} className="rounded-lg bg-accent-400 px-3 py-2 text-sm font-semibold text-black">
-            {a.pausedLeft != null ? "Продолжить" : "Пауза"}
-          </button>
-        )}
-      </div>
-    </div>
+    <FloatingBar>
+      <button onClick={act.unfold} className="min-w-0 flex-1 text-left" aria-label="Развернуть растяжку">
+        <div className="truncate text-xs text-neutral-600">{a.done ? "Растяжка закончена" : `${ph ? PHASE[ph.k] : ""}${ex ? ` · ${nm1(ex)}` : ""}`}</div>
+        <div className="text-xl font-bold tabular-nums">{a.done ? "Готово" : fmtDur(Math.max(0, left) + 999)}</div>
+      </button>
+      {!a.done && <Button size="xs" onClick={act.pause}>{a.pausedLeft != null ? "Продолжить" : "Пауза"}</Button>}
+    </FloatingBar>
   );
 }

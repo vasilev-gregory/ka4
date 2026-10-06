@@ -2,8 +2,8 @@
 // plan), replace, the muscles they plan for, start, delete. Saved as you go.
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { startWorkout } from "../model/workoutActions.js";
-import { CARDIO_PLAN, programItem } from "../model/workout.js";
+import { addProgramItems, removeProgram, replaceProgramItem, startWorkout } from "../model/workoutActions.js";
+import { CARDIO_PLAN } from "../model/workout.js";
 import { fmtNum } from "../core/util.js";
 import { Picker } from "./ExerciseList.jsx";
 import { ProgramMuscles } from "./ProgramMuscles.jsx";
@@ -19,14 +19,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
 
   const pick = (ex) => {
     const rep = picker.replace;
-    change((pp) => {
-      if (rep !== undefined) {
-        const old = pp.items[rep];
-        // the same kind keeps its sets; cardio <-> strength starts from the new kind's defaults
-        if (old) pp.items[rep] = (exMap[old.exerciseId]?.kind === "cardio") === (ex.kind === "cardio") ? { ...old, exerciseId: ex.id } : programItem(ex);
-      }
-      else pp.items.push(programItem(ex));
-    });
+    change((pp) => (rep !== undefined ? replaceProgramItem(pp, rep, ex, exMap) : addProgramItems(pp, [ex])));
     setPicker(false);
   };
 
@@ -54,13 +47,13 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
 
       <ProgramFooter canStart={!data.active && p.items.length > 0} startLabel={data.active ? "Уже идёт тренировка" : "Начать тренировку"}
         onStart={() => { up((d) => startWorkout(d, p)); goWorkout(); }}
-        onDelete={() => { up((d) => { d.programs = d.programs.filter((x) => x.id !== id); }); back(); }} />
+        onDelete={() => { up((d) => removeProgram(d, id)); back(); }} />
 
       {picker && (
-        <Picker data={data} up={up} onClose={() => setPicker(false)} onPick={pick}
+        <Picker data={data} up={up} onClose={() => setPicker(false)} onPick={pick} already={p.items.map((x) => x.exerciseId)}
           title={picker.replace !== undefined ? "Заменить упражнение" : undefined}
           onPickMany={picker.replace !== undefined ? undefined : (list) => {
-            change((pp) => { list.forEach((ex) => pp.items.push(programItem(ex))); });
+            change((pp) => addProgramItems(pp, list));
             setPicker(false);
           }} />
       )}

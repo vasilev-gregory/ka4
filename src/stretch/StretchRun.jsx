@@ -1,11 +1,13 @@
 // The stretching run going on (data.stretch.active), wherever the app is: its clock (phases run out, 3-2-1
 // clicks, a signal on each new phase, the screen kept on) and either the player or, folded, a strip above the
 // tab bar (system back folds it too). Always in the stretching colours, whatever the mode.
-import { useEffect, useEffectEvent, useRef } from "react";
-import { beep, blip, tick } from "../core/sound.js";
+import { useEffect, useEffectEvent } from "react";
+import { createPortal } from "react-dom";
+import { useBackCloses } from "../ui/navigation.js";
 import { addRunRound, adjustRunPhase, closeRun, discardRun, goToPhase, keepQuickProgram, runState, syncRun, tickRun, togglePauseRun } from "../model/stretchRunActions.js";
 import { useNow } from "../ui/kit.jsx";
 import { useWakeLock } from "../ui/useWakeLock.js";
+import { useCountdownSignals } from "../ui/useCountdownSignals.js";
 import { StretchMiniBar, StretchPlayer } from "./StretchPlayer.jsx";
 
 // open / setOpen: the player unfolded or folded (kept by the app, so a new run opens it)
@@ -26,37 +28,13 @@ function ActiveRun({ stretch, upStretch, sound, open, setOpen, settings }) {
   const advance = useEffectEvent(() => upStretch((s) => (due ? tickRun(s, Date.now()) : syncRun(s, Date.now()))));
   useEffect(() => { if (due || run.stale) advance(); }, [due, run.stale, now]);
 
-  // a signal on every new phase (a long one when work starts or the run ends), 3-2-1 clicks before the end
-  const phaseKey = a.done ? "done" : `${run.idx}:${a.end}`;
-  const first = useRef(true);
-  const onPhase = useEffectEvent(() => {
-    if (first.current) { first.current = false; return; } // not when the app reopens on a run
-    if (!sound) return;
-    if (a.done || (run.phase && run.phase.k === "work")) beep(); else blip();
-  });
-  useEffect(() => { onPhase(); }, [phaseKey]);
-  const ticked = useRef(new Set());
-  const sec = Math.ceil(run.left / 1000);
-  const onSecond = useEffectEvent(() => {
-    const k = `${phaseKey}:${sec}`;
-    if (!sound || !running || sec > 3 || sec < 1 || ticked.current.has(k)) return;
-    ticked.current.add(k);
-    tick();
-  });
-  useEffect(() => { onSecond(); }, [sec]);
+  // a signal on every new phase (the long one when work starts or the run ends), 3-2-1 clicks before its end
+  const work = a.done || (run.phase && run.phase.k === "work");
+  useCountdownSignals({ key: a.done ? "done" : a.entered, at: a.done ? a.finishedAt : a.end - a.dur * 1000, signal: work ? "beep" : "blip",
+    left: run.left, running, sound });
 
-  // the system back gesture folds the player (one history entry while it is unfolded), it never ends the run
-  const fold = useEffectEvent(() => setOpen(false));
-  useEffect(() => {
-    if (!open) return;
-    history.pushState({ ...history.state, overlay: true }, "");
-    const onPop = () => fold();
-    window.addEventListener("popstate", onPop);
-    return () => {
-      window.removeEventListener("popstate", onPop);
-      if (history.state && history.state.overlay) history.back(); // folded or closed from the screen: drop the entry
-    };
-  }, [open]);
+  // the system back gesture folds the player, it never ends the run
+  useBackCloses(() => setOpen(false), open);
 
   const act = {
     skip: () => upStretch((s) => goToPhase(s, run.idx + 1, Date.now())),
@@ -70,10 +48,7 @@ function ActiveRun({ stretch, upStretch, sound, open, setOpen, settings }) {
     fold: () => setOpen(false),
     unfold: () => setOpen(true),
   };
-  return (
-    <div className="mode-stretch">
-      {open ? <StretchPlayer stretch={stretch} upStretch={upStretch} run={run} act={act} settings={settings} />
-        : <StretchMiniBar run={run} act={act} />}
-    </div>
-  );
+  // the player covers everything, so it goes to the top of the page (not inside the strips' stack)
+  return open ? createPortal(<div className="mode-stretch"><StretchPlayer stretch={stretch} upStretch={upStretch} run={run} act={act} settings={settings} /></div>, document.body)
+    : <div className="mode-stretch"><StretchMiniBar run={run} act={act} /></div>;
 }

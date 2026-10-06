@@ -19,25 +19,32 @@ export function runTimeline(s, a = s.active) {
   if (!p) return [];
   const exMap = stExMap(s);
   const T = stTiming(p);
-  const round = [...(T.roundRest > 0 ? [{ k: "roundRest", dur: T.roundRest }] : []),
-    ...buildTimeline({ ...p, timing: { ...T, rounds: 1, mode: "circuit" } }, exMap)];
+  const one = buildTimeline({ ...p, timing: { ...T, rounds: 1, mode: "circuit" } }, exMap);
+  // after the rest between rounds the next stretch needs no intro (the rest shows it)
+  const round = T.roundRest > 0 ? [{ k: "roundRest", dur: T.roundRest }, ...one.filter((ph, i) => !(i === 0 && ph.k === "prep"))] : one;
   return [...buildTimeline(p, exMap), ...Array.from({ length: a.extraRounds || 0 }, () => round).flat()];
 }
 
-// a phase as the run remembers it: kind, stretch, side and which occurrence of that
+// a phase as the run remembers it: kind, stretch, side, which occurrence of that, and where it was (pos)
 export function refOf(tl, i) {
   const at = { k: tl[i].k, exId: exIdOf(tl[i]), side: tl[i].side || null };
-  return { ...at, nth: tl.slice(0, i).filter((x) => samePhase(x, at)).length };
+  return { ...at, nth: tl.slice(0, i).filter((x) => samePhase(x, at)).length, pos: i };
 }
 
-// where that phase is now: the same one, else the same step without the side (sides switched), else the same
-// stretch, else the start. exact: whether it is the very same step (its clock goes on)
+// of the phases matching, the one nearest to where the run was
+const nearest = (tl, ok, pos) => tl.reduce((best, x, i) => (ok(x) && (best < 0 || Math.abs(i - pos) < Math.abs(best - pos)) ? i : best), -1);
+
+// Where that phase is now: the same one (its n-th occurrence), else the same step without the side (sides switched),
+// else the same stretch, nearest to where the run was; a stretch removed: what is now in its place.
+// exact: the very same step (its clock goes on).
 function locate(tl, at) {
+  const pos = at.pos ?? 0;
   let seen = 0;
   let i = tl.findIndex((x) => samePhase(x, at) && seen++ === at.nth);
-  if (i < 0) i = tl.findIndex((x) => sameStep(x, at));
+  if (i < 0) i = nearest(tl, (x) => sameStep(x, at), pos);
   const exact = i >= 0;
-  if (i < 0 && at.exId) i = tl.findIndex((x) => exIdOf(x) === at.exId);
+  if (i < 0 && at.exId) i = nearest(tl, (x) => exIdOf(x) === at.exId, pos);
+  if (i < 0) i = Math.min(pos, tl.length - 1);
   return { i: Math.max(0, i), exact };
 }
 
@@ -59,6 +66,7 @@ function credit(a, ph, sec) {
 
 function record(s, complete, at) {
   const a = s.active;
+  if (!Object.keys(a.held).length) return; // nothing held (all skipped): not history
   if (!complete && at - a.startedAt < 60e3) return; // a run left within a minute isn't history
   recordSession(s, findProgram(s, a.programId) || {}, { programId: a.programId, startedAt: a.startedAt, finishedAt: at, complete, work: { ...a.held } });
 }
@@ -76,6 +84,7 @@ function enter(s, tl, i, start) {
   a.dur = tl[i].dur;
   a.end = start + tl[i].dur * 1000;
   a.pausedLeft = null;
+  a.entered = (a.entered || 0) + 1; // a new phase (its signal), even the same one again
 }
 
 // Starts a program, unless a run is going on (then that one stays); a finished run is closed first.
@@ -119,7 +128,12 @@ export function syncRun(s, now) {
   const tl = runTimeline(s);
   if (!tl.length) { closeRun(s, now); return; }
   const { i, exact } = locate(tl, a.at);
-  if (!exact) { enter(s, tl, i, now); return; }
+  if (!exact) { // another step now: it starts afresh, and a paused run stays paused
+    const paused = a.pausedLeft != null;
+    enter(s, tl, i, now);
+    if (paused) a.pausedLeft = a.dur * 1000;
+    return;
+  }
   const dd = (tl[i].dur - a.dur) * 1000;
   if (a.pausedLeft != null) a.pausedLeft = Math.max(0, a.pausedLeft + dd); else a.end += dd;
   a.dur = tl[i].dur;

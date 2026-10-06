@@ -1,18 +1,16 @@
 // One stretching run from the history: its numbers, the areas it stretched (this run / its week) and the stretches
 // with the time held; it can be deleted. Built from the same pieces as a strength workout's card (ui/Session).
-import { fmtDur, weekStartOf } from "../core/util.js";
+import { fmtDur, plural, weekStartOf } from "../core/util.js";
 import { heldTotal, sessionAreas, stExMap, stretchWeek } from "../model/stretch.js";
 import { removeSession } from "../model/stretchActions.js";
-import { DeleteButton, ExImg, Header, exPhoto } from "../ui/kit.jsx";
+import { DeleteButton, ExImg, Header, exPhoto, useApp } from "../ui/kit.jsx";
 import { SessionHeader, StatTiles, ViewsCard } from "../ui/Session.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
 const VIEWS = [["run", "Растяжка"], ["week", "Неделя"]];
 
-// what the history list says about a run
-export const sessionSummary = (x) => `${fmtDur(x.finishedAt - x.startedAt)}, удержание ${fmtDur(heldTotal(x) * 1000)}${x.complete ? "" : ", не до конца"}`;
-
 export function StretchSession({ stretch, upStretch, id, back }) {
+  const { nm1 } = useApp();
   const x = stretch.sessions.find((y) => y.id === id);
   if (!x) return <div className="p-4"><Header title="Растяжка удалена" back={back} /></div>;
   const exMap = stExMap(stretch);
@@ -24,7 +22,7 @@ export function StretchSession({ stretch, upStretch, id, back }) {
       <StatTiles tiles={[
         [fmtDur(x.finishedAt - x.startedAt), x.complete ? "время" : "время, не до конца"],
         [fmtDur(heldTotal(x) * 1000), "удержание, на сторону"],
-        [held.length, "растяжек"],
+        [held.length, plural(held.length, "растяжка", "растяжки", "растяжек")],
       ]} />
       {held.length > 0 && (
         <ViewsCard title="Мышцы" views={VIEWS} className="-mt-3 mb-5">
@@ -39,7 +37,7 @@ export function StretchSession({ stretch, upStretch, id, back }) {
             <div key={exId} className="flex items-center gap-3 rounded-xl bg-neutral-900 p-3">
               {ex && exPhoto(ex) && <ExImg ex={ex} />}
               <div className="min-w-0 flex-1">
-                <div className="font-semibold">{ex ? ex.ru || ex.name : "Удалённая растяжка"}</div>
+                <div className="font-semibold">{nm1(ex, "Удалённая растяжка")}</div>
                 <div className="text-xs text-neutral-400">{ex && ex.area ? `${ex.area} · ` : ""}удержание {fmtDur(sec * 1000)}{ex && ex.sides ? " на сторону" : ""}</div>
               </div>
             </div>

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { produce, setAutoFreeze } from "immer";
 import { storage } from "../storage.js";
 import { KEY, migrate, seed } from "./state.js";
-import { closeStaleWorkout } from "./workout.js";
+import { closeStaleWorkout } from "./workoutActions.js";
 
 // State objects also go through plain code (migrate, structuredClone, editors' drafts); keep them mutable.
 setAutoFreeze(false);

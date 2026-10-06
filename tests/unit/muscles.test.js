@@ -40,6 +40,12 @@ test("rules: the right heads and parts of the legs", () => {
   assert.deepEqual(own("Пуловер на блоке", "спина"), { lats: 1 });
   assert.deepEqual(own("Болгарские выпады", "ноги"), { quads: 1, glutes: 1 });
   assert.deepEqual(own("Сгибания ног лёжа", "ноги"), { hams: 1 });
+  // no false matches: an incline bench press among the shoulders, a decline one, french press, sumo squat
+  assert.deepEqual(own("Жим гантелей на наклонной скамье", "плечи"), { frontdelt: 1, sidedelt: 0.5, triceps: 0.5 });
+  assert.deepEqual(own("Жим лёжа с обратным наклоном", "грудь"), { chest: 1, frontdelt: 0.5, triceps: 0.5 });
+  assert.deepEqual(own("Французский жим", "трицепс"), { triceps: 1 });
+  assert.deepEqual(own("Приседания сумо", "ноги"), { quads: 1, glutes: 0.5 });
+  assert.deepEqual(own("Становая тяга сумо", "ноги"), { glutes: 1, hams: 1, quads: 0.5, lowback: 0.5 });
   assert.deepEqual(musclesOf({ id: "x4", name: "Side raise", ru: "Махи в стороны", group: "плечи", kind: "reps" }), { sidedelt: 1 });
 });
 

@@ -4,10 +4,10 @@ import { Pencil } from "lucide-react";
 import { fmtDate, fmtKg, fmtNum, plural } from "../core/util.js";
 import { EX_KINDS, GROUPS } from "../model/catalog.js";
 import { cycleMuscle, MUSCLE_NAME, MUSCLES, musclesOf } from "../model/muscles.js";
-import { fmtSets } from "../model/workout.js";
+import { exerciseSessions, fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
-import { Button, ExImg, Header, PhotoPicker, Segmented, Sheet, Trend, useApp } from "../ui/kit.jsx";
+import { Button, Chip, ExImg, Header, PhotoPicker, Segmented, Sheet, Trend, useApp } from "../ui/kit.jsx";
 import { BodyMap } from "../ui/BodyMap.jsx";
 
 // "Мышцы: квадрицепс; помогают: ягодицы"
@@ -24,15 +24,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   const [muscleAsk, setMuscleAsk] = useState(null); // the change waiting for "Пересчитать"
   const [muscleOk, setMuscleOk] = useState(false);
   const ex = exMap[id];
-  const sessions = useMemo(() => {
-    const out = [];
-    for (let i = data.workouts.length - 1; i >= 0; i--) {
-      const w = data.workouts[i];
-      const e = w.exercises.find((x) => x.exerciseId === id);
-      if (e) out.push({ w, sets: e.sets });
-    }
-    return out;
-  }, [data.workouts, id]);
+  const sessions = useMemo(() => exerciseSessions(data.workouts, id), [data.workouts, id]);
   if (!ex) return <div className="p-4"><Header title="Упражнение удалено" back={back} /></div>;
 
   const isTime = ex.kind === "time";
@@ -72,24 +64,21 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
             className="mb-3 w-full rounded-lg bg-black px-3 py-2.5 outline-hidden focus:ring-2 focus:ring-accent-400" />
           <div className="mb-3 flex flex-wrap gap-1.5">
             {GROUPS.map((g) => (
-              <button key={g} onClick={() => mut((x) => { x.group = g; })}
-                className={`rounded-full px-3 py-1 text-xs ${ex.group === g ? "bg-accent-400 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{g}</button>
+              <Chip key={g} on={ex.group === g} onClick={() => mut((x) => { x.group = g; })}>{g}</Chip>
             ))}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {EX_KINDS.map(([k, l]) => (
-              <button key={k} onClick={() => mut((x) => { x.kind = k; })}
-                className={`rounded-full px-3 py-1 text-xs ${ex.kind === k ? "bg-neutral-100 text-neutral-900" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+              <Chip key={k} secondary on={ex.kind === k} onClick={() => mut((x) => { x.kind = k; })}>{l}</Chip>
             ))}
           </div>
           {!isCardio && <>
             <div className="mb-1.5 mt-3 text-xs text-neutral-400">Мышцы: тап — основная, ещё тап — вспомогательная, ещё — убрать</div>
             <div className="flex flex-wrap gap-1.5">
               {MUSCLES.map(([m, name]) => (
-                <button key={m} onClick={() => changeMuscles((x) => { x.muscles = cycleMuscle(x, m); })}
-                  className={`rounded-full px-3 py-1 text-xs ${worked[m] >= 1 ? "bg-accent-400 text-black" : worked[m] ? "bg-accent-950 text-accent-300" : "bg-neutral-800 text-neutral-400"}`}>
+                <Chip key={m} on={worked[m] >= 1} half={worked[m] > 0 && worked[m] < 1} onClick={() => changeMuscles((x) => { x.muscles = cycleMuscle(x, m); })}>
                   {name}
-                </button>
+                </Chip>
               ))}
             </div>
             {ex.muscles && <button onClick={() => changeMuscles((x) => { delete x.muscles; })} className="mt-1.5 text-[11px] text-neutral-400 underline">как в каталоге</button>}
@@ -102,8 +91,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
             {[["нет", 0, false], ["100%", 1, false], ["95%", 0.95, false], ["85%", 0.85, false], ["65%", 0.65, false], ["55%", 0.55, false], ["гравитрон", 0, true]].map(([l, f, as]) => {
               const on = as ? !!ex.assist : !ex.assist && (ex.bw || 0) === f;
               return (
-                <button key={l} onClick={() => mut((x) => { x.assist = as; x.bw = as ? 0 : f; })}
-                  className={`rounded-full px-3 py-1 text-xs ${on ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{l}</button>
+                <Chip key={l} on={on} onClick={() => mut((x) => { x.assist = as; x.bw = as ? 0 : f; })}>{l}</Chip>
               );
             })}
           </div>
@@ -116,7 +104,10 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
 
       <div className="mb-4 flex items-center gap-6">
         <ExImg ex={ex} size={64} />
-        <div><div className="text-2xl font-bold tabular-nums">{sessions.length}</div><div className="text-xs text-neutral-400">тренировок</div></div>
+        <div>
+          <div className="text-2xl font-bold tabular-nums">{sessions.length}</div>
+          <div className="text-xs text-neutral-400">{plural(sessions.length, "тренировка", "тренировки", "тренировок")}</div>
+        </div>
         <div>
           <div className="text-2xl font-bold tabular-nums text-accent-400">{best ? fmtNum(best) : "—"}</div>
           <div className="text-xs text-neutral-400">{isCardio ? "дольше всего, мин" : isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div>

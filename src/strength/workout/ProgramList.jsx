@@ -1,7 +1,7 @@
 // No workout running: the programs to start from (shared rows, ui/ProgramRows), and yesterday's auto-closed
 // workout asking to update its program.
 import { fmtDate, progTitle, uid } from "../../core/util.js";
-import { resolvePendingProgramUpdate, startWorkout } from "../../model/workoutActions.js";
+import { createProgram, resolvePendingProgramUpdate, startWorkout } from "../../model/workoutActions.js";
 import { Button, Card, Header, useApp } from "../../ui/kit.jsx";
 import { ProgramRows } from "../../ui/ProgramRows.jsx";
 
@@ -12,7 +12,7 @@ export function ProgramList({ data, up, exMap, open }) {
   const pendingProgram = pending && data.programs.find((x) => x.id === pending.programId);
   const create = () => {
     const id = uid();
-    up((d) => { d.programs.push({ id, name: "", items: [] }); });
+    up((d) => createProgram(d, id));
     open({ type: "program", id });
   };
   const start = (p) => up((d) => startWorkout(d, p));
