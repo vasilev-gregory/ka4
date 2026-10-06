@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../../src/model/state.js";
-import { addRunRound, adjustRunPhase, closeRun, goToPhase, playProgram, runState, tickRun, togglePauseRun } from "../../src/model/stretchRunActions.js";
+import { addRunRound, adjustRunPhase, closeRun, discardRun, goToPhase, playProgram, runState, tickRun, togglePauseRun } from "../../src/model/stretchRunActions.js";
 import { setItemTiming } from "../../src/model/stretchActions.js";
 
 // prep 10 | figure four (two sides): work 30, switch 5, work 30 | rest 15 | pizza (one side): work 30
@@ -126,4 +126,13 @@ test("a quick run without a program: default times, into history, can be kept as
   assert.equal(s.programs[1].items[0].over.work, 25);
   keepQuickProgram(s); // once
   assert.equal(s.programs.length, 2);
+});
+
+test("a cancelled run is dropped without a trace", () => {
+  const s = setup();
+  playProgram(s, "p", T0);
+  runFor(s, T0, T0 + 90_000);
+  discardRun(s);
+  assert.equal(s.active, undefined);
+  assert.equal(s.sessions.length, 0);
 });

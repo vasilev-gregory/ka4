@@ -185,3 +185,8 @@ export function closeRun(s, now) {
   }
   delete s.active;
 }
+
+// cancelled: the run is dropped and nothing of it goes into history
+export function discardRun(s) {
+  if (s.active && !s.active.done) delete s.active;
+}

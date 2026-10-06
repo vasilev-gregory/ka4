@@ -8,12 +8,12 @@ import { fmtDur, progTitle, weekStartOf } from "../core/util.js";
 import { AREA_PARTS, PHASE, areaOf, stExMap, stretchWeek } from "../model/stretch.js";
 import { QUICK, findProgram } from "../model/stretchActions.js";
 import { BodyMap } from "../ui/BodyMap.jsx";
-import { Button, ExImg, exPhoto } from "../ui/kit.jsx";
+import { Button, ConfirmButton, ExImg, exPhoto } from "../ui/kit.jsx";
 import { usePullDown } from "../ui/gestures.js";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 import { StretchEditor } from "./StretchEditor.jsx";
 
-// run: runState(); act: { skip, back, pause, adjust(delta), addRound, close, keep (a quick run as a program), fold }
+// run: runState(); act: { skip, back, pause, adjust(delta), addRound, close, discard, keep (a quick run as a program), fold }
 export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
   const [overlay, setOverlay] = useState(null); // "program" | "app"
   const pull = usePullDown(act.fold);
@@ -110,7 +110,11 @@ export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
             <button onClick={act.skip} className="rotate-180 rounded-full bg-neutral-900 p-4 text-neutral-300" aria-label="Пропустить"><ChevronLeft size={28} /></button>
           </div>
           {a.pausedLeft != null && (
-            <button onClick={act.close} className="-mt-3 pb-5 text-sm text-neutral-400">Закончить растяжку — сохранится то, что успел</button>
+            <div className="-mt-3 flex flex-col items-center gap-1 pb-5">
+              <button onClick={act.close} className="py-1 text-sm text-neutral-300">Закончить растяжку — сохранится то, что успел</button>
+              <ConfirmButton onConfirm={act.discard} confirmText="Точно не сохранять?" className="py-1 text-sm text-neutral-500"
+                armedClassName="rounded-lg bg-red-600 px-4 py-1 text-sm text-white">Отменить, не сохранять</ConfirmButton>
+            </div>
           )}
         </>
       )}

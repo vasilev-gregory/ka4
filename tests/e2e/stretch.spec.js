@@ -148,7 +148,24 @@ test("the run survives a reload, folds away to a strip while browsing, and ends 
   await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toContainText("Работа · Пицца");
   await page.getByRole("button", { name: "Развернуть растяжку" }).click();
   await page.getByRole("button", { name: "Пауза" }).click();
+  await expect(page.getByRole("button", { name: "Отменить, не сохранять" })).toBeVisible();
   await page.getByRole("button", { name: /Закончить растяжку/ }).click();
   await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toHaveCount(0);
   await expect.poll(async () => (await stored(page)).stretch.active).toBeUndefined();
+});
+
+test("a run can be cancelled without saving (two taps)", async ({ page }) => {
+  await page.clock.install();
+  await openApp(page);
+  await switchMode(page, "Растяжка");
+  await page.getByRole("button", { name: "Быстрая растяжка — без программы" }).click();
+  await page.getByText("Пицца").first().click();
+  await page.getByRole("button", { name: "Начать (1)" }).click();
+  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "+ круг" }).click(); // longer than what we wait
+  await page.clock.runFor(70_000); // past the minute after which leaving would save it
+  await page.getByRole("button", { name: "Пауза" }).click();
+  await page.getByRole("button", { name: "Отменить, не сохранять" }).click();
+  await page.getByRole("button", { name: "Точно не сохранять?" }).click();
+  await expect.poll(async () => (await stored(page)).stretch.active).toBeUndefined();
+  expect((await stored(page)).stretch.sessions).toHaveLength(0);
 });
