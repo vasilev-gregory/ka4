@@ -145,6 +145,18 @@ export const FloatingStack = ({ children }) => (
   <div className="above-nav pointer-events-none fixed inset-x-0 z-40 flex flex-col gap-2 px-3 [&>*]:pointer-events-auto">{children}</div>
 );
 
+// A session going on, seen from elsewhere: a small pill in the corner above the tab bar — a live dot, what it is and
+// its time; a tap goes back to it. mode: whose colours ("strength" | "stretch"), whatever mode the app is in.
+export const SessionPill = ({ mode, label, time, onClick, ariaLabel }) => (
+  <div className={`mx-auto flex w-full max-w-md justify-end ${mode === "stretch" ? "mode-stretch" : "mode-strength"}`}>
+    <button onClick={onClick} aria-label={ariaLabel} className="flex items-center gap-2 rounded-full bg-accent-400 py-2 pl-3 pr-4 text-sm font-semibold text-black shadow-lg">
+      <span className="h-2 w-2 animate-pulse rounded-full bg-black/70" />
+      <span>{label}</span>
+      {time && <span className="tabular-nums">{time}</span>}
+    </button>
+  </div>
+);
+
 // one strip of the stack; accent: it's time to act (the rest is over)
 export const FloatingBar = ({ accent = false, progress, children }) => (
   <div className={`mx-auto w-full max-w-md overflow-hidden rounded-2xl shadow-lg ${accent ? "bg-accent-400 text-neutral-900" : "bg-neutral-100 text-neutral-900"}`}>

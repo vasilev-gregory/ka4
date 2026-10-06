@@ -62,3 +62,17 @@ test("while a stretching run goes on, only its program's ▶ works (it goes back
   await page.getByRole("button", { name: "Вернуться" }).click();
   await expect(page.getByRole("button", { name: "Свернуть" })).toBeVisible();
 });
+
+test("a workout going on is always in sight and blocks stretching; its strip leads back", async ({ page }) => {
+  await openApp(page);
+  await startWorkout(page);
+  await tab(page, "История");
+  const strip = page.getByRole("button", { name: "Вернуться к тренировке" });
+  await expect(strip).toContainText("Тренировка");
+  await switchMode(page, "Растяжка");
+  await expect(page.getByText("Идёт силовая тренировка — сначала заверши её")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Без программы" })).toBeDisabled();
+  await strip.click(); // back to strength, on the workout
+  await expect(page.getByRole("button", { name: "Завершить" }).first()).toBeVisible();
+  await expect(strip).toHaveCount(0);
+});

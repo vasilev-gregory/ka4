@@ -189,3 +189,16 @@ test("a program left empty and unnamed is dropped, one with a name or an exercis
   S.dropEmptyProgram(s, "x");
   assert.equal(s.programs.some((p) => p.id === "x"), false);
 });
+
+test("one session at a time: a workout doesn't start while a stretching run goes on", async () => {
+  const { runningSession } = await import("../../src/model/workout.js");
+  const d = seed();
+  assert.equal(runningSession(d), null);
+  d.stretch.active = { programId: "p", done: false };
+  assert.equal(runningSession(d), "stretch");
+  A.startWorkout(d, d.programs[0], 1000);
+  assert.equal(d.active, null);
+  d.stretch.active.done = true; // a finished run waiting to be closed doesn't count
+  A.startWorkout(d, d.programs[0], 1000);
+  assert.equal(runningSession(d), "strength");
+});

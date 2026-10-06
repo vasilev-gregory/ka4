@@ -153,7 +153,7 @@ test("the run survives a reload, folds away to a strip while browsing, and ends 
 
   await page.getByRole("button", { name: "Свернуть" }).click();
   await tab(page, "История"); // the app is free to use, the run goes on in the strip
-  await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toContainText("Работа · Пицца");
+  await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toContainText("Растяжка · работа");
   await page.getByRole("button", { name: "Развернуть растяжку" }).click();
   await page.getByRole("button", { name: "Пауза" }).click();
   await expect(page.getByRole("button", { name: "Отменить", exact: true })).toBeVisible();

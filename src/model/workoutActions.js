@@ -2,7 +2,7 @@
 // inside up()) and mutates it; time comes in as `now` so the rules are testable.
 import { num, progTitle, uid } from "../core/util.js";
 import {
-  buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, itemsOf, lastActivity, normalizeGroups, programDiff, programItem, segmentsOf, setColumns,
+  buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, itemsOf, lastActivity, normalizeGroups, programDiff, programItem, runningSession, segmentsOf, setColumns,
 } from "./workout.js";
 import { moveItem } from "../core/util.js";
 
@@ -16,6 +16,7 @@ const withPlan = (sets, it) => (it.min ? sets.map((s) => ({ ...s, hr: String(it.
 const planOf = (d, it) => (it.min || it.km || d.exercises.find((e) => e.id === it.exerciseId)?.kind !== "cardio" ? it : { ...it, min: CARDIO_PLAN.min });
 
 export function startWorkout(d, program, now = Date.now()) {
+  if (runningSession(d) === "stretch") return; // one session at a time: not while a stretching run goes on
   const items = program?.items || [];
   // a program of only cardio needs no warm-up block
   const cardioOnly = items.length > 0 && items.every((it) => d.exercises.find((e) => e.id === it.exerciseId)?.kind === "cardio");

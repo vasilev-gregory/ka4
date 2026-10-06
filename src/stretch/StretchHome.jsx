@@ -9,7 +9,8 @@ import { ProgramRows } from "../ui/ProgramRows.jsx";
 import { StretchPicker } from "./StretchPicker.jsx";
 
 // play(programId): starts a program (or opens the run going on); playNow(exerciseIds): a quick run of those stretches
-export function StretchHome({ stretch, upStretch, open, play, playNow }) {
+// busy: why nothing can start here (the strength workout goes on), or null
+export function StretchHome({ stretch, upStretch, open, play, playNow, busy }) {
   const { nm1 } = useApp();
   const exMap = stExMap(stretch);
   const [picking, setPicking] = useState(false);
@@ -22,7 +23,7 @@ export function StretchHome({ stretch, upStretch, open, play, playNow }) {
     <div className="p-4">
       <Header title="Растяжка" />
       <ProgramRows onOpen={(id) => open({ type: "stretchProgram", id })} onStart={play} onCreate={create}
-        onWithout={() => setPicking(true)} running={stretch.active && !stretch.active.done ? stretch.active.programId : null}
+        onWithout={() => setPicking(true)} running={stretch.active && !stretch.active.done ? stretch.active.programId : null} blocked={busy}
         programs={stretch.programs.map((p) => {
           const total = buildTimeline(p, exMap).reduce((x, ph) => x + ph.dur, 0);
           const names = p.items.map((it) => exMap[it.exerciseId]).filter(Boolean).map((e) => nm1(e)).join(", ");

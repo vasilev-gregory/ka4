@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { unlockAudio } from "./core/sound.js";
 import { MeasureEditor, MeasuresTab } from "./measures/Measures.jsx";
 import { usePersistentData } from "./model/usePersistentData.js";
-import { makeBodyWeightAt, makeNames } from "./model/workout.js";
+import { makeBodyWeightAt, makeNames, RUNNING_NOTE, runningSession } from "./model/workout.js";
 import { SettingsTab } from "./settings/SettingsTab.jsx";
 import { BackupNag } from "./shell/BackupNag.jsx";
 import { SharedImport } from "./shell/SharedImport.jsx";
@@ -14,6 +14,7 @@ import { WorkoutDetail } from "./strength/History.jsx";
 import { HistoryTab } from "./strength/HistoryTab.jsx";
 import { ProgramEditor } from "./strength/ProgramEditor.jsx";
 import { RestBar } from "./strength/workout/RestBar.jsx";
+import { WorkoutPill } from "./strength/workout/WorkoutPill.jsx";
 import { WorkoutTab } from "./strength/workout/WorkoutTab.jsx";
 import { StretchEditor } from "./stretch/StretchEditor.jsx";
 import { StretchHistory } from "./stretch/StretchHistory.jsx";
@@ -69,17 +70,20 @@ function Shell({ data, up, replace, saved }) {
   // the stretching run lives in the data, folded or not too
   const runOpen = !(data.stretch.active && data.stretch.active.folded);
   const setRunOpen = (open) => upStretch((s) => setRunFolded(s, !open));
-  const play = (programId) => upStretch((s) => playProgram(s, programId, Date.now()));
-  const playNow = (exerciseIds) => upStretch((s) => playQuick(s, exerciseIds, Date.now()));
+  // one session at a time: no stretching while a strength workout goes on (and startWorkout() refuses the other way)
+  const busy = runningSession(data) === "strength" ? RUNNING_NOTE.strength : null;
+  const play = (programId) => { if (!busy) upStretch((s) => playProgram(s, programId, Date.now())); };
+  const playNow = (exerciseIds) => { if (!busy) upStretch((s) => playQuick(s, exerciseIds, Date.now())); };
 
   const sound = data.settings.sound !== false;
   // strips above the tab bar: the content leaves room for them
-  const bars = (data.active?.restEndsAt ? 1 : 0) + (data.stretch.active && !runOpen ? 1 : 0);
+  const workoutPill = !!data.active && (stretchMode || tab !== "workout" || !!view);
+  const bars = (data.active?.restEndsAt ? 1 : 0) + (data.stretch.active && !runOpen ? 1 : 0) + (workoutPill ? 1 : 0);
   // the screen stays on while a strength workout runs, whatever screen is open (stretching: StretchRun)
   useWakeLock(!!data.active && !data.active.paused);
 
   const common = { data, up, exMap, open, back };
-  const stretchProps = { stretch: data.stretch, upStretch, open, back, play, playNow };
+  const stretchProps = { stretch: data.stretch, upStretch, open, back, play, playNow, busy };
   const settings = (close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={restore} />;
   const SCREENS = {
     stretchProgram: (v) => <StretchEditor {...stretchProps} id={v.id} />,
@@ -107,15 +111,17 @@ function Shell({ data, up, replace, saved }) {
             Изменения не сохраняются. Сделай копию в настройках.
           </div>
         )}
-        <div className={`mx-auto max-w-md ${["pb-20", "pb-40", "pb-60"][bars]}`}>
+        <div className={`mx-auto max-w-md ${["pb-20", "pb-40", "pb-60", "pb-80"][bars]}`}>
           {content}
           {tab === "workout" && !view && !data.active && <BackupNag data={data} up={up} />}
         </div>
         <FloatingStack>
+          {/* a session going on is always in sight: off its own screen, a pill in the corner leads back to it */}
+          {workoutPill && <WorkoutPill active={data.active} onOpen={() => { if (stretchMode) switchMode("strength"); nav.setTab("workout"); }} />}
+          <StretchRun stretch={data.stretch} upStretch={upStretch} sound={sound} open={runOpen} setOpen={setRunOpen} settings={settings} />
           {data.active?.restEndsAt && (
             <RestBar endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={sound} label={stretchMode ? "Отдых · сила" : "Отдых"} />
           )}
-          <StretchRun stretch={data.stretch} upStretch={upStretch} sound={sound} open={runOpen} setOpen={setRunOpen} settings={settings} />
         </FloatingStack>
         {modeToast && (
           <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
@@ -124,7 +130,7 @@ function Shell({ data, up, replace, saved }) {
         )}
         <SharedImport data={data} up={up} replace={restore} onImported={() => nav.setTab("history")} />
         <TabBar tab={tab} onTab={nav.setTab} onSwipe={() => switchMode()} stretchMode={stretchMode}
-          running={stretchMode ? !!(data.stretch.active && !data.stretch.active.done) : !!data.active} />
+          running={!!runningSession(data)} />
       </div>
     </AppCtx.Provider>
   );

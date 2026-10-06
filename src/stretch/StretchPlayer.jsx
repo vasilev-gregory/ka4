@@ -8,7 +8,7 @@ import { fmtDur, progTitle, weekStartOf } from "../core/util.js";
 import { AREA_PARTS, PHASE, areaOf, stExMap, stretchWeek } from "../model/stretch.js";
 import { QUICK, findProgram } from "../model/stretchActions.js";
 import { BodyMap } from "../ui/BodyMap.jsx";
-import { Button, ConfirmButton, ExImg, FloatingBar, ProgressBar, exPhoto, useApp } from "../ui/kit.jsx";
+import { Button, ConfirmButton, ExImg, ProgressBar, SessionPill, exPhoto, useApp } from "../ui/kit.jsx";
 import { usePullDown } from "../ui/gestures.js";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 import { StretchEditor } from "./StretchEditor.jsx";
@@ -136,18 +136,9 @@ function RunWeek({ stretch, exMap, ws, only }) {
   );
 }
 
-// The folded run: a strip above the tab bar with the phase, the countdown and pause; a tap opens the player.
+// The folded run: a pill in the corner (ui/kit SessionPill) with the phase's countdown; a tap opens the player.
 export function StretchMiniBar({ run, act }) {
-  const { nm1 } = useApp();
   const { a, phase: ph, left } = run;
-  const ex = ph && ph.ex;
-  return (
-    <FloatingBar>
-      <button onClick={act.unfold} className="min-w-0 flex-1 text-left" aria-label="Развернуть растяжку">
-        <div className="truncate text-xs text-neutral-600">{a.done ? "Растяжка закончена" : `${ph ? PHASE[ph.k] : ""}${ex ? ` · ${nm1(ex)}` : ""}`}</div>
-        <div className="text-xl font-bold tabular-nums">{a.done ? "Готово" : fmtDur(Math.max(0, left) + 999)}</div>
-      </button>
-      {!a.done && <Button size="xs" onClick={act.pause}>{a.pausedLeft != null ? "Продолжить" : "Пауза"}</Button>}
-    </FloatingBar>
-  );
+  const label = a.done ? "Растяжка готова" : a.pausedLeft != null ? "Растяжка, пауза" : `Растяжка · ${ph ? PHASE[ph.k].toLowerCase() : ""}`;
+  return <SessionPill mode="stretch" label={label} time={a.done ? null : fmtDur(Math.max(0, left) + 999)} onClick={act.unfold} ariaLabel="Развернуть растяжку" />;
 }

@@ -1,5 +1,6 @@
 // No workout running: the programs to start from (shared rows, ui/ProgramRows), and yesterday's auto-closed
 // workout asking to update its program.
+import { RUNNING_NOTE, runningSession } from "../../model/workout.js";
 import { fmtDate, progTitle, uid } from "../../core/util.js";
 import { createProgram, resolvePendingProgramUpdate, startWorkout } from "../../model/workoutActions.js";
 import { Button, Card, Header, useApp } from "../../ui/kit.jsx";
@@ -31,6 +32,7 @@ export function ProgramList({ data, up, exMap, open }) {
         </Card>
       )}
       <ProgramRows onOpen={(id) => open({ type: "program", id })} onCreate={create} onWithout={() => start(null)}
+        blocked={runningSession(data) === "stretch" ? RUNNING_NOTE.stretch : null}
         onStart={(id) => start(data.programs.find((x) => x.id === id))}
         programs={data.programs.map((p) => ({
           id: p.id, name: p.name, canStart: p.items.length > 0,

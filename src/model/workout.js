@@ -259,3 +259,8 @@ export function exerciseSessions(workouts, id) {
   }
   return out;
 }
+
+// The session going on, if any: "strength" (a workout) or "stretch" (a stretching run not finished yet). Only one
+// at a time: neither can start while the other goes on.
+export const runningSession = (d) => (d.active ? "strength" : d.stretch && d.stretch.active && !d.stretch.active.done ? "stretch" : null);
+export const RUNNING_NOTE = { strength: "Идёт силовая тренировка — сначала заверши её", stretch: "Идёт растяжка — сначала заверши её" };

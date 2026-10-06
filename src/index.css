@@ -19,6 +19,16 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
   --color-accent-900: #78350f;
   --color-accent-950: #451a03;
 }
+/* a strength element inside the stretching mode (the pill of a workout going on) keeps the strength colours */
+.mode-strength {
+  --color-accent-200: #fde68a;
+  --color-accent-300: #fcd34d;
+  --color-accent-400: #fbbf24;
+  --color-accent-500: #f59e0b;
+  --color-accent-700: #b45309;
+  --color-accent-900: #78350f;
+  --color-accent-950: #451a03;
+}
 .mode-stretch {
   --color-accent-200: #99f6e4;
   --color-accent-300: #5eead4;

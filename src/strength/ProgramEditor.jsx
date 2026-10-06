@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { addProgramItems, dropEmptyProgram, removeProgram, replaceProgramItem, startWorkout } from "../model/workoutActions.js";
-import { CARDIO_PLAN } from "../model/workout.js";
+import { CARDIO_PLAN, runningSession } from "../model/workout.js";
 import { fmtNum } from "../core/util.js";
 import { Picker } from "./ExerciseList.jsx";
 import { ProgramMuscles } from "./ProgramMuscles.jsx";
@@ -46,7 +46,8 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
       <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте, у кардио — план в минутах или километрах (тап по единице). Изменения сохраняются сразу.</p>
       <ProgramMuscles program={p} exMap={exMap} open={open} />
 
-      <ProgramFooter canStart={!data.active && p.items.length > 0} startLabel={data.active ? "Уже идёт тренировка" : "Начать тренировку"}
+      <ProgramFooter canStart={!runningSession(data) && p.items.length > 0}
+        startLabel={{ strength: "Уже идёт тренировка", stretch: "Идёт растяжка" }[runningSession(data)] || "Начать тренировку"}
         onStart={() => { up((d) => startWorkout(d, p)); goWorkout(); }}
         onDelete={() => { up((d) => removeProgram(d, id)); back(); }} />
 

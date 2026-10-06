@@ -12,7 +12,8 @@ import { StretchPicker } from "./StretchPicker.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
 // inRun: opened over the player (its settings): no start / delete; onAppSettings opens the app's settings
-export function StretchEditor({ stretch, upStretch, id, back, open, play, inRun = false, onAppSettings }) {
+// busy: why it can't start (the strength workout goes on), or null
+export function StretchEditor({ stretch, upStretch, id, back, open, play, busy, inRun = false, onAppSettings }) {
   const { nm1 } = useApp();
   const [picker, setPicker] = useState(false);
   const [openItem, setOpenItem] = useState(null);
@@ -95,8 +96,8 @@ export function StretchEditor({ stretch, upStretch, id, back, open, play, inRun 
         <Button block onClick={back} className="mt-6">Продолжить растяжку</Button>
         {onAppSettings && <Button variant="quiet" block onClick={onAppSettings} className="mt-2">Общие настройки: звук и другое</Button>}
       </> : <>
-        <ProgramFooter canStart={tl.length > 0} onStart={() => play(id)} onDelete={() => { upStretch((s) => S.removeProgram(s, id)); back(); }}
-          startLabel={stretch.active && !stretch.active.done ? "Вернуться к растяжке" : `Начать растяжку${total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}`} />
+        <ProgramFooter canStart={tl.length > 0 && !busy} onStart={() => play(id)} onDelete={() => { upStretch((s) => S.removeProgram(s, id)); back(); }}
+          startLabel={busy ? "Идёт силовая тренировка" : stretch.active && !stretch.active.done ? "Вернуться к растяжке" : `Начать растяжку${total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}`} />
       </>}
 
       {picker && (
