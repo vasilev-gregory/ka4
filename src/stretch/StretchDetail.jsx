@@ -5,8 +5,7 @@ import { fmtDate, fmtDur, plural } from "../core/util.js";
 import { ST_AREAS, isBuiltInStretch } from "../model/catalog.js";
 import { AREA_PARTS, areaOf, stretchSessionsOf } from "../model/stretch.js";
 import { updateExercise } from "../model/stretchActions.js";
-import { BodyMap } from "../ui/BodyMap.jsx";
-import { ExerciseNameFields, ExerciseSessions, ExerciseStats, ExerciseTitle } from "../ui/ExerciseCard.jsx";
+import { ExerciseBody, ExerciseNameFields, ExerciseSessions, ExerciseStats, ExerciseTitle } from "../ui/ExerciseCard.jsx";
 import { Chip, Header, PhotoPicker, Trend } from "../ui/kit.jsx";
 
 export function StretchDetail({ stretch, upStretch, id, back, open }) {
@@ -21,13 +20,6 @@ export function StretchDetail({ stretch, upStretch, id, back, open }) {
   return (
     <div className="p-4 pb-28">
       <ExerciseTitle ex={ex} back={back} editing={edit} toggleEdit={() => setEdit(!edit)} />
-      <div className="-mt-2 mb-4 flex items-center gap-3">
-        {parts.length > 0 && <BodyMap parts={parts} fill={Object.fromEntries(parts.map((m) => [m, 1]))} color="fill-accent-400" small title="Что тянется" />}
-        <p className="min-w-0 flex-1 text-xs text-neutral-400">
-          {ex.area ? `Тянется: ${ex.area}` : "Группа мышц не указана"}{ex.sides ? " · на обе стороны" : " · одна сторона"}
-        </p>
-      </div>
-
       {edit && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-3">
           <ExerciseNameFields ex={ex} onChange={update} />
@@ -46,6 +38,9 @@ export function StretchDetail({ stretch, upStretch, id, back, open }) {
         [runs.length, plural(runs.length, "растяжка", "растяжки", "растяжек")],
         [fmtDur(total * 1000), "удержание всего, на сторону", true],
       ]} />
+      <ExerciseBody title="Что тянется" parts={parts} fill={Object.fromEntries(parts.map((m) => [m, 1]))} color="fill-accent-400">
+        {ex.area ? ex.area : "Группа мышц не указана"}{ex.sides ? " · на обе стороны" : " · одна сторона"}
+      </ExerciseBody>
       {series.length >= 2 && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-2">
           <Trend points={series} unit="с" header={(shown) => `${fmtDur(shown[0].v * 1000)} → ${fmtDur(shown[shown.length - 1].v * 1000)} с ${fmtDate(shown[0].t)}`} />

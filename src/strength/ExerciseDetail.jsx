@@ -7,8 +7,7 @@ import { exerciseSessions, fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
 import { Button, Chip, Header, PhotoPicker, Segmented, Sheet, Trend, useApp } from "../ui/kit.jsx";
-import { BodyMap } from "../ui/BodyMap.jsx";
-import { ExerciseNameFields, ExerciseSessions, ExerciseStats, ExerciseTitle } from "../ui/ExerciseCard.jsx";
+import { ExerciseBody, ExerciseNameFields, ExerciseSessions, ExerciseStats, ExerciseTitle } from "../ui/ExerciseCard.jsx";
 
 // "Мышцы: квадрицепс; помогают: ягодицы"
 const fmtWorked = (w) => {
@@ -46,14 +45,6 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
   return (
     <div className="p-4 pb-28">
       <ExerciseTitle ex={ex} back={back} editing={edit} toggleEdit={() => setEdit(!edit)} />
-      {!isCardio && Object.keys(worked).length > 0 && (
-        <div className="-mt-2 mb-4 flex items-center gap-3">
-          {/* what the exercise works: main muscles filled, helping ones half */}
-          <BodyMap parts={Object.keys(worked)} fill={worked} color="fill-rose-500" small title="Мышцы упражнения" />
-          <p className="min-w-0 flex-1 text-xs text-neutral-400">{fmtWorked(worked)}</p>
-        </div>
-      )}
-
       {edit && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-3">
           <ExerciseNameFields ex={ex} onChange={(patch) => mut((x) => Object.assign(x, patch))} />
@@ -103,6 +94,9 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
         ...(oneRm != null ? [[`≈${fmtNum(Math.round(oneRm * 2) / 2)}`, "1ПМ, кг (расчёт)"]] : []),
       ]} />
 
+      {!isCardio && Object.keys(worked).length > 0 && (
+        <ExerciseBody parts={Object.keys(worked)} fill={worked} color="fill-rose-500">{fmtWorked(worked)}</ExerciseBody>
+      )}
       {maxSeries.length >= 2 && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-2">
           {!isTime && (

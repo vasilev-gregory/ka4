@@ -56,7 +56,7 @@
 | Полоса прогресса | `ProgressBar` | |
 | Отсчёт: 3-2-1, сигнал на конце, вибрация, тишина при повторном открытии | `useCountdownSignals` (`ui/useCountdownSignals.js`) | ⚙ звуки и вибрация вне `core/sound.js` и этого хука |
 | Экран не гаснет во время идущей сессии | `useWakeLock` — в `App.jsx` для силы, в `StretchRun` для растяжки | в экранах вкладок |
-| Карточка упражнения / растяжки: заголовок с ✎, поля названий, картинка с цифрами, список сессий; строка упражнения в карточке сессии | `ExerciseTitle`, `ExerciseNameFields`, `ExerciseStats`, `ExerciseSessions`, `ExerciseRow` (`ui/ExerciseCard.jsx`) | |
+| Карточка упражнения / растяжки: заголовок с ✎, поля названий, картинка с цифрами, список сессий; строка упражнения в карточке сессии | `ExerciseTitle`, `ExerciseNameFields`, `ExerciseStats`, `ExerciseBody` (что работает — схема обычного размера в карточке), `ExerciseSessions`, `ExerciseRow` (`ui/ExerciseCard.jsx`) | |
 | Свойства растяжки (названия, группа, фото, стороны) и её история | `stretch/StretchDetail` (экран `stretchExercise`) | менять их в редакторе программы |
 | Пустая безымянная программа после выхода из редактора | `useDropIfEmpty` + `dropEmptyProgram` (сила и растяжка) | |
 | Схема тела | `BodyMap` | |
