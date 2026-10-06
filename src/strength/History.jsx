@@ -7,8 +7,8 @@ import { SessionHeader, StatTiles } from "../ui/Session.jsx";
 import { ExerciseRow } from "../ui/ExerciseCard.jsx";
 import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
-import { DeleteButton, Header, useApp } from "../ui/kit.jsx";
-import { removeWorkout } from "../model/workoutActions.js";
+import { DeleteButton, Header, SwitchRow, useApp } from "../ui/kit.jsx";
+import { removeWorkout, setWorkoutOff } from "../model/workoutActions.js";
 
 // "+2,5 кг", "−1 кг", "так же"
 const fmtDelta = (d) => (Math.abs(d) < 0.25 ? "так же" : `${d > 0 ? "+" : "−"}${fmtNum(Math.round(Math.abs(d) * 2) / 2)} кг`);
@@ -65,7 +65,9 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
           );
         })}
       </div>
-      <DeleteButton onConfirm={() => { up((d) => removeWorkout(d, id)); back(); }} confirmText="Удалить из истории?" className="mt-6">
+      <SwitchRow title="Не в зачёт" className="mt-6" on={!!w.off} onClick={() => up((d) => setWorkoutOff(d, id, !w.off))}
+        hint="Плохой день: остаётся в истории и в счёте тренировок, но не в графиках упражнений, рекордах и «прошлом разе»" />
+      <DeleteButton onConfirm={() => { up((d) => removeWorkout(d, id)); back(); }} confirmText="Удалить из истории?" className="mt-3">
         Удалить тренировку
       </DeleteButton>
     </div>
