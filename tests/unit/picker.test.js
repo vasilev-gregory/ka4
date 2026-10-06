@@ -1,6 +1,7 @@
 // The exercise picker's list: search by words, "твои" first, groups, sorting by the shown name.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { equipmentOf } from "../../src/model/equipment.js";
 import { CLOSEST, exactName, matchesQuery, pickerSections, usageOf } from "../../src/model/picker.js";
 
 const items = [
@@ -27,7 +28,7 @@ test("sections: «твои» by use, then groups in order (unknown ones last), e
   assert.deepEqual(s.map(([g, l]) => [g, l.map((e) => e.id)]), [["твои", ["a", "c", "d"]], ["ноги", ["b"]]]);
   const plain = pickerSections(items, { ...opts, query: "жим" });
   assert.deepEqual(plain.map(([g, l]) => [g, l.map((e) => e.id)]), [["грудь", ["c"]], ["ноги", ["b"]]]);
-  assert.deepEqual(pickerSections(items, { ...opts, group: "мои" }).map(([g]) => g), ["мои"]);
+  assert.deepEqual(pickerSections(items, { ...opts, keep: (e) => e.group === "мои" }).map(([g]) => g), ["мои"]);
 });
 
 test("search ignores endings, «ё» and small words; nothing with every word: the closest ones", () => {
@@ -42,4 +43,20 @@ test("search ignores endings, «ё» and small words; nothing with every word: t
   const s = pickerSections(ex, { ...opts, query: q });
   assert.deepEqual(s.map(([g, l]) => [g, l.map((e) => e.id)]), [[CLOSEST, ["p"]]]);
   assert.deepEqual(pickerSections(ex, { ...opts, query: "жим ногами лёжа" }), []); // too far: nothing
+});
+
+test("equipment: from the names, the table for built-ins that don't say it, «свой вес» only when nothing else", () => {
+  assert.deepEqual(equipmentOf({ id: "x", name: "Мой жим гантелей" }), ["dumbbell"]);
+  assert.deepEqual(equipmentOf({ id: "cable-crunch", name: "Cable crunch", ru: "Скручивания на блоке" }), ["cable"]);
+  assert.deepEqual(equipmentOf({ id: "crunch", name: "Crunch", ru: "Скручивания" }), ["body"]);
+  assert.deepEqual(equipmentOf({ id: "barbell-hack-squat", name: "Barbell hack squat", ru: "Гакк-приседания со штангой" }), ["barbell"]);
+  assert.deepEqual(equipmentOf({ id: "reverse-fly", name: "Reverse fly", ru: "Обратные разведения в наклоне" }), ["dumbbell"]);
+  assert.deepEqual(equipmentOf({ id: "x", name: "Что-то своё", equip: ["machine"] }), ["machine"]); // the user's choice wins
+  assert.deepEqual(equipmentOf({ id: "run", name: "Run", kind: "cardio" }), []);
+});
+
+test("every built-in exercise has its equipment", async () => {
+  const { seed } = await import("../../src/model/state.js");
+  const none = seed().exercises.filter((e) => e.kind !== "cardio" && !equipmentOf(e).length).map((e) => e.id);
+  assert.deepEqual(none, []);
 });

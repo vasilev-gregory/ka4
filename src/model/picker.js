@@ -30,10 +30,10 @@ function closest(items, ws) {
 
 // Sections of the list: [["твои", items], [group, items], …] or [[CLOSEST, items]]. groupOf(e): its group; groups:
 // their order (others after); usage: { id: { n, last } } (the "твои"); nameOf(e): the name shown (sorting);
-// group: only that one ("" = all).
-export function pickerSections(items, { query = "", group = "", groupOf, groups = [], usage = {}, nameOf }) {
+// keep(e): the chosen filters (a muscle, the equipment).
+export function pickerSections(items, { query = "", keep = () => true, groupOf, groups = [], usage = {}, nameOf }) {
   const byName = (x, y) => nameOf(x).localeCompare(nameOf(y), "ru");
-  const inGroup = items.filter((e) => !group || groupOf(e) === group);
+  const inGroup = items.filter(keep);
   const ws = words(query);
   const hits = inGroup.filter((e) => found(e, ws) === ws.length);
   if (ws.length > 1 && !hits.length) { const near = closest(inGroup, ws); return near.length ? [[CLOSEST, near]] : []; }

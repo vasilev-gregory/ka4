@@ -1,8 +1,11 @@
-// Picking strength exercises: the shared picker (ui/ExercisePicker) with the strength catalog, muscle groups,
-// "твои" from the workouts and programs, and the form for a new exercise (names, group, kind).
+// Picking strength exercises: the shared picker (ui/ExercisePicker) with the strength catalog, filters by the muscle
+// it works most (or cardio) and by equipment, sections by muscle group, "твои" from the workouts and programs, and
+// the form for a new exercise (names, group, kind).
 import { useState } from "react";
 import { uid } from "../core/util.js";
 import { EX_KINDS, GROUPS } from "../model/catalog.js";
+import { EQUIPMENT, equipmentOf } from "../model/equipment.js";
+import { MUSCLES, musclesOf } from "../model/muscles.js";
 import { exerciseUsage } from "../model/workout.js";
 import { createExercise } from "../model/workoutActions.js";
 import { Chip } from "../ui/kit.jsx";
@@ -28,12 +31,19 @@ function NewExercise({ name: start, group, cancel, done }) {
   );
 }
 
+const FILTERS = [
+  { id: "muscle", chips: [...MUSCLES.map(([m, l]) => [m, l]), ["cardio", "кардио"]],
+    fits: (e, m) => (m === "cardio" ? e.kind === "cardio" : musclesOf(e)[m] >= 1) },
+  { id: "equip", chips: EQUIPMENT.map(([k, l]) => [k, l]), fits: (e, k) => equipmentOf(e).includes(k) },
+];
+
 // onPick(ex) for one; onPickMany(list) to pick several; already: ids in the program; group: the chip chosen at the start
 export function Picker({ data, up, onPick, onPickMany, onClose, group = "", already, title = "Добавить упражнение" }) {
   const tags = (e, inMine) => [inMine && e.group, e.kind === "time" && "на время", e.kind === "cardio" && (inMine || group !== "кардио") && "кардио"].filter(Boolean);
   return (
-    <ExercisePicker title={title} items={data.exercises} groups={GROUPS} groupOf={(e) => e.group} usage={exerciseUsage(data.workouts, data.programs)}
-      already={already} tags={tags} onPick={onPick} onPickMany={onPickMany} onClose={onClose} group={group} newLabel="+ Новое упражнение"
+    <ExercisePicker title={title} items={data.exercises} groups={GROUPS} groupOf={(e) => e.group} filters={FILTERS}
+      start={group === "кардио" ? { muscle: "cardio" } : {}} usage={exerciseUsage(data.workouts, data.programs)}
+      already={already} tags={tags} onPick={onPick} onPickMany={onPickMany} onClose={onClose} newLabel="+ Новое упражнение"
       createForm={({ name, cancel, done }) => (
         <NewExercise name={name} group={group} cancel={cancel} done={(ex) => { up((d) => createExercise(d, ex)); done(ex); }} />
       )} />

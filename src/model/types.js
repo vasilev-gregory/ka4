@@ -41,6 +41,7 @@
  * @property {boolean} [assist]           assisted machine: w is the assistance, load = body weight − w
  * @property {string} [photo]             own picture, a JPEG data URL
  * @property {Record<string, number>} [muscles]  muscles it works, muscle id -> 1 (main) | 0.5 (helping); none = muscles.js rules
+ * @property {string[]} [equip]          what it is done with (model/equipment.js keys); none = read from the names
  */
 
 /** @typedef {{ id: string, name: string, items: ProgramItem[] }} Program  name may be "" (shown as "Без названия") */

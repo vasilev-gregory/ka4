@@ -7,30 +7,35 @@ import { CLOSEST, exactName, pickerSections } from "../model/picker.js";
 import { Button, Chip, ExImg, Header, useApp } from "./kit.jsx";
 import { useBackCloses, useRestorable } from "./navigation.js";
 
-// items: exercises / stretches; groups, groupOf(e): the chips and sections; usage: model/picker usageOf;
+// items: exercises / stretches; groups, groupOf(e): the sections (and the chips, unless filters are given);
+// filters: rows of chips [{ id, chips: [[value, label]], fits(e, value) }], the first with «все», the others tapped
+// again to clear; start: { [filter id]: the chip chosen at the start }; usage: model/picker usageOf;
 // already: ids in the program; tags(e, inMine): small words on the right; onPick(e) for one, onPickMany(list) for
-// several (the picker stays open); action: the button's word; group: the chip chosen at the start;
-// newLabel: «+ Новое упражнение»; createForm({ name, cancel, done(ex) }): the section's form for a new one
-export function ExercisePicker({ title, items, groups, groupOf, usage, already = [], tags, onPick, onPickMany, onClose, action = "Добавить",
-  group = "", newLabel, createForm }) {
+// several (the picker stays open); action: the button's word; newLabel: «+ Новое упражнение»;
+// createForm({ name, cancel, done(ex) }): the section's form for a new one
+export function ExercisePicker({ title, items, groups, groupOf, filters: rows, start = {}, usage, already = [], tags, onPick, onPickMany, onClose,
+  action = "Добавить", newLabel, createForm }) {
   const { nm1, nm2 } = useApp();
   useBackCloses(onClose); // the system back closes the picker, not the screen under it
   const multi = !!onPickMany;
   const [q, setQ] = useRestorable("picker-query", "");
-  const [filter, setFilter] = useRestorable("picker-group", group);
+  const allGroups = [...groups, ...new Set(items.map(groupOf).filter((g) => !groups.includes(g)))];
+  const filters = rows || [{ id: "group", chips: allGroups.map((g) => [g, g]), fits: (e, g) => groupOf(e) === g }];
+  const [chips, setChips] = useRestorable("picker-filters", start); // { [filter id]: value }
+  const keep = (e) => filters.every((f) => !chips[f.id] || f.fits(e, chips[f.id]));
+  const pickChip = (id, v) => setChips((c) => ({ ...c, [id]: c[id] === v ? "" : v }));
   const [creating, setCreating] = useState(null); // the name a new one starts with
   const [chosenIds, setChosenIds] = useRestorable("picker-chosen", []); // ids: kept if the app is closed meanwhile
   const chosen = chosenIds.map((id) => items.find((e) => e.id === id)).filter(Boolean);
   const isChosen = (e) => chosenIds.includes(e.id);
   const setChosen = (fn) => setChosenIds(fn(chosen).map((e) => e.id));
   const tap = (e) => (multi ? setChosen((c) => (isChosen(e) ? c.filter((x) => x.id !== e.id) : [...c, e])) : onPick(e));
-  const sections = pickerSections(items, { query: q, group: filter, groupOf, groups, usage, nameOf: nm1 });
-  const allGroups = [...groups, ...new Set(items.map(groupOf).filter((g) => !groups.includes(g)))];
+  const sections = pickerSections(items, { query: q, keep, groupOf, groups, usage, nameOf: nm1 });
   const startCreate = () => { setCreating(q.trim()); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const created = (e) => { setCreating(null); setQ(""); if (multi) setChosen((c) => [...c, e]); else onPick(e); };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+    <div data-testid="picker" className="fixed inset-0 z-50 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <div className="mx-auto max-w-md p-4 pb-32">
         <Header title={title} right={<button onClick={onClose} className="p-2 text-neutral-400" aria-label="Закрыть"><X size={22} /></button>} />
         <div className="flex items-center gap-2 rounded-xl bg-neutral-900 px-3">
@@ -43,10 +48,12 @@ export function ExercisePicker({ title, items, groups, groupOf, usage, already =
         {creating != null ? createForm({ name: creating, cancel: () => setCreating(null), done: created })
           : <Button variant="dashed" block size="sm" onClick={startCreate} className="mt-2">{newLabel}</Button>}
 
-        <div className="-mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1">
-          <Chip on={!filter} onClick={() => setFilter("")}>все</Chip>
-          {allGroups.map((g) => <Chip key={g} on={filter === g} onClick={() => setFilter(filter === g ? "" : g)}>{g}</Chip>)}
-        </div>
+        {filters.map((f, i) => (
+          <div key={f.id} className="-mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1" data-testid={`filter-${f.id}`}>
+            {i === 0 && <Chip on={!chips[f.id]} onClick={() => setChips((c) => ({ ...c, [f.id]: "" }))}>все</Chip>}
+            {f.chips.map(([v, l]) => <Chip key={v} secondary={i > 0} on={chips[f.id] === v} onClick={() => pickChip(f.id, v)}>{l}</Chip>)}
+          </div>
+        ))}
 
         {sections.length === 0 && <p className="mt-4 text-neutral-400">Ничего не нашлось.</p>}
         {sections.map(([g, list]) => (

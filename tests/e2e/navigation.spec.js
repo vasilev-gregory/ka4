@@ -66,3 +66,18 @@ test("closed by the system in the background, the app opens where it was left: t
   await again.goBack(); // back walks the restored screens down to the list
   await expect(again.getByText("II. Грудь и спина", { exact: true })).toBeVisible();
 });
+
+test("picker filters: by the muscle an exercise works most and by equipment", async ({ page }) => {
+  await openApp(page);
+  await page.getByText("I. Ноги и плечи", { exact: true }).click();
+  await page.getByRole("button", { name: "Добавить упражнение" }).click();
+  const picker = page.getByTestId("picker");
+  await picker.getByTestId("filter-muscle").getByRole("button", { name: "средняя дельта" }).click();
+  await expect(picker.getByText("Махи гантелями в стороны")).toBeVisible();
+  await expect(picker.getByText("Жим ногами", { exact: true })).toHaveCount(0);
+  await picker.getByTestId("filter-equip").getByRole("button", { name: "блок" }).click();
+  await expect(picker.getByText("Махи в сторону на нижнем блоке")).toBeVisible();
+  await expect(picker.getByText("Махи гантелями в стороны")).toHaveCount(0);
+  await picker.getByTestId("filter-equip").getByRole("button", { name: "блок" }).click(); // tapped again: off
+  await expect(picker.getByText("Махи гантелями в стороны")).toBeVisible();
+});
