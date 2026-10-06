@@ -5,14 +5,13 @@ import { Play } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, progTitle } from "../../core/util.js";
 import {
-  durations, finalizeActive, fmtTotals, lastSession, liveRestKey, programDiff, restBefore, restShown, segmentsOf, setColumns, stats,
+  durations, fmtTotals, lastSession, liveRestKey, programDiff, restBefore, restShown, segmentsOf, setColumns, stats,
 } from "../../model/workout.js";
 import { bestE1rm, recordSets } from "../../model/records.js";
 import * as A from "../../model/workoutActions.js";
 import { useHoldReorder, useLongPress, useSwipeRows } from "../../ui/gestures.js";
-import { Button, ConfirmButton, Sheet, useApp, useNow, useUndo } from "../../ui/kit.jsx";
-import { useWakeLock } from "../../ui/useWakeLock.js";
-import { moveItem, useSortable } from "../../ui/sortable.js";
+import { Button, DeleteButton, Sheet, useApp, useNow, useUndo } from "../../ui/kit.jsx";
+import { useSortable } from "../../ui/sortable.js";
 import { Picker } from "../ExerciseList.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
 import { WarmupCard } from "./WarmupCard.jsx";
@@ -30,8 +29,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge / delete
   const undo = useUndo();
   const now = useNow(1000, !a.paused);
-  useWakeLock(!a.paused); // the screen stays on while training
-  const sort = useSortable((from, to) => up((d) => { moveItem(d.active.exercises, from, to); }));
+  const sort = useSortable((from, to) => up((d) => A.moveExercise(d, from, to)));
   const { drag: colDrag, headerProps } = useHoldReorder((from, to) => up((d) => A.moveColumn(d.settings, from, to)));
   const longPress = useLongPress();
   const { swipe, bind: swipeBind } = useSwipeRows({ disabled: !!sel, onStart: longPress.cancel });
@@ -51,7 +49,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const doFinish = (updateProgram) => {
     setAskUpdate(false);
     const id = a.id;
-    up((d) => { finalizeActive(d, updateProgram); });
+    up((d) => A.finishWorkout(d, updateProgram, Date.now()));
     if (hasDone) open({ type: "workout", id });
   };
   const pick = (ex) => {
@@ -86,7 +84,12 @@ export function ActiveWorkout({ data, up, exMap, open }) {
     },
     mergeSelected: () => { up((d) => A.mergeSets(d, ei, sel.set)); setSel(null); },
     unmergeSelected: () => { up((d) => A.unmergeSets(d, ei, sel.set)); setSel(null); },
-    deleteSelected: () => { up((d) => A.deleteSets(d, ei, sel.set)); setSel(null); },
+    deleteSelected: () => {
+      const was = structuredClone(a.exercises[ei].sets);
+      up((d) => A.deleteSets(d, ei, sel.set));
+      setSel(null);
+      undo.offer("Подходы удалены", () => up((d) => A.restoreSets(d, ei, was)));
+    },
     cancelSelection: () => setSel(null),
   });
   // set number: tap = warm-up on/off (or select while selecting), hold = start selecting
@@ -144,18 +147,15 @@ export function ActiveWorkout({ data, up, exMap, open }) {
       </div>
 
       <div className="mt-6 flex gap-2">
-        <ConfirmButton onConfirm={() => up((d) => { d.active = null; })} confirmText="Удалить тренировку?"
-          className="rounded-xl bg-neutral-900 px-4 py-3 text-neutral-400" armedClassName="rounded-xl bg-red-600 px-4 py-3 text-white">
-          Удалить
-        </ConfirmButton>
+        <DeleteButton inline onConfirm={() => up(A.discardWorkout)} confirmText="Удалить тренировку?">Удалить</DeleteButton>
         {a.paused ? (
           <>
             <Button className="flex-1" onClick={() => up((d) => A.resumeWorkout(d))}>Продолжить</Button>
-            <button onClick={finish} className="rounded-xl bg-neutral-800 px-4 py-3">Завершить</button>
+            <Button variant="quiet" className="px-4" onClick={finish}>Завершить</Button>
           </>
         ) : (
           <>
-            <button onClick={() => up((d) => A.pauseWorkout(d))} className="rounded-xl bg-neutral-800 px-4 py-3">Пауза</button>
+            <Button variant="quiet" className="px-4" onClick={() => up((d) => A.pauseWorkout(d))}>Пауза</Button>
             <Button className="flex-1" onClick={finish}>Завершить</Button>
           </>
         )}

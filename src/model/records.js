@@ -55,3 +55,15 @@ export function recordSets(sets, ex, bw, bestBefore) {
   });
   return out;
 }
+
+// How an exercise of workout w went against its previous session: { record: true } (best estimated 1RM so far),
+// { delta: kg of estimated 1RM against last time }, or null (nothing to compare)
+export function sessionProgress(workouts, w, e, ex, bwAt) {
+  const cur = sessionE1rm(e.sets, ex, bwAt(w.startedAt));
+  if (cur == null) return null;
+  const best = bestE1rm(workouts, e.exerciseId, ex, bwAt, w.startedAt);
+  if (best != null && cur > best + 1e-9) return { record: true };
+  const prev = previousSession(workouts, e.exerciseId, w.startedAt);
+  const was = prev && sessionE1rm(prev.sets, ex, bwAt(prev.workout.startedAt));
+  return was == null ? null : { delta: cur - was };
+}

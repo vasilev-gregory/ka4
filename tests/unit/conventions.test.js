@@ -32,3 +32,28 @@ test("new screens use the shared kit for primary buttons instead of copying the 
     .filter((f) => /<button[^>]*className="[^"]*rounded-xl bg-accent-400 py-3 font-semibold/.test(readFileSync(f, "utf8")));
   assert.deepEqual(copies, []);
 });
+
+// ---- ARCHITECTURE.md: one place per task ----
+const screens = files("src").filter((f) => !f.startsWith(join("src", "model")));
+const offenders = (list, re) => list.filter((f) => re.test(readFileSync(f, "utf8")));
+
+test("exercise names go through nm1 / nm2 (useApp), not ex.ru || ex.name", () => {
+  assert.deepEqual(offenders(screens, /\.ru \|\| [a-z]/), []);
+});
+
+test("screens don't change the data's collections themselves: that's model/*Actions.js", () => {
+  assert.deepEqual(offenders(screens, /\b[ds]\.(workouts|programs|exercises|measurements|sessions)\s*(=[^=]|\.push\(|\.splice\()|\bd\.active\s*=[^=]/), []);
+});
+
+test("sounds and vibration only through core/sound.js and the countdown hook", () => {
+  const allowed = [join("src", "core", "sound.js"), join("src", "ui", "useCountdownSignals.js"), join("src", "settings", "SettingsTab.jsx")];
+  assert.deepEqual(offenders(files("src").filter((f) => !allowed.includes(f)), /navigator\.vibrate|import \{[^}]*\b(beep|blip|tick)\b[^}]*\} from "[./]*core\/sound\.js"/), []);
+});
+
+test("choice chips are kit's Chip, not copied classes", () => {
+  assert.deepEqual(offenders(files("src").filter((f) => !f.endsWith(join("ui", "kit.jsx"))), /rounded-full px-3 py-1 text-xs/), []);
+});
+
+test("browser history is only touched by ui/navigation.js (screens: open(); overlays: useBackCloses)", () => {
+  assert.deepEqual(offenders(files("src").filter((f) => !f.endsWith(join("ui", "navigation.js"))), /history\.(pushState|back|go)\(/), []);
+});

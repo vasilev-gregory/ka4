@@ -21,9 +21,9 @@ export function parseBackup(text) {
 
 // Sends the whole data as a .json file via the share sheet (Telegram etc.), or downloads it.
 // Returns "shared" | "downloaded" | "cancelled".
-export async function shareBackup(data) {
+export async function shareBackup(data, now = Date.now()) {
   const txt = backupText(data);
-  const name = `kach-backup-${isoDay(Date.now())}.json`;
+  const name = `kach-backup-${isoDay(now)}.json`;
   const file = new File([txt], name, { type: "application/json" });
   try {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -42,6 +42,19 @@ export async function shareBackup(data) {
 
 export const BACKUP_EVERY = 7 * 864e5;
 
-export const backupDue = (data) =>
+export const backupDue = (data, now = Date.now()) =>
   (data.workouts.length + ((data.stretch && data.stretch.sessions.length) || 0) > 0) &&
-  Date.now() - (data.settings.lastBackupAt || 0) > BACKUP_EVERY;
+  now - (data.settings.lastBackupAt || 0) > BACKUP_EVERY;
+
+// a copy was made just now
+export function markBackedUp(d, now = Date.now()) {
+  d.settings.lastBackupAt = now;
+}
+
+// "remind me tomorrow": the reminder comes back in a day
+export function snoozeBackup(d, now = Date.now()) {
+  d.settings.lastBackupAt = now - BACKUP_EVERY + 864e5;
+}
+
+// whole days since the last copy, or null when there was none
+export const daysSinceBackup = (data, now = Date.now()) => (data.settings.lastBackupAt ? Math.floor((now - data.settings.lastBackupAt) / 864e5) : null);

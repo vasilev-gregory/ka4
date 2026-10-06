@@ -21,7 +21,8 @@ import { StretchSession } from "./stretch/StretchSession.jsx";
 import { StretchHome } from "./stretch/StretchHome.jsx";
 import { StretchRun } from "./stretch/StretchRun.jsx";
 import { playProgram, playQuick } from "./model/stretchRunActions.js";
-import { AppCtx, Button, ConfirmButton } from "./ui/kit.jsx";
+import { AppCtx, Button, DeleteButton, FloatingStack } from "./ui/kit.jsx";
+import { useWakeLock } from "./ui/useWakeLock.js";
 import { useNavigation } from "./ui/navigation.js";
 
 export default function App() {
@@ -36,10 +37,7 @@ export default function App() {
     <div className="min-h-screen bg-black p-6 text-neutral-100">
       <p className="mb-4 whitespace-pre-wrap text-xs text-neutral-400">{err}</p>
       <Button block onClick={reload}>Попробовать ещё раз</Button>
-      <ConfirmButton onConfirm={startFresh} confirmText="Старые данные будут перезаписаны"
-        className="mt-3 w-full py-3 text-neutral-500" armedClassName="mt-3 w-full rounded-xl bg-red-600 py-3 text-white">
-        Начать с чистого листа
-      </ConfirmButton>
+      <DeleteButton onConfirm={startFresh} confirmText="Старые данные будут перезаписаны">Начать с чистого листа</DeleteButton>
     </div>
   );
   if (!data) return <div className="flex min-h-screen items-center justify-center bg-black text-neutral-400">Загружаю…</div>;
@@ -72,6 +70,12 @@ function Shell({ data, up, replace, saved }) {
   const play = (programId) => { upStretch((s) => playProgram(s, programId, Date.now())); setRunOpen(true); };
   const playNow = (exerciseIds) => { upStretch((s) => playQuick(s, exerciseIds, Date.now())); setRunOpen(true); };
 
+  const sound = data.settings.sound !== false;
+  // strips above the tab bar: the content leaves room for them
+  const bars = (data.active?.restEndsAt ? 1 : 0) + (data.stretch.active && !runOpen ? 1 : 0);
+  // the screen stays on while a strength workout runs, whatever screen is open (stretching: StretchRun)
+  useWakeLock(!!data.active && !data.active.paused);
+
   const common = { data, up, exMap, open, back };
   const stretchProps = { stretch: data.stretch, upStretch, open, back, play, playNow };
   const settings = (close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={restore} />;
@@ -100,14 +104,16 @@ function Shell({ data, up, replace, saved }) {
             Изменения не сохраняются. Сделай копию в настройках.
           </div>
         )}
-        <div className={`mx-auto max-w-md ${data.stretch.active && !runOpen ? "pb-40" : "pb-20"}`}>
+        <div className={`mx-auto max-w-md ${["pb-20", "pb-40", "pb-60"][bars]}`}>
           {content}
           {tab === "workout" && !view && !data.active && <BackupNag data={data} up={up} />}
         </div>
-        {data.active?.restEndsAt && (
-          <RestBar key={data.active.restEndsAt} endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={data.settings.sound !== false} />
-        )}
-        <StretchRun stretch={data.stretch} upStretch={upStretch} sound={data.settings.sound !== false} open={runOpen} setOpen={setRunOpen} settings={settings} />
+        <FloatingStack>
+          {data.active?.restEndsAt && (
+            <RestBar endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={sound} label={stretchMode ? "Отдых · сила" : "Отдых"} />
+          )}
+          <StretchRun stretch={data.stretch} upStretch={upStretch} sound={sound} open={runOpen} setOpen={setRunOpen} settings={settings} />
+        </FloatingStack>
         {modeToast && (
           <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
             <div className="rounded-2xl bg-accent-400 px-6 py-4 text-lg font-bold text-black shadow-xl">{stretchMode ? "Растяжка" : "Сила"}</div>

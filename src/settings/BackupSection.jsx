@@ -2,7 +2,7 @@
 // a Кач backup (replaces everything) or another app's export (adds workouts).
 import { useState, useRef } from "react";
 import { fmtDate } from "../core/util.js";
-import { shareBackup } from "../model/backup.js";
+import { markBackedUp, shareBackup } from "../model/backup.js";
 import { Button } from "../ui/kit.jsx";
 import { ImportFlow } from "./ImportFlow.jsx";
 
@@ -14,7 +14,7 @@ export function BackupSection({ data, up, replace }) {
   const shareFile = async () => {
     const r = await shareBackup(data);
     if (r === "cancelled") return;
-    up((d) => { d.settings.lastBackupAt = Date.now(); });
+    up((d) => markBackedUp(d, Date.now()));
     setMsg(r === "shared" ? "Файл отправлен" : "Файл сохранён в загрузки");
   };
   const pickFile = (ev) => {

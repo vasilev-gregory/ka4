@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext, useRef, lazy, Suspense 
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { IMGS } from "../model/images.js";
 import { WINDOWS, windowStart } from "../model/periods.js";
+import { useBackCloses } from "./navigation.js";
 
 // Derived, read-only helpers that depend on user data/settings, provided by App to all screens.
 export const AppCtx = createContext(null);
@@ -13,8 +14,9 @@ export function useNow(ms, on = true) {
   const [n, setN] = useState(() => Date.now());
   useEffect(() => {
     if (!on) return;
+    const first = setTimeout(() => setN(Date.now()), 0); // resuming: the time now, not when it stopped
     const t = setInterval(() => setN(Date.now()), ms);
-    return () => clearInterval(t);
+    return () => { clearTimeout(first); clearInterval(t); };
   }, [ms, on]);
   return n;
 }
@@ -122,7 +124,7 @@ const BUTTON = {
   dashed: "rounded-xl border border-dashed border-neutral-700 text-neutral-300",
   quiet: "rounded-xl bg-neutral-800 text-neutral-300",
 };
-const BUTTON_SIZE = { md: "py-3", lg: "p-4", sm: "px-4 py-2.5" };
+const BUTTON_SIZE = { md: "py-3", lg: "p-4", sm: "px-4 py-2.5", xs: "px-3 py-2 text-xs" };
 
 // variant: primary (accent) | secondary | dashed (add something) | quiet; block = full width
 export function Button({ variant = "primary", size = "md", block, className = "", ...props }) {
@@ -137,6 +139,33 @@ export const Pill = ({ on, children, className = "" }) => (
     {children ?? (on ? "вкл" : "выкл")}
   </span>
 );
+
+// Strips above the tab bar (rest timer, a folded stretching run): one stack, so they never cover each other.
+export const FloatingStack = ({ children }) => (
+  <div className="above-nav pointer-events-none fixed inset-x-0 z-40 flex flex-col gap-2 px-3 [&>*]:pointer-events-auto">{children}</div>
+);
+
+// one strip of the stack; accent: it's time to act (the rest is over)
+export const FloatingBar = ({ accent = false, progress, children }) => (
+  <div className={`mx-auto w-full max-w-md overflow-hidden rounded-2xl shadow-lg ${accent ? "bg-accent-400 text-neutral-900" : "bg-neutral-100 text-neutral-900"}`}>
+    {progress != null && <ProgressBar pct={progress} className="h-1.5 rounded-none bg-neutral-300" barClassName="bg-accent-500" />}
+    <div className="flex items-center gap-2 p-3">{children}</div>
+  </div>
+);
+
+// how far something has gone, 0..100
+export const ProgressBar = ({ pct, className = "h-2 rounded-full bg-neutral-800", barClassName = "bg-accent-400" }) => (
+  <div className={`w-full overflow-hidden ${className}`}>
+    <div className={`h-full ${barClassName}`} style={{ width: `${Math.max(0, Math.min(100, pct))}%`, transition: "width 200ms linear" }} />
+  </div>
+);
+
+// a choice chip (a group, a kind, a muscle): on = chosen, half = chosen as a lesser one (a helping muscle);
+// secondary: a second, quieter row of choices
+export const Chip = ({ on, half, onClick, children, secondary = false, className = "" }) => {
+  const look = on ? (secondary ? "bg-neutral-100 text-black" : "bg-accent-400 text-black") : half ? "bg-accent-950 text-accent-300" : "bg-neutral-800 text-neutral-300";
+  return <button onClick={onClick} aria-pressed={!!on} className={`shrink-0 rounded-full px-3 py-1 text-xs ${look} ${className}`}>{children}</button>;
+};
 
 // a settings row that toggles something: title, hint, вкл/выкл on the right
 export function SwitchRow({ title, hint, on, onClick, className = "" }) {
@@ -164,9 +193,11 @@ export function Segmented({ options, value, onChange }) {
 }
 
 // "Delete …" at the bottom of a screen: the first tap arms it (turns red), the second deletes
-export const DeleteButton = ({ onConfirm, confirmText, children }) => (
+// inline: a compact button in a row of buttons instead of a full-width line at the bottom
+export const DeleteButton = ({ onConfirm, confirmText, children, inline = false, className = "" }) => (
   <ConfirmButton onConfirm={onConfirm} confirmText={confirmText}
-    className="mt-3 w-full py-3 text-neutral-500" armedClassName="mt-3 w-full rounded-xl bg-red-600 py-3 text-white">
+    className={inline ? `rounded-xl bg-neutral-900 px-4 py-3 text-neutral-400 ${className}` : `mt-3 w-full py-3 text-neutral-500 ${className}`}
+    armedClassName={inline ? `rounded-xl bg-red-600 px-4 py-3 text-white ${className}` : `mt-3 w-full rounded-xl bg-red-600 py-3 text-white ${className}`}>
     {children}
   </ConfirmButton>
 );
@@ -195,17 +226,17 @@ export function Trend({ points, unit, header, height = "h-48" }) {
     style: { touchAction: "pan-y" },
     onPointerDown: (e) => { drag.current = shown.length >= 2 ? { x: e.clientX, y: e.clientY, active: false } : null; },
     onPointerMove: (e) => {
-      const d = drag.current;
-      if (!d) return;
-      const dx = e.clientX - d.x, dy = e.clientY - d.y;
-      if (!d.active) {
+      const g = drag.current;
+      if (!g) return;
+      const dx = e.clientX - g.x, dy = e.clientY - g.y;
+      if (!g.active) {
         if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { drag.current = null; return; } // a scroll
         if (Math.abs(dx) < 10) return;
-        d.active = true;
+        g.active = true;
         try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
       }
       const left = box.current.getBoundingClientRect().left;
-      setSel([d.x - left, e.clientX - left]);
+      setSel([g.x - left, e.clientX - left]);
     },
     onPointerUp: (e) => {
       const d = drag.current;
@@ -255,6 +286,7 @@ export function useUndo(ms = 5000) {
 
 // Floating sheet over a dimmed screen: questions and hints. A tap outside closes it.
 export function Sheet({ title, onClose, children }) {
+  useBackCloses(onClose); // the system back closes the sheet, not the screen under it
   return (
     <div className="fixed inset-0 z-50 flex items-end bg-black/70 p-3" onClick={onClose}>
       <div className="safe-bottom mx-auto max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl bg-neutral-900 p-4 shadow-xl"

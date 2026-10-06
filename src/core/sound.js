@@ -37,3 +37,9 @@ export function beep() {
   if (!actx) return;
   try { if (actx.state === "suspended") actx.resume(); tone(988, 0, 0.18); tone(988, 0.22, 0.18); tone(1319, 0.44, 0.45); } catch (e) {}
 }
+
+// Vibration: a short buzz for a touch that took (long press, drag), a long one for "time to act" (with beep()).
+export function vibrate(pattern = 20) {
+  try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) {}
+}
+export const VIBRATE_ACT = [300, 150, 300];

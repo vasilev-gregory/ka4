@@ -25,7 +25,7 @@ test("±5, + round and the settings overlay", async ({ page }) => {
   await page.getByRole("button", { name: "+ круг" }).click();
   await expect.poll(async () => Number((await total.innerText()).split(" / ")[1])).toBeGreaterThan(before);
   // the gear opens this program's settings over the run; the app's settings are one more step
-  await page.getByRole("button", { name: "Настройки" }).first().click();
+  await page.getByRole("button", { name: "Настройки" }).last().click();
   await expect(page.getByText("Настройки программы")).toBeVisible();
   await page.getByRole("button", { name: "Общие настройки: звук и другое" }).click();
   await expect(page.getByText("Звук таймера")).toBeVisible();
@@ -46,7 +46,7 @@ test("editing the program mid-run: the current stretch takes its new time; built
   await page.getByRole("button", { name: "Пропустить" }).click(); // -> work, left side
   await expect(page.getByText("левая сторона")).toBeVisible();
   await page.getByRole("button", { name: "Пауза" }).click();
-  await page.getByRole("button", { name: "Настройки" }).first().click();
+  await page.getByRole("button", { name: "Настройки" }).last().click();
   await page.getByRole("button", { name: /Сгибатели бедра: выпад, корпус вперёд/ }).last().click(); // open the stretch: its own times
   await page.locator("div.justify-between", { has: page.getByText("работа", { exact: true }) }).last().getByRole("button", { name: "Больше" }).click();
   await expect(page.getByText(/на обе стороны/)).toHaveCount(0); // what the stretch is, not a setting
@@ -110,10 +110,10 @@ test("stretching uses the same body map: history by week / month, what made up a
   const front = page.getByRole("img", { name: "Спереди" });
   await expect(front.locator('[data-muscle="hipflex"]')).toHaveCount(2); // the groin and the inner thigh are parts here
   await expect(front.locator('[data-muscle="adductors"]')).toHaveCount(2);
-  await expect(page.getByRole("button", { name: /сгибатели бедра.*4:00 · 1 дн\..*мало/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /сгибатели бедра.*4:00 · 1 раз.*мало/ })).toBeVisible();
   await expect(page.getByText("до минимума ещё 1:00")).toBeVisible();
   await front.locator('[data-muscle="adductors"]').first().click();
-  await expect(page.getByText("приводящие: 2:00 · 1 дн. — мало")).toBeVisible();
+  await expect(page.getByText("приводящие: 2:00 · 1 раз — мало")).toBeVisible();
   await expect(page.getByTestId("muscle-exercises").getByText("Пицца: сед ноги врозь, наклон вперёд")).toBeVisible();
 
   await page.getByRole("button", { name: "Месяц" }).click();

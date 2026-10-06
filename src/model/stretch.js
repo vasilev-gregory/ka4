@@ -1,5 +1,6 @@
 // Stretching domain logic: timing inheritance, timeline for the player, seconds of hold per muscle area
 // (done in a period, or planned by a program) and how a week's amount compares with the evidence.
+import { usageOf } from "./picker.js";
 import { fmtDur } from "../core/util.js";
 import { averageWeeks, inPeriod, weekEnd } from "./calendar.js";
 import { ST_DEFAULTS, ST_WEEK_MAX, ST_WEEK_MIN } from "./catalog.js";
@@ -99,7 +100,8 @@ export const heldTotal = (session) => Object.values(session.work || {}).reduce((
 // (perWeek: area -> { sec, freq, by }; by is the whole period's)
 export function stretchPeriod(s, range, now = Date.now()) {
   const list = inPeriod(s.sessions, range);
-  const { weeks, perWeek } = averageWeeks(range, now, (ws) => stretchWeek(s, ws).areas);
+  const inside = { ...s, sessions: list }; // edge weeks count only the period's own days, like strength
+  const { weeks, perWeek } = averageWeeks(range, now, (ws) => stretchWeek(inside, ws).areas);
   return { sessions: list.length, time: list.reduce((t, x) => t + (x.finishedAt - x.startedAt), 0), weeks, perWeek };
 }
 
@@ -123,3 +125,9 @@ export function stretchHint(sec) {
   if (sec >= ST_WEEK_MIN) return `до максимума эффекта ещё ${fmtDur((ST_WEEK_MAX - sec) * 1000)}`;
   return `до минимума ещё ${fmtDur((ST_WEEK_MIN - sec) * 1000)}`;
 }
+
+// how much each stretch is used, for "твои" in the picker (model/picker.js)
+export const stretchUsage = (s) => usageOf(s.sessions.map((x) => ({ startedAt: x.startedAt, ids: Object.keys(x.work || {}) })), s.programs);
+
+// what the history list says about a run
+export const sessionSummary = (x) => `${fmtDur(x.finishedAt - x.startedAt)}, удержание ${fmtDur(heldTotal(x) * 1000)}${x.complete ? "" : ", не до конца"}`;

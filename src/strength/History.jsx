@@ -1,26 +1,22 @@
 // One finished workout: totals, the muscles it worked (and its week), rest, exercises with progress notes.
 import { Trophy } from "lucide-react";
-import { fmtDur, fmtKg, fmtNum } from "../core/util.js";
-import { fmtSets, restStats, stats } from "../model/workout.js";
+import { fmtDur, fmtKg, fmtNum, plural } from "../core/util.js";
+import { fmtSets, previousOfProgram, restStats, stats } from "../model/workout.js";
 import { WorkoutMuscles } from "./WorkoutMuscles.jsx";
 import { SessionHeader, StatTiles } from "../ui/Session.jsx";
-import { bestE1rm, previousSession, sessionE1rm } from "../model/records.js";
+import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
-import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
+import { DeleteButton, ExImg, Header, useApp } from "../ui/kit.jsx";
+import { removeWorkout } from "../model/workoutActions.js";
 
 // "+2,5 кг", "−1 кг", "так же"
 const fmtDelta = (d) => (Math.abs(d) < 0.25 ? "так же" : `${d > 0 ? "+" : "−"}${fmtNum(Math.round(Math.abs(d) * 2) / 2)} кг`);
 
-// How an exercise went compared with its previous session: a record, or the change of the estimated 1RM.
+// how an exercise went against its previous session, as a line under it
 function progressNote(data, w, e, ex, bwAt) {
-  const cur = sessionE1rm(e.sets, ex, bwAt(w.startedAt));
-  if (cur == null) return null;
-  const best = bestE1rm(data.workouts, e.exerciseId, ex, bwAt, w.startedAt);
-  if (best != null && cur > best + 1e-9) return { text: "рекорд", good: true };
-  const prev = previousSession(data.workouts, e.exerciseId, w.startedAt);
-  const was = prev && sessionE1rm(prev.sets, ex, bwAt(prev.workout.startedAt));
-  if (was == null) return null;
-  return { text: `${fmtDelta(cur - was)} к прошлому разу`, good: cur - was >= 0.25 };
+  const p = sessionProgress(data.workouts, w, e, ex, bwAt);
+  if (!p) return null;
+  return p.record ? { text: "рекорд", good: true } : { text: `${fmtDelta(p.delta)} к прошлому разу`, good: p.delta >= 0.25 };
 }
 
 export function WorkoutDetail({ data, up, exMap, id, back, open }) {
@@ -29,7 +25,7 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
   if (!w) return <div className="p-4"><Header title="Тренировка удалена" back={back} /></div>;
   const st = stats(w, exMap, bwAt);
   // volume against the previous workout of the same program
-  const prevSame = w.programId && [...data.workouts].reverse().find((x) => x.programId === w.programId && x.startedAt < w.startedAt);
+  const prevSame = previousOfProgram(data.workouts, w);
   const prevVol = prevSame ? stats(prevSame, exMap, bwAt).vol : 0;
   const volNote = prevVol > 0 ? `объём, ${st.vol >= prevVol ? "+" : "−"}${Math.round(Math.abs(st.vol / prevVol - 1) * 100)}%` : "объём";
   const kcal = workoutKcal(w, exMap, bwAt);
@@ -37,7 +33,7 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
   const tiles = [
     [fmtDur(st.dur), st.extra >= 60000 ? `время, +${fmtDur(st.extra)} позже` : "время"],
     !cardioOnly && [fmtKg(st.vol), volNote],
-    !cardioOnly && [st.sets, "подходов"],
+    !cardioOnly && [st.sets, plural(st.sets, "подход", "подхода", "подходов")],
     st.cardioMin > 0 && [`${fmtNum(st.cardioMin)} мин`, st.cardioKm > 0 ? `кардио, ${fmtNum(st.cardioKm)} км` : "кардио"],
     kcal == null ? ["—", "ккал: укажи вес тела в замерах"] : [`≈${kcal}`, "ккал, оценка"],
   ].filter(Boolean);
@@ -73,10 +69,9 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
           );
         })}
       </div>
-      <ConfirmButton onConfirm={() => { up((d) => { d.workouts = d.workouts.filter((x) => x.id !== id); }); back(); }}
-        confirmText="Удалить из истории?" className="mt-6 w-full py-3 text-neutral-500" armedClassName="mt-6 w-full rounded-xl bg-red-600 py-3 text-white">
+      <DeleteButton onConfirm={() => { up((d) => removeWorkout(d, id)); back(); }} confirmText="Удалить из истории?" className="mt-6">
         Удалить тренировку
-      </ConfirmButton>
+      </DeleteButton>
     </div>
   );
 }

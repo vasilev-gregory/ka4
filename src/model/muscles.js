@@ -1,6 +1,6 @@
 // Muscles: which muscles an exercise works (main = 1, helping = 0.5), hard sets per muscle over a period,
 // and the growth status of a weekly amount. Pure data and queries; the body picture lives in ui/BodyMap.
-import { slug } from "../core/util.js";
+import { fmtNum, slug } from "../core/util.js";
 import { weekEnd } from "./calendar.js";
 
 // [id, name, coarse group (catalog GROUPS)]; this order is the order of lists
@@ -20,14 +20,14 @@ export const MUSCLE_NAME = Object.fromEntries(MUSCLES.map(([id, name]) => [id, n
 const RULES = [
   ["ноги", /leg-extension|разгибан/, { quads: 1 }],
   ["ноги", /leg-curl|сгибан/, { hams: 1 }],
-  ["ноги", /sumo-deadlift|сумо/, { glutes: 1, hams: 1, quads: 0.5, lowback: 0.5 }],
+  ["ноги", /sumo-deadlift|тяг.*сумо|сумо.*тяг/, { glutes: 1, hams: 1, quads: 0.5, lowback: 0.5 }],
   ["ноги", /romanian-deadlift|kettlebell|румын|мертв|гир/, { hams: 1, glutes: 1, lowback: 0.5 }],
   ["ноги", /hip-thrust|glute-bridge|ягодичн|мост/, { glutes: 1, hams: 0.5 }],
   ["ноги", /abduction|side-leg-raise|отведен|мах/, { glutes: 1 }],
   ["ноги", /lunge|split-squat|single-leg-squat|выпад|болгар|сплит|пистолет|зашагив/, { quads: 1, glutes: 1 }],
   ["ноги", null, { quads: 1, glutes: 0.5 }],
   // rear and front before lateral: "махи в наклоне", "махи перед собой" are not lateral raises
-  ["плечи", /reverse|rear-delt|задн|обратн|наклон/, { reardelt: 1, traps: 0.5 }],
+  ["плечи", /reverse|rear-delt|задн|обратн|в наклоне|наклонившись/, { reardelt: 1, traps: 0.5 }],
   ["плечи", /front-raise|перед собой|вперед/, { frontdelt: 1 }],
   ["плечи", /upright-row|подбород|протяжк/, { sidedelt: 1, traps: 0.5 }],
   ["плечи", /lateral-raise|мах|развед|в сторон/, { sidedelt: 1 }],
@@ -35,6 +35,7 @@ const RULES = [
   ["грудь", /dips|брус/, { chest: 1, triceps: 1, frontdelt: 0.5 }],
   ["грудь", /crossover|fly|svend|кроссовер|развод|развед|сведен|бабочк|пек|свенд/, { chest: 1, frontdelt: 0.5 }],
   ["грудь", /close-grip|узк/, { chest: 1, triceps: 1 }],
+  ["грудь", /decline|обратн.*наклон|головой вниз/, { chest: 1, frontdelt: 0.5, triceps: 0.5 }],
   ["грудь", /incline|наклон/, { chest: 1, frontdelt: 1, triceps: 0.5 }],
   ["грудь", null, { chest: 1, frontdelt: 0.5, triceps: 0.5 }],
   ["спина", /cable-pullover|machine-pullover|пуловер.*(блок|тренаж)|(блок|тренаж).*пуловер/, { lats: 1 }],
@@ -46,7 +47,7 @@ const RULES = [
   ["спина", null, { lats: 1, traps: 1, reardelt: 0.5, biceps: 0.5 }], // rows
   ["бицепс", null, { biceps: 1 }],
   ["трицепс", /dips|брус/, { triceps: 1, chest: 0.5, frontdelt: 0.5 }],
-  ["трицепс", /bench-press|жим/, { triceps: 1, chest: 0.5 }],
+  ["трицепс", /bench-press|close-grip|узк/, { triceps: 1, chest: 0.5 }],
   ["трицепс", null, { triceps: 1 }],
   ["предплечья", null, { forearms: 1 }],
   ["икры", null, { calves: 1 }],
@@ -158,4 +159,4 @@ export function weekHint(sets, freq) {
   if (freq < 2) return "объём есть, нужна ещё одна тренировка на неделе";
   return "неделя закрыта";
 }
-const fmtSets = (n) => `${String(Math.ceil(n * 2) / 2).replace(".", ",")} подх.`;
+const fmtSets = (n) => `${fmtNum(Math.ceil(n * 2) / 2)} подх.`;

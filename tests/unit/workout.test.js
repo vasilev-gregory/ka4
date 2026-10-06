@@ -2,7 +2,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../../src/model/state.js";
-import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, closeStaleWorkout, fmtSets, setColumns } from "../../src/model/workout.js";
+import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, fmtSets, setColumns } from "../../src/model/workout.js";
+import { closeStaleWorkout } from "../../src/model/workoutActions.js";
 
 test("set labels and group normalization", () => {
   const ss = [{}, { g: "a" }, { g: "a" }, { g: "b" }, {}];
@@ -91,4 +92,22 @@ test("estimated 1RM, records and the previous session", async () => {
   const today = [{ w: "100", r: "6", done: true }, { w: "100", r: "6", done: true }, { w: "60", r: "10", t: "w", done: true }, { w: "105", r: "6", done: true }];
   assert.deepEqual([...recordSets(today, sq, 80, best)], [0, 3]);
   assert.deepEqual([...recordSets(today, sq, 80, null)], [], "first time: no records");
+  const { sessionProgress } = await import("../../src/model/records.js");
+  const w3 = { startedAt: 3, exercises: [{ exerciseId: "sq", sets: [{ w: "95", r: "5", done: true }] }] };
+  assert.ok(Math.abs(sessionProgress([...workouts, w3], w3, w3.exercises[0], sq, bw).delta - 5 * (1 + 5 / 30)) < 1e-9); // +5 kg × (1 + 5/30)
+  const w4 = { startedAt: 4, exercises: [{ exerciseId: "sq", sets: [{ w: "110", r: "5", done: true }] }] };
+  assert.deepEqual(sessionProgress([...workouts, w4], w4, w4.exercises[0], sq, bw), { record: true });
+  assert.equal(sessionProgress(workouts, workouts[0], workouts[0].exercises[0], sq, bw), null); // nothing before
+});
+
+test("an exercise's sessions newest first; the previous workout of the same program", async () => {
+  const { exerciseSessions, previousOfProgram } = await import("../../src/model/workout.js");
+  const ws = [
+    { id: "1", programId: "p", startedAt: 1, exercises: [{ exerciseId: "squat", sets: [1] }] },
+    { id: "2", programId: "q", startedAt: 2, exercises: [] },
+    { id: "3", programId: "p", startedAt: 3, exercises: [{ exerciseId: "squat", sets: [3] }] },
+  ];
+  assert.deepEqual(exerciseSessions(ws, "squat").map((x) => x.w.id), ["3", "1"]);
+  assert.equal(previousOfProgram(ws, ws[2]).id, "1");
+  assert.equal(previousOfProgram(ws, ws[0]), null);
 });

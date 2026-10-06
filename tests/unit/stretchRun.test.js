@@ -136,3 +136,40 @@ test("a cancelled run is dropped without a trace", () => {
   assert.equal(s.active, undefined);
   assert.equal(s.sessions.length, 0);
 });
+
+test("edits under the run keep its place: fewer rounds, a stretch removed; a paused run stays paused", () => {
+  const s = setup();
+  s.programs[0].timing.rounds = 3;
+  playProgram(s, "p", T0);
+  const tl = runState(s, T0).tl;
+  const late = tl.findIndex((ph, i) => i > tl.length - 5 && ph.k === "work"); // a hold in round 3
+  goToPhase(s, late, T0);
+  s.programs[0].timing.rounds = 2; // round 3 gone: carry on in the nearest place, not round 1
+  tickRun(s, T0 + 1000);
+  assert.ok(runState(s, T0 + 1000).idx > runState(s, T0 + 1000).tl.length / 2);
+  togglePauseRun(s, T0 + 2000);
+  s.programs[0].items = s.programs[0].items.filter((it) => it.exerciseId !== runState(s, T0 + 2000).phase.ex?.id);
+  tickRun(s, T0 + 3000);
+  assert.ok(s.active.pausedLeft != null, "still paused after the edit");
+});
+
+test("a run with nothing held isn't history; an extra round has no intro after its rest", async () => {
+  const s = setup();
+  playProgram(s, "p", T0);
+  for (let i = 1; i <= 7; i++) goToPhase(s, i, T0 + i * 1000); // skip everything to the end
+  assert.equal(s.active.done, true);
+  assert.equal(s.sessions.length, 0);
+  const t = setup();
+  t.programs[0].timing.rounds = 1;
+  playProgram(t, "p", T0);
+  addRunRound(t);
+  const kinds = runState(t, T0).tl.map((ph) => ph.k);
+  assert.equal(kinds[kinds.indexOf("roundRest") + 1], "work");
+});
+
+test("a week ends at the next Monday 00:00: a Monday 00:30 session is in one week only", async () => {
+  const { weekEnd } = await import("../../src/model/calendar.js");
+  const { weekStartOf } = await import("../../src/core/util.js");
+  const ws = weekStartOf(new Date(2026, 9, 7).getTime());
+  assert.equal(weekEnd(ws), new Date(2026, 9, 12).getTime());
+});

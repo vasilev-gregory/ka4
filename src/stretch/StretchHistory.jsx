@@ -2,12 +2,11 @@
 // (shared rows, ui/Session; a tap opens the run's card).
 import { fmtDur, plural } from "../core/util.js";
 import { inPeriod } from "../model/calendar.js";
-import { stExMap, stretchPeriod, stretchWeek } from "../model/stretch.js";
+import { sessionSummary, stExMap, stretchPeriod, stretchWeek } from "../model/stretch.js";
 import { Header } from "../ui/kit.jsx";
 import { HistoryRow } from "../ui/Session.jsx";
 import { PeriodCard, PeriodNav, TOTAL_NOTE, usePeriod } from "../ui/PeriodNav.jsx";
 import { StretchBreakdown, StretchWhy } from "./StretchBreakdown.jsx";
-import { sessionSummary } from "./StretchSession.jsx";
 
 // week: minutes per area and days with stretching. month / year: runs, time and the average week per area.
 function PeriodPanel({ stretch, zoom, range }) {

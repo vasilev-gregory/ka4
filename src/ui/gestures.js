@@ -1,8 +1,9 @@
 // Touch gestures: swipe a row, long press, hold-and-slide reorder, flick. Thresholds are tuned for phones.
+import { vibrate } from "../core/sound.js";
 import { useState, useRef } from "react";
 import { setDragActive } from "./sortable.js";
 
-const buzz = () => { try { navigator.vibrate && navigator.vibrate(20); } catch (e) {} };
+const buzz = () => vibrate(20);
 
 // The click that ends a swipe must not also press whatever is under the finger.
 export function useClickGuard() {

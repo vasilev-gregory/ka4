@@ -1,7 +1,10 @@
 // Strength actions: every change to a workout the UI can make. Each takes the app data (an immer draft
 // inside up()) and mutates it; time comes in as `now` so the rules are testable.
 import { num, progTitle, uid } from "../core/util.js";
-import { buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, normalizeGroups, setColumns } from "./workout.js";
+import {
+  buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, itemsOf, lastActivity, normalizeGroups, programDiff, programItem, segmentsOf, setColumns,
+} from "./workout.js";
+import { moveItem } from "../core/util.js";
 
 const exAt = (d, ei) => d.active && d.active.exercises[ei];
 
@@ -104,6 +107,12 @@ export function restoreSet(d, ei, si, set) {
   if (ex) ex.sets.splice(Math.min(si, ex.sets.length), 0, set);
 }
 
+// undo of deleteSets: the exercise's sets as they were
+export function restoreSets(d, ei, sets) {
+  const ex = exAt(d, ei);
+  if (ex) ex.sets = sets;
+}
+
 export function deleteSets(d, ei, indexes) {
   const ex = d.active.exercises[ei];
   ex.sets = ex.sets.filter((_, i) => !indexes.has(i));
@@ -180,4 +189,99 @@ export function moveColumn(settings, from, to) {
     const key = order[j++];
     return full.find((x) => x.key === key);
   });
+}
+
+// Ends the workout: optionally writes its exercises back into its program, keeps only done sets, files it into
+// history (if anything was done). Returns its id.
+export function finishWorkout(d, updateProgram, now = Date.now()) {
+  const w = d.active;
+  if (!w) return null;
+  if (updateProgram) {
+    const p = d.programs.find((x) => x.id === w.programId);
+    if (p) p.items = itemsOf(w, p);
+  }
+  closeSegment(w, now);
+  w.finishedAt = w.segments[w.segments.length - 1].end;
+  delete w.restEndsAt;
+  delete w.paused;
+  w.exercises = w.exercises
+    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, g, at, done }) => ({
+      w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}), ...(g ? { g } : {}), ...(at ? { at } : {}), done,
+    })) }))
+    .filter((e) => e.sets.length);
+  if (w.exercises.length) d.workouts.push(w);
+  d.active = null;
+  return w.id;
+}
+
+// the running workout dropped without a trace
+export function discardWorkout(d) {
+  d.active = null;
+}
+
+export function removeWorkout(d, id) {
+  d.workouts = d.workouts.filter((x) => x.id !== id);
+}
+
+// reorder the exercises of the running workout
+export function moveExercise(d, from, to) {
+  if (d.active) moveItem(d.active.exercises, from, to);
+}
+
+export function createProgram(d, id) {
+  d.programs.push({ id, name: "", items: [] });
+}
+
+export function removeProgram(d, id) {
+  d.programs = d.programs.filter((x) => x.id !== id);
+}
+
+// exercises added to a program, each with the default plan of its kind
+export function addProgramItems(p, exercises) {
+  exercises.forEach((ex) => p.items.push(programItem(ex)));
+}
+
+// an item replaced by another exercise: the same kind keeps its sets; cardio <-> strength starts from the new kind's defaults
+export function replaceProgramItem(p, i, ex, exMap) {
+  const old = p.items[i];
+  if (!old) return;
+  p.items[i] = (exMap[old.exerciseId]?.kind === "cardio") === (ex.kind === "cardio") ? { ...old, exerciseId: ex.id } : programItem(ex);
+}
+
+// the user's own exercise
+export function createExercise(d, ex) {
+  d.exercises.push(ex);
+}
+
+// the rest countdown on / off; off also drops a countdown going on
+export function setCountdown(d, on) {
+  d.settings.countdown = on;
+  if (d.active && !on) d.active.restEndsAt = null;
+}
+
+// a running workout with no activity for this long, and not from today, was abandoned
+export const ABANDONED_AFTER = 4 * 3600e3;
+
+// A workout left paused overnight is finished on the next launch. So is one left running
+// (app killed, phone died) since yesterday: it ends at its last activity, not at "now".
+// If it differed from its program, the change is offered later via data.pendingProgramUpdate.
+export function closeStaleWorkout(d0, now = Date.now()) {
+  const a = d0.active;
+  if (!a) return d0;
+  const today = new Date(now).toDateString();
+  const last = lastActivity(a);
+  if (a.paused) {
+    const segs = segmentsOf(a);
+    const lastEnd = segs[segs.length - 1].end || a.startedAt;
+    if (new Date(lastEnd).toDateString() === today) return d0;
+  } else if (new Date(last).toDateString() === today || now - last < ABANDONED_AFTER) {
+    return d0;
+  }
+  const d = structuredClone(d0);
+  const w = d.active;
+  const diff = programDiff(w, d.programs);
+  if (diff) d.pendingProgramUpdate = diff;
+  closeSegment(w, last); // no-op when paused (the segment is already closed)
+  finishWorkout(d, false, last);
+  return d;
 }

@@ -58,9 +58,10 @@ export default [
       ] }],
     },
   },
-  // actions take the time as a `now` parameter (default Date.now()) so the rules are testable
+  // the model takes the time as a `now` parameter (default Date.now()) so the rules are testable
   {
-    files: ["src/model/*Actions.js"],
+    files: ["src/model/**/*.js"],
+    ignores: ["src/model/usePersistentData.js"],
     rules: {
       "no-restricted-syntax": ["error", ...ACCENT, { selector: `${date}:not(AssignmentPattern > ${date})`, message: "Take time as a `now = Date.now()` parameter." }],
     },

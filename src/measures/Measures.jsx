@@ -1,6 +1,7 @@
 // Body measurements: summary cards with chart, entries list, editor.
+import { removeMeasurement, saveMeasurement } from "../model/measureActions.js";
 import { useState } from "react";
-import { fmtDate, fmtNum, isoDay, num, numericInput, uid } from "../core/util.js";
+import { fmtDate, fmtNum, isoDay, num, numericInput } from "../core/util.js";
 import { MEASURES } from "../model/catalog.js";
 import { Button, DeleteButton, Header, Trend } from "../ui/kit.jsx";
 
@@ -66,14 +67,7 @@ export function MeasureEditor({ data, up, id, back }) {
   const sorted = (data.measurements || []).slice().sort((a, b) => a.date - b.date);
   const lastVal = (k) => { for (let i = sorted.length - 1; i >= 0; i--) if (sorted[i] !== existing && num(sorted[i].values[k]) > 0) return sorted[i].values[k]; return ""; };
   const save = () => {
-    const clean = Object.fromEntries(Object.entries(vals).filter(([, v]) => num(v) > 0));
-    const [y, mo, dd] = day.split("-").map(Number);
-    const date = new Date(y, mo - 1, dd, 12).getTime();
-    up((d) => {
-      if (!Array.isArray(d.measurements)) d.measurements = [];
-      const m = existing && d.measurements.find((x) => x.id === existing.id);
-      if (m) { m.values = clean; m.date = date; } else d.measurements.push({ id: uid(), date, values: clean });
-    });
+    up((d) => saveMeasurement(d, { id: existing && existing.id, day, values: vals }));
     back();
   };
   // weight and whatever was ever measured; the rest behind "ещё"
@@ -104,7 +98,7 @@ export function MeasureEditor({ data, up, id, back }) {
       <p className="mt-2 text-xs text-neutral-500">Серым — прошлое значение. Заполняй только то, что мерил.</p>
       <Button block onClick={save} className="mt-4">Сохранить</Button>
       {existing && (
-        <DeleteButton onConfirm={() => { up((d) => { d.measurements = d.measurements.filter((x) => x.id !== existing.id); }); back(); }} confirmText="Удалить замер?">
+        <DeleteButton onConfirm={() => { up((d) => removeMeasurement(d, existing.id)); back(); }} confirmText="Удалить замер?">
           Удалить замер
         </DeleteButton>
       )}

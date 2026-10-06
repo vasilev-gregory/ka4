@@ -102,6 +102,8 @@
  * @property {number|null} pausedLeft    paused: ms left of the phase
  * @property {boolean} [done]            ran to the end (already in sessions); finishedAt then
  * @property {number} [finishedAt]
+ * @property {StretchProgram} [program]  a run without a program (programId "quick"): the stretches chosen for it
+ * @property {string} [savedAs]           that run kept as a program: its id
  */
 
 /** @typedef {{ id: string, name: string, ru?: string, sides: boolean, area?: string, photo?: string }} StretchExercise  sides: done on both sides */

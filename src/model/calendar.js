@@ -21,8 +21,8 @@ export function shiftPeriod(zoom, ts, k) {
 // workouts / sessions started within the range
 export const inPeriod = (list, { from, to }) => list.filter((w) => w.startedAt >= from && w.startedAt < to);
 
-// one calendar week from its Monday (an hour of slack for the DST switch)
-export const weekEnd = (ws) => ws + 7 * DAY + 3600e3;
+// the end of the calendar week from its Monday: the next Monday 00:00 (DST-safe)
+export const weekEnd = (ws) => weekStartOf(ws + 8 * DAY);
 
 // A weekly load averaged over the weeks of the range that have already started.
 // loadOfWeek(ws) -> { key: { numeric fields…, by: { id: n } } }. Returns { weeks, perWeek }: the numeric fields

@@ -1,4 +1,5 @@
 // Strength domain logic: sets, segments, rest, load/volume, program lines. Pure functions over app data.
+import { usageOf } from "./picker.js";
 import { fmtDur, fmtKg, fmtNum, num } from "../core/util.js";
 import { COLUMNS, DEFAULT_COLUMNS, PARTIAL_WEIGHT } from "./catalog.js";
 
@@ -20,7 +21,7 @@ export const CARDIO_PLAN = { min: 20, km: 5 };
 export const programItem = (ex) => ({ exerciseId: ex.id, sets: defaultSets(ex), ...(ex.kind === "cardio" ? { min: CARDIO_PLAN.min } : {}) });
 
 // A workout's exercises as program lines (for "update the program?"); cardio plans stay as the program had them.
-function itemsOf(w, program) {
+export function itemsOf(w, program) {
   return w.exercises.map((e) => {
     const was = program.items.find((it) => it.exerciseId === e.exerciseId);
     return { exerciseId: e.exerciseId, sets: e.sets.length || 1, ...(was?.min != null ? { min: was.min } : {}), ...(was?.km != null ? { km: was.km } : {}) };
@@ -67,26 +68,6 @@ export function closeSegment(w, t = Date.now()) {
   if (!last.end) last.end = t;
 }
 
-export function finalizeActive(d, updateProgram) {
-  const w = d.active;
-  if (!w) return null;
-  if (updateProgram) {
-    const p = d.programs.find((x) => x.id === w.programId);
-    if (p) p.items = itemsOf(w, p);
-  }
-  closeSegment(w);
-  w.finishedAt = w.segments[w.segments.length - 1].end;
-  delete w.restEndsAt;
-  delete w.paused;
-  w.exercises = w.exercises
-    .map((e) => ({ ...e, sets: e.sets.filter((s) => s.done).map(({ w: sw, r, p, t, rir, g, at, done }) => ({
-      w: sw, r, p: p || "", ...(t ? { t } : {}), ...(rir != null ? { rir } : {}), ...(g ? { g } : {}), ...(at ? { at } : {}), done,
-    })) }))
-    .filter((e) => e.sets.length);
-  if (w.exercises.length) d.workouts.push(w);
-  d.active = null;
-  return w.id;
-}
 
 // Gaps between consecutive confirmed sets. Steps of a drop set don't count, nor gaps across a pause
 // or longer than 15 min (that's not rest, that's a break).
@@ -167,7 +148,7 @@ export function bodyWeightAt(measurements, fallback, ts) {
 // Which exercise name leads (settings.namesRu): returns { nm1: primary, nm2: secondary }.
 export function makeNames(ru) {
   return {
-    nm1: (ex) => (!ex ? "" : ru && ex.ru ? ex.ru : ex.name),
+    nm1: (ex, missing = "") => (!ex ? missing : ru && ex.ru ? ex.ru : ex.name), // missing: what to show for a deleted one
     nm2: (ex) => (!ex ? "" : ru ? (ex.ru ? ex.name : "") : ex.ru || ""),
   };
 }
@@ -254,29 +235,21 @@ export function lastActivity(w) {
   return t;
 }
 
-// a running workout with no activity for this long, and not from today, was abandoned
-export const ABANDONED_AFTER = 4 * 3600e3;
 
-// A workout left paused overnight is finished on the next launch. So is one left running
-// (app killed, phone died) since yesterday: it ends at its last activity, not at "now".
-// If it differed from its program, the change is offered later via data.pendingProgramUpdate.
-export function closeStaleWorkout(d0, now = Date.now()) {
-  const a = d0.active;
-  if (!a) return d0;
-  const today = new Date(now).toDateString();
-  const last = lastActivity(a);
-  if (a.paused) {
-    const segs = segmentsOf(a);
-    const lastEnd = segs[segs.length - 1].end || a.startedAt;
-    if (new Date(lastEnd).toDateString() === today) return d0;
-  } else if (new Date(last).toDateString() === today || now - last < ABANDONED_AFTER) {
-    return d0;
+// how much each exercise is used, for "твои" in the picker (model/picker.js)
+export const exerciseUsage = (workouts, programs) =>
+  usageOf(workouts.map((w) => ({ startedAt: w.startedAt, ids: w.exercises.map((e) => e.exerciseId) })), programs);
+
+// the previous workout of the same program, or null
+export const previousOfProgram = (workouts, w) =>
+  (w.programId && [...workouts].reverse().find((x) => x.programId === w.programId && x.startedAt < w.startedAt)) || null;
+
+// an exercise's sessions, newest first: [{ w, sets }]
+export function exerciseSessions(workouts, id) {
+  const out = [];
+  for (let i = workouts.length - 1; i >= 0; i--) {
+    const e = workouts[i].exercises.find((x) => x.exerciseId === id);
+    if (e) out.push({ w: workouts[i], sets: e.sets });
   }
-  const d = structuredClone(d0);
-  const w = d.active;
-  const diff = programDiff(w, d.programs);
-  if (diff) d.pendingProgramUpdate = diff;
-  closeSegment(w, last); // no-op when paused (the segment is already closed)
-  finalizeActive(d, false);
-  return d;
+  return out;
 }

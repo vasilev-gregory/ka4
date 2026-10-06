@@ -6,13 +6,14 @@ import { fmtDur, plural } from "../core/util.js";
 import { ST_AREAS, ST_FIELDS, isBuiltInStretch } from "../model/catalog.js";
 import { buildTimeline, stExMap, stTiming, stretchPlan } from "../model/stretch.js";
 import * as S from "../model/stretchActions.js";
-import { Button, ExImg, Header, PhotoPicker, SecStepper, Segmented, exPhoto } from "../ui/kit.jsx";
+import { Button, Chip, ExImg, Header, PhotoPicker, SecStepper, Segmented, exPhoto, useApp } from "../ui/kit.jsx";
 import { ProgramFooter, ProgramItems, ProgramName } from "../ui/ProgramEdit.jsx";
 import { StretchPicker } from "./StretchPicker.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
 // inRun: opened over the player (its settings): no start / delete; onAppSettings opens the app's settings
 export function StretchEditor({ stretch, upStretch, id, back, play, inRun = false, onAppSettings }) {
+  const { nm1 } = useApp();
   const [picker, setPicker] = useState(false);
   const [openItem, setOpenItem] = useState(null);
   const [timerOpen, setTimerOpen] = useState(false);
@@ -39,7 +40,7 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
           body: <>
             {ex && exPhoto(ex) && <ExImg ex={ex} size={34} />}
             <button onClick={() => setOpenItem(isOpen ? null : i)} className="ml-1 min-w-0 flex-1 py-1 text-left">
-              <div className="truncate">{ex ? ex.ru || ex.name : "Удалённая растяжка"}</div>
+              <div className="truncate">{nm1(ex, "Удалённая растяжка")}</div>
               <div className={`truncate text-xs ${it.over && Object.keys(it.over).length ? "text-accent-300" : "text-neutral-500"}`}>
                 {ex && ex.area ? `${ex.area} · ` : ""}{t.work} с{ex && ex.sides ? " × 2 стороны" : ""}, отдых {t.rest} с
               </div>
@@ -126,18 +127,14 @@ function ItemPanel({ it, t, ex, change, upStretch }) {
       <div className="mt-1 text-xs text-neutral-400">Группа мышц</div>
       <div className="flex flex-wrap gap-1.5">
         {ST_AREAS.map((ar) => (
-          <button key={ar} onClick={() => updateEx({ area: ar })}
-            className={`rounded-full px-2.5 py-1 text-[11px] ${ex.area === ar ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>{ar}</button>
+          <Chip key={ar} on={ex.area === ar} onClick={() => updateEx({ area: ar })}>{ar}</Chip>
         ))}
       </div>
       <div className="mt-1 text-xs text-neutral-400">Фото</div>
       <PhotoPicker ex={ex} onChange={(v) => updateEx({ photo: v || undefined })} />
       {/* one side or two is what a stretch is: fixed for built-in ones, the user's own say it themselves */}
       {!isBuiltInStretch(ex.id) && (
-        <button onClick={() => updateEx({ sides: !ex.sides })}
-          className={`mt-1 rounded-full px-3 py-1 text-xs ${ex.sides ? "bg-accent-400 text-black" : "bg-neutral-800 text-neutral-300"}`}>
-          на обе стороны: {ex.sides ? "да" : "нет"}
-        </button>
+        <Chip on={ex.sides} onClick={() => updateEx({ sides: !ex.sides })} className="mt-1">на обе стороны: {ex.sides ? "да" : "нет"}</Chip>
       )}
     </div>
   );
