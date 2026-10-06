@@ -29,7 +29,7 @@ test("±5, + round and the settings overlay", async ({ page }) => {
   await expect(page.getByText("Настройки программы")).toBeVisible();
   await page.getByRole("button", { name: "Общие настройки: звук и другое" }).click();
   await expect(page.getByText("Звук таймера")).toBeVisible();
-  await page.getByRole("button", { name: "Назад" }).first().click();
+  await page.locator(".z-60").getByRole("button", { name: "Назад" }).click(); // the app settings' back, over the player
   await expect(page.getByText("Настройки программы")).toBeVisible();
   await page.getByRole("button", { name: "Продолжить растяжку" }).click();
   await expect(page.locator("div.text-8xl")).toHaveCount(1); // the run survived
@@ -38,7 +38,7 @@ test("±5, + round and the settings overlay", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("editing the program mid-run: the current stretch takes its new time, a stretch made one-sided loses its sides", async ({ page }) => {
+test("editing the program mid-run: the current stretch takes its new time; built-in stretches have fixed sides", async ({ page }) => {
   await openApp(page);
   await switchMode(page, "Растяжка");
   await (await newProgram(page, ["Сгибатели бедра: выпад"]))();
@@ -47,11 +47,10 @@ test("editing the program mid-run: the current stretch takes its new time, a str
   await expect(page.getByText("левая сторона")).toBeVisible();
   await page.getByRole("button", { name: "Пауза" }).click();
   await page.getByRole("button", { name: "Настройки" }).first().click();
-  await page.getByRole("button", { name: /Сгибатели бедра: выпад, корпус вперёд/ }).click(); // open the stretch: its own times
-  await page.locator("div.justify-between", { has: page.getByText("работа", { exact: true }) }).getByRole("button", { name: "Больше" }).click();
-  await page.getByRole("button", { name: /на обе стороны: да/ }).click();
+  await page.getByRole("button", { name: /Сгибатели бедра: выпад, корпус вперёд/ }).last().click(); // open the stretch: its own times
+  await page.locator("div.justify-between", { has: page.getByText("работа", { exact: true }) }).last().getByRole("button", { name: "Больше" }).click();
+  await expect(page.getByText(/на обе стороны/)).toHaveCount(0); // what the stretch is, not a setting
   await page.getByRole("button", { name: "Продолжить растяжку" }).click();
-  await expect(page.getByText("левая сторона")).toHaveCount(0);
   await expect(page.locator("div.text-8xl").first()).toHaveText(/^0:3[45]$/); // 30 + 5 s, still paused
 });
 
@@ -126,4 +125,30 @@ test("stretching uses the same body map: history by week / month, what made up a
   await page.getByText("Бёдра").click();
   await expect(page.getByText("Мышцы по плану")).toBeVisible();
   await expect(page.getByRole("button", { name: /широчайшие.*1:00$/ })).toBeVisible(); // 2 rounds × 30 s, one side counted
+});
+
+test("the run survives a reload, folds away to a strip while browsing, and ends early from pause", async ({ page }) => {
+  await openApp(page);
+  await switchMode(page, "Растяжка");
+  await page.getByRole("button", { name: "Быстрая растяжка — без программы" }).click();
+  await page.getByText("Пицца").first().click();
+  await page.getByText("Четвёрка").first().click();
+  await page.getByRole("button", { name: "Начать (2)" }).click();
+  await page.getByRole("button", { name: "Пропустить" }).click(); // the intro
+  await expect(page.getByRole("img", { name: "Что тянется: спереди" })).toBeVisible(); // what this stretch works
+  await expect(page.locator(".text-accent-300", { hasText: "приводящие" })).toBeVisible();
+  await expect.poll(async () => (await stored(page)).stretch.active?.at?.k).toBe("work");
+
+  await page.reload(); // e.g. the app updated itself mid-run
+  await expect(page.getByText("Пицца: сед ноги врозь, наклон вперёд").first()).toBeVisible();
+  await expect(page.getByText("Работа", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Свернуть" }).click();
+  await tab(page, "История"); // the app is free to use, the run goes on in the strip
+  await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toContainText("Работа · Пицца");
+  await page.getByRole("button", { name: "Развернуть растяжку" }).click();
+  await page.getByRole("button", { name: "Пауза" }).click();
+  await page.getByRole("button", { name: /Закончить растяжку/ }).click();
+  await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toHaveCount(0);
+  await expect.poll(async () => (await stored(page)).stretch.active).toBeUndefined();
 });

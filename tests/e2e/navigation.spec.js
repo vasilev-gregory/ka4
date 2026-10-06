@@ -24,7 +24,7 @@ test("program changes are saved as you go; back returns to the list", async ({ p
   await expect(page.getByRole("button", { name: "Убрать" })).toHaveCount(7);
 });
 
-test("a stretching run left with system back after a minute is saved", async ({ page }) => {
+test("system back folds a running stretch into the strip; it goes on and ends from there", async ({ page }) => {
   await page.clock.install();
   await openApp(page);
   await switchMode(page, "Растяжка");
@@ -36,7 +36,12 @@ test("a stretching run left with system back after a minute is saved", async ({ 
   for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "+ круг" }).click(); // longer than the minute we wait
   await page.clock.runFor(65_000);
   await page.goBack();
-  await expect(page.getByText("Таймер программы")).toBeVisible(); // back in the editor
+  await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toBeVisible(); // folded, not ended
+  await expect(page.getByText("Таймер программы")).toBeVisible(); // the editor under it is still there
+  await page.getByRole("button", { name: "Развернуть растяжку" }).click();
+  await page.getByRole("button", { name: "Закрыть" }).first().click();
   await expect.poll(async () => (await stored(page)).stretch.sessions.length).toBe(1);
   expect((await stored(page)).stretch.sessions[0].complete).toBe(false);
+  await page.goBack(); // the entry the player had is gone with it: back leaves the editor
+  await expect(page.getByText("+ Новая программа растяжки")).toBeVisible();
 });

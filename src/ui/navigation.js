@@ -26,8 +26,9 @@ export function useNavigation(initialTab = "workout") {
   };
   const back = () => { if (depth.current > 0) history.back(); };
   // close every screen (tab switch, mode switch, restore)
+  // (an overlay over the screens, like the stretching player, may hold one more entry: { overlay: true })
   const reset = () => {
-    const n = depth.current;
+    const n = depth.current + (history.state && history.state.overlay ? 1 : 0);
     if (!n) return;
     depth.current = 0;
     setStack([]);

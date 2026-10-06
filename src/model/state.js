@@ -49,6 +49,8 @@ export function migrate(d) {
     const seedRow = ST_SEED.find((r) => r[0] === e.id);
     if (seedRow && ST_OLD_NAMES[e.id] && e.name === ST_OLD_NAMES[e.id]) { e.name = seedRow[1]; e.ru = seedRow[2]; }
     ST_FIXES.forEach(([id, oldRu, fix]) => { if (e.id === id && e.ru === oldRu) Object.assign(e, fix); });
+    // one side or two is what the stretch is, not a choice: a built-in one always as in the catalog
+    if (seedRow) e.sides = seedRow[3];
   });
   if (d.settings && d.settings.restMode === "stopwatch" && d.settings.countdown === undefined) d.settings.countdown = false;
   d.exercises.forEach((e) => {
