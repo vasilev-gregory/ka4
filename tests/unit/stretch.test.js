@@ -63,3 +63,9 @@ test("one session: hold per area and in all", async () => {
   assert.deepEqual(sessionAreas(s, x)["сгибатели бедра"], { sec: 90, by: { "st-hip-flexor-forward": 60, "st-hip-flexor-tall": 30 } });
   assert.equal(heldTotal(x), 135);
 });
+
+test("a stretch's runs, newest first, with the time held", async () => {
+  const { stretchSessionsOf } = await import("../../src/model/stretch.js");
+  const s = { sessions: [{ id: "1", work: { a: 30 } }, { id: "2", work: { b: 10 } }, { id: "3", work: { a: 45, b: 5 } }] };
+  assert.deepEqual(stretchSessionsOf(s, "a").map((r) => [r.x.id, r.sec]), [["3", 45], ["1", 30]]);
+});

@@ -1,14 +1,14 @@
 // One exercise: progress chart, history, editing (name, group, kind, bodyweight share).
 import { useState, useMemo } from "react";
-import { Pencil } from "lucide-react";
 import { fmtDate, fmtKg, fmtNum, plural } from "../core/util.js";
 import { EX_KINDS, GROUPS } from "../model/catalog.js";
 import { cycleMuscle, MUSCLE_NAME, MUSCLES, musclesOf } from "../model/muscles.js";
 import { exerciseSessions, fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
-import { Button, Chip, ExImg, Header, PhotoPicker, Segmented, Sheet, Trend, useApp } from "../ui/kit.jsx";
+import { Button, Chip, Header, PhotoPicker, Segmented, Sheet, Trend, useApp } from "../ui/kit.jsx";
 import { BodyMap } from "../ui/BodyMap.jsx";
+import { ExerciseNameFields, ExerciseSessions, ExerciseStats, ExerciseTitle } from "../ui/ExerciseCard.jsx";
 
 // "Мышцы: квадрицепс; помогают: ягодицы"
 const fmtWorked = (w) => {
@@ -17,7 +17,7 @@ const fmtWorked = (w) => {
 };
 
 export function ExerciseDetail({ data, up, exMap, id, back, open }) {
-  const { bwAt, nm1, nm2 } = useApp();
+  const { bwAt } = useApp();
   const [edit, setEdit] = useState(false);
   const [metric, setMetric] = useState("max");
   // changing the muscles recounts the whole history: asked once per visit, then the change goes through
@@ -45,9 +45,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
 
   return (
     <div className="p-4 pb-28">
-      <Header title={nm1(ex)} back={back}
-        right={<button onClick={() => setEdit(!edit)} className="shrink-0 self-start p-2 text-neutral-400" aria-label="Изменить"><Pencil size={20} /></button>} />
-      {nm2(ex) && <p className="-mt-3 mb-4 text-neutral-400">{nm2(ex)}</p>}
+      <ExerciseTitle ex={ex} back={back} editing={edit} toggleEdit={() => setEdit(!edit)} />
       {!isCardio && Object.keys(worked).length > 0 && (
         <div className="-mt-2 mb-4 flex items-center gap-3">
           {/* what the exercise works: main muscles filled, helping ones half */}
@@ -58,10 +56,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
 
       {edit && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-3">
-          <input value={ex.name} placeholder="Название" onChange={(e) => mut((x) => { x.name = e.target.value; })}
-            className="mb-2 w-full rounded-lg bg-black px-3 py-2.5 outline-hidden focus:ring-2 focus:ring-accent-400" />
-          <input value={ex.ru || ""} placeholder="Второе название" onChange={(e) => mut((x) => { x.ru = e.target.value; })}
-            className="mb-3 w-full rounded-lg bg-black px-3 py-2.5 outline-hidden focus:ring-2 focus:ring-accent-400" />
+          <ExerciseNameFields ex={ex} onChange={(patch) => mut((x) => Object.assign(x, patch))} />
           <div className="mb-3 flex flex-wrap gap-1.5">
             {GROUPS.map((g) => (
               <Chip key={g} on={ex.group === g} onClick={() => mut((x) => { x.group = g; })}>{g}</Chip>
@@ -102,23 +97,11 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
         </div>
       )}
 
-      <div className="mb-4 flex items-center gap-6">
-        <ExImg ex={ex} size={64} />
-        <div>
-          <div className="text-2xl font-bold tabular-nums">{sessions.length}</div>
-          <div className="text-xs text-neutral-400">{plural(sessions.length, "тренировка", "тренировки", "тренировок")}</div>
-        </div>
-        <div>
-          <div className="text-2xl font-bold tabular-nums text-accent-400">{best ? fmtNum(best) : "—"}</div>
-          <div className="text-xs text-neutral-400">{isCardio ? "дольше всего, мин" : isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг"}</div>
-        </div>
-        {oneRm != null && (
-          <div>
-            <div className="text-2xl font-bold tabular-nums">≈{fmtNum(Math.round(oneRm * 2) / 2)}</div>
-            <div className="text-xs text-neutral-400">1ПМ, кг (расчёт)</div>
-          </div>
-        )}
-      </div>
+      <ExerciseStats ex={ex} stats={[
+        [sessions.length, plural(sessions.length, "тренировка", "тренировки", "тренировок")],
+        [best ? fmtNum(best) : "—", isCardio ? "дольше всего, мин" : isTime ? "лучшее время, с" : isBody ? "макс. нагрузка с весом тела, кг" : "макс. вес, кг", true],
+        ...(oneRm != null ? [[`≈${fmtNum(Math.round(oneRm * 2) / 2)}`, "1ПМ, кг (расчёт)"]] : []),
+      ]} />
 
       {maxSeries.length >= 2 && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-2">
@@ -142,15 +125,8 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
         </Sheet>
       )}
 
-      {sessions.length === 0 && <p className="text-neutral-400">Истории пока нет. Сделай подход, и он появится здесь.</p>}
-      <div className="space-y-2">
-        {sessions.map(({ w, sets }) => (
-          <button key={w.id} onClick={() => open({ type: "workout", id: w.id })} className="w-full rounded-xl bg-neutral-900 p-3 text-left active:bg-neutral-800">
-            <div className="text-xs text-neutral-400">{fmtDate(w.startedAt)}</div>
-            <div className="tabular-nums">{fmtSets(sets, ex.kind)}</div>
-          </button>
-        ))}
-      </div>
+      <ExerciseSessions empty="Истории пока нет. Сделай подход, и он появится здесь."
+        sessions={sessions.map(({ w, sets }) => ({ id: w.id, at: w.startedAt, text: fmtSets(sets, ex.kind), onClick: () => open({ type: "workout", id: w.id }) }))} />
     </div>
   );
 }

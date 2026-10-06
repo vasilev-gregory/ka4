@@ -104,6 +104,8 @@
  * @property {number} [finishedAt]
  * @property {StretchProgram} [program]  a run without a program (programId "quick"): the stretches chosen for it
  * @property {string} [savedAs]           that run kept as a program: its id
+ * @property {boolean} [folded]           the player folded into the strip above the tab bar
+ * @property {number} [entered]           phases entered so far (a new phase's signal, even the same phase again)
  */
 
 /** @typedef {{ id: string, name: string, ru?: string, sides: boolean, area?: string, photo?: string }} StretchExercise  sides: done on both sides */

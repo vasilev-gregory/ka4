@@ -48,3 +48,10 @@ export async function startWorkout(page, n = 0) {
   const help = page.getByRole("dialog", { name: "Как работать с подходами" });
   if (await help.waitFor({ timeout: 1500 }).then(() => true, () => false)) await help.getByRole("button", { name: "Понятно" }).click();
 }
+
+// «Завершить»; with sets left unticked the app asks first, then finishes
+export async function finishWorkout(page) {
+  await page.getByRole("button", { name: "Завершить" }).first().click();
+  const ask = page.getByRole("dialog", { name: "Завершить тренировку?" });
+  if (await ask.isVisible()) await ask.getByRole("button", { name: "Завершить" }).click();
+}

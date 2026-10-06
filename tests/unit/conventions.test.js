@@ -23,7 +23,7 @@ test("no line longer than 200 characters (wrap JSX props, long class lists)", ()
 
 test("amber / teal appear only in the accent theme (index.css)", () => {
   const css = readFileSync("src/index.css", "utf8");
-  const outside = css.replace(/@theme \{[^}]*\}/, "").replace(/\.mode-stretch \{[^}]*\}/, "");
+  const outside = css.replace(/@theme \{[^}]*\}/, "").replace(/\.mode-stretch \{[^}]*\}/, "").replace(/\.mode-strength \{[^}]*\}/, "");
   assert.ok(!/\b(amber|teal)-\d/.test(outside));
 });
 

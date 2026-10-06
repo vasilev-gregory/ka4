@@ -30,7 +30,7 @@ export function MuscleBreakdown({ load, map = true, only, note, single = false, 
     <ByList title={`Засчитались${byNote ? ` ${byNote}` : ""}`} entries={Object.entries(load[m].by).map(([id, n]) => {
       const ex = exMap[id];
       return { id, value: n, text: `${fmtNum(n)} подх.`, name: ex ? nm1(ex) || ex.name : "Удалённое упражнение",
-        tag: (musclesOf(ex)[m] || 0) >= 1 ? "основная" : "помогает", onClick: () => ex && open?.({ type: "exercise", id }) };
+        tag: (musclesOf(ex)[m] || 0) >= 1 ? "основная" : "помогает", onClick: ex && open ? () => open({ type: "exercise", id }) : undefined };
     })} />
   ));
   return <LoadBreakdown items={ITEMS} load={shown} scale={single ? SINGLE : SCALE} map={map} only={only}

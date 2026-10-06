@@ -10,7 +10,7 @@ import { useWakeLock } from "../ui/useWakeLock.js";
 import { useCountdownSignals } from "../ui/useCountdownSignals.js";
 import { StretchMiniBar, StretchPlayer } from "./StretchPlayer.jsx";
 
-// open / setOpen: the player unfolded or folded (kept by the app, so a new run opens it)
+// open / setOpen: the player unfolded or folded (kept with the run: stretchRunActions.setRunFolded)
 export function StretchRun({ stretch, upStretch, sound, open, setOpen, settings }) {
   if (!stretch.active) return null;
   return <ActiveRun stretch={stretch} upStretch={upStretch} sound={sound} open={open} setOpen={setOpen} settings={settings} />;
@@ -42,8 +42,8 @@ function ActiveRun({ stretch, upStretch, sound, open, setOpen, settings }) {
     pause: () => upStretch((s) => togglePauseRun(s, Date.now())),
     adjust: (d) => upStretch((s) => adjustRunPhase(s, d, Date.now())),
     addRound: () => upStretch(addRunRound),
-    close: () => { upStretch((s) => closeRun(s, Date.now())); setOpen(true); },
-    discard: () => { upStretch(discardRun); setOpen(true); },
+    close: () => upStretch((s) => closeRun(s, Date.now())),
+    discard: () => upStretch(discardRun),
     keep: () => upStretch(keepQuickProgram),
     fold: () => setOpen(false),
     unfold: () => setOpen(true),

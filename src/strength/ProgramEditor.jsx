@@ -2,18 +2,19 @@
 // plan), replace, the muscles they plan for, start, delete. Saved as you go.
 import { useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { addProgramItems, removeProgram, replaceProgramItem, startWorkout } from "../model/workoutActions.js";
-import { CARDIO_PLAN } from "../model/workout.js";
+import { addProgramItems, dropEmptyProgram, removeProgram, replaceProgramItem, startWorkout } from "../model/workoutActions.js";
+import { CARDIO_PLAN, runningSession } from "../model/workout.js";
 import { fmtNum } from "../core/util.js";
 import { Picker } from "./ExerciseList.jsx";
 import { ProgramMuscles } from "./ProgramMuscles.jsx";
 import { Button, ExImg, Header, SecStepper, Stepper, useApp } from "../ui/kit.jsx";
-import { ProgramFooter, ProgramItems, ProgramName } from "../ui/ProgramEdit.jsx";
+import { ProgramFooter, ProgramItems, ProgramName, useDropIfEmpty } from "../ui/ProgramEdit.jsx";
 
 export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
   const { nm1, nm2 } = useApp();
   const [picker, setPicker] = useState(false);
   const change = (fn) => up((d) => { const p = d.programs.find((x) => x.id === id); if (p) fn(p); });
+  useDropIfEmpty(() => up((d) => dropEmptyProgram(d, id)));
   const p = data.programs.find((x) => x.id === id);
   if (!p) return <div className="p-4"><Header title="Программа удалена" back={back} /></div>;
 
@@ -30,22 +31,23 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
       <ProgramItems items={p.items} change={change} removed="Упражнение убрано" row={(it, i) => ({
         body: <>
           <ExImg ex={exMap[it.exerciseId]} size={34} />
-          <button onClick={() => exMap[it.exerciseId] && open({ type: "exercise", id: it.exerciseId })} className="ml-2 min-w-0 flex-1 text-left">
-            <div className="truncate">{nm1(exMap[it.exerciseId]) || "Удалённое упражнение"}</div>
+          <button onClick={() => exMap[it.exerciseId] && open({ type: "exercise", id: it.exerciseId })} className="ml-1 min-w-0 flex-1 text-left">
+            <div className="line-clamp-2 leading-tight">{nm1(exMap[it.exerciseId], "Удалённое упражнение")}</div>
             {nm2(exMap[it.exerciseId]) && <div className="truncate text-xs text-neutral-500">{nm2(exMap[it.exerciseId])}</div>}
           </button>
         </>,
         tail: <>
           {exMap[it.exerciseId]?.kind === "cardio" ? <CardioPlan it={it} set={(plan) => change((pp) => { pp.items[i] = { ...pp.items[i], ...plan }; })} />
             : <Stepper compact value={it.sets} onChange={(v) => change((pp) => { pp.items[i].sets = v; })} />}
-          <button onClick={() => setPicker({ replace: i })} className="p-1 text-neutral-500" aria-label="Заменить"><RefreshCw size={16} /></button>
+          <button onClick={() => setPicker({ replace: i })} className="p-2 text-neutral-500" aria-label="Заменить"><RefreshCw size={16} /></button>
         </>,
       })} />
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить упражнение</Button>
       <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте, у кардио — план в минутах или километрах (тап по единице). Изменения сохраняются сразу.</p>
       <ProgramMuscles program={p} exMap={exMap} open={open} />
 
-      <ProgramFooter canStart={!data.active && p.items.length > 0} startLabel={data.active ? "Уже идёт тренировка" : "Начать тренировку"}
+      <ProgramFooter canStart={!runningSession(data) && p.items.length > 0}
+        startLabel={{ strength: "Уже идёт тренировка", stretch: "Идёт растяжка" }[runningSession(data)] || "Начать тренировку"}
         onStart={() => { up((d) => startWorkout(d, p)); goWorkout(); }}
         onDelete={() => { up((d) => removeProgram(d, id)); back(); }} />
 

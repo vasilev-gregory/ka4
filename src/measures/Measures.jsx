@@ -3,7 +3,7 @@ import { removeMeasurement, saveMeasurement } from "../model/measureActions.js";
 import { useState } from "react";
 import { fmtDate, fmtNum, isoDay, num, numericInput } from "../core/util.js";
 import { MEASURES } from "../model/catalog.js";
-import { Button, DeleteButton, Header, Trend } from "../ui/kit.jsx";
+import { Button, DeleteButton, Header, Sheet, Trend } from "../ui/kit.jsx";
 
 export function MeasuresTab({ data, open, openSettings }) {
   const [sel, setSel] = useState("weight");
@@ -66,6 +66,10 @@ export function MeasureEditor({ data, up, id, back }) {
   const [all, setAll] = useState(false);
   const sorted = (data.measurements || []).slice().sort((a, b) => a.date - b.date);
   const lastVal = (k) => { for (let i = sorted.length - 1; i >= 0; i--) if (sorted[i] !== existing && num(sorted[i].values[k]) > 0) return sorted[i].values[k]; return ""; };
+  const [askLeave, setAskLeave] = useState(false);
+  const filled = Object.values(vals).some((v) => num(v) > 0);
+  // changed since opened (a new one: anything filled)
+  const dirty = existing ? day !== isoDay(existing.date) || JSON.stringify(vals) !== JSON.stringify(existing.values) : filled;
   const save = () => {
     up((d) => saveMeasurement(d, { id: existing && existing.id, day, values: vals }));
     back();
@@ -76,7 +80,7 @@ export function MeasureEditor({ data, up, id, back }) {
   const hidden = MEASURES.filter((m) => !shown.includes(m));
   return (
     <div className="p-4 pb-28">
-      <Header title={existing ? "Замер" : "Новый замер"} back={back} />
+      <Header title={existing ? "Замер" : "Новый замер"} back={() => (dirty ? setAskLeave(true) : back())} />
       <input type="date" value={day} onChange={(e) => setDay(e.target.value)}
         className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-neutral-100 outline-hidden focus:ring-2 focus:ring-accent-400" />
       <div className="space-y-2">
@@ -96,7 +100,13 @@ export function MeasureEditor({ data, up, id, back }) {
         </button>
       )}
       <p className="mt-2 text-xs text-neutral-500">Серым — прошлое значение. Заполняй только то, что мерил.</p>
-      <Button block onClick={save} className="mt-4">Сохранить</Button>
+      <Button block onClick={save} disabled={!filled} className="mt-4">Сохранить</Button>
+      {askLeave && (
+        <Sheet title="Сохранить изменения?" onClose={() => setAskLeave(false)}>
+          <Button block onClick={save} disabled={!filled} className="mb-2">Сохранить</Button>
+          <Button variant="quiet" block onClick={back}>Не сохранять</Button>
+        </Sheet>
+      )}
       {existing && (
         <DeleteButton onConfirm={() => { up((d) => removeMeasurement(d, existing.id)); back(); }} confirmText="Удалить замер?">
           Удалить замер

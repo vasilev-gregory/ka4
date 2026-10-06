@@ -131,3 +131,7 @@ export const stretchUsage = (s) => usageOf(s.sessions.map((x) => ({ startedAt: x
 
 // what the history list says about a run
 export const sessionSummary = (x) => `${fmtDur(x.finishedAt - x.startedAt)}, удержание ${fmtDur(heldTotal(x) * 1000)}${x.complete ? "" : ", не до конца"}`;
+
+// a stretch's runs, newest first: [{ x: the session, sec: held, per side }]
+export const stretchSessionsOf = (s, exId) =>
+  s.sessions.filter((x) => (x.work || {})[exId] > 0).map((x) => ({ x, sec: x.work[exId] })).reverse();

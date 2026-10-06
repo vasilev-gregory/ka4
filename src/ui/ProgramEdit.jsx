@@ -1,6 +1,7 @@
 // The parts of a program editor shared by strength and stretching: the name, the list of its items (hold the handle
 // and drag to reorder, ✕ removes with «Вернуть»), and the start / delete buttons. What a row shows is up to the
 // section; changes are saved as you go.
+import { useEffect, useEffectEvent } from "react";
 import { GripVertical, X } from "lucide-react";
 import { moveItem, useSortable } from "./sortable.js";
 import { Button, DeleteButton, useUndo } from "./kit.jsx";
@@ -30,13 +31,13 @@ export function ProgramItems({ items, change, removed, row }) {
         return (
           <div key={i + it.exerciseId} ref={sort.itemRef(i)} style={sort.itemStyle(i)}
             className={`rounded-xl p-2 ${sort.dragFrom === i ? "bg-neutral-800" : "bg-neutral-900"}`}>
-            <div className="flex items-center gap-1">
-              <button {...sort.handleProps(i, items.length)} className="cursor-grab p-1 text-neutral-500" aria-label="Перетащить">
+            <div className="flex items-center gap-0.5">
+              <button {...sort.handleProps(i, items.length)} className="cursor-grab p-2 text-neutral-500" aria-label="Перетащить">
                 <GripVertical size={18} />
               </button>
               {body}
               {tail}
-              <button onClick={() => remove(i)} className="p-1 text-neutral-500" aria-label="Убрать"><X size={18} /></button>
+              <button onClick={() => remove(i)} className="p-2 text-neutral-500" aria-label="Убрать"><X size={18} /></button>
             </div>
             {below}
           </div>
@@ -55,4 +56,10 @@ export function ProgramFooter({ startLabel, canStart, onStart, onDelete }) {
       <DeleteButton onConfirm={onDelete} confirmText="Удалить программу?">Удалить программу</DeleteButton>
     </>
   );
+}
+
+// leaving the editor of a program that stayed empty and unnamed: drop(), so no «Без названия» is left behind
+export function useDropIfEmpty(drop) {
+  const run = useEffectEvent(drop);
+  useEffect(() => () => run(), []);
 }

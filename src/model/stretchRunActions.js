@@ -90,7 +90,7 @@ function enter(s, tl, i, start) {
 // Starts a program, unless a run is going on (then that one stays); a finished run is closed first.
 export function playProgram(s, programId, now) {
   if (s.active && s.active.done) delete s.active;
-  if (s.active) return;
+  if (s.active) { s.active.folded = false; return; } // the run going on: back to it
   const a = { programId, startedAt: now, extraRounds: 0, held: {} };
   const tl = runTimeline(s, a);
   if (!tl.length) return;
@@ -203,4 +203,9 @@ export function closeRun(s, now) {
 // cancelled: the run is dropped and nothing of it goes into history
 export function discardRun(s) {
   if (s.active && !s.active.done) delete s.active;
+}
+
+// the player folded into the strip (or unfolded): kept with the run, so a reload shows it the same way
+export function setRunFolded(s, folded) {
+  if (s.active) s.active.folded = folded;
 }

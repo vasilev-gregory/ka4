@@ -9,7 +9,7 @@ import { PeriodCard, PeriodNav, TOTAL_NOTE, usePeriod } from "../ui/PeriodNav.js
 import { StretchBreakdown, StretchWhy } from "./StretchBreakdown.jsx";
 
 // week: minutes per area and days with stretching. month / year: runs, time and the average week per area.
-function PeriodPanel({ stretch, zoom, range }) {
+function PeriodPanel({ stretch, zoom, range, open }) {
   let title, areas;
   if (zoom === "week") {
     const w = stretchWeek(stretch, range.from);
@@ -17,14 +17,14 @@ function PeriodPanel({ stretch, zoom, range }) {
     areas = w.areas;
   } else {
     const p = stretchPeriod(stretch, range);
-    title = p.sessions ? `${p.sessions} ${plural(p.sessions, "растяжка", "растяжки", "растяжек")}, ${fmtDur(p.time)}` : "";
+    title = p.sessions ? `${p.sessions} ${plural(p.sessions, "растяжка", "растяжки", "растяжек")}, время ${fmtDur(p.time)}` : "";
     areas = p.perWeek;
   }
   const any = Object.keys(areas).length > 0;
   const empty = zoom === "week" ? "На этой неделе растяжки не было." : zoom === "month" ? "В этом месяце растяжки не было." : "В этом году растяжки не было.";
   return (
     <PeriodCard title={title} averaged={zoom !== "week" && any} why={<StretchWhy />}>
-      {any ? <StretchBreakdown areas={areas} week={zoom === "week"} exMap={stExMap(stretch)} byNote={TOTAL_NOTE[zoom]} />
+      {any ? <StretchBreakdown areas={areas} week={zoom === "week"} exMap={stExMap(stretch)} byNote={TOTAL_NOTE[zoom]} open={open} />
         : <p className="text-xs text-neutral-500">{empty}</p>}
     </PeriodCard>
   );
@@ -37,7 +37,7 @@ export function StretchHistory({ stretch, open }) {
     <div className="p-4">
       <Header title="История растяжки" />
       <PeriodNav period={period} dates={stretch.sessions.map((s) => s.startedAt)}>
-        <PeriodPanel stretch={stretch} zoom={period.zoom} range={period.range} />
+        <PeriodPanel stretch={stretch} zoom={period.zoom} range={period.range} open={open} />
       </PeriodNav>
       {stretch.sessions.length === 0 && <p className="text-neutral-400">Здесь появятся пройденные растяжки.</p>}
       <div className="space-y-2">

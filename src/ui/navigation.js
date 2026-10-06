@@ -25,6 +25,7 @@ export function useNavigation(initialTab = "workout") {
     if (history.state && history.state.overlay) history.replaceState({ kach: depth.current }, "");
     else history.pushState({ kach: depth.current }, "");
     setStack((s) => [...s, view]);
+    window.scrollTo(0, 0); // a new screen starts at its top
   };
   const back = () => { if (depth.current > 0) history.back(); };
   // close every screen (tab switch, mode switch, restore)

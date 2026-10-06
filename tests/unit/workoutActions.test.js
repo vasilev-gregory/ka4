@@ -174,3 +174,31 @@ test("turning the countdown off drops the one going on; workouts and the running
   A.removeWorkout(d, "a");
   assert.deepEqual(d.workouts.map((w) => w.id), ["b"]);
 });
+
+test("a program left empty and unnamed is dropped, one with a name or an exercise stays", async () => {
+  const S = await import("../../src/model/stretchActions.js");
+  const d = seed();
+  A.createProgram(d, "e");
+  A.createProgram(d, "n");
+  d.programs.find((p) => p.id === "n").name = "Ноги";
+  A.dropEmptyProgram(d, "e");
+  A.dropEmptyProgram(d, "n");
+  assert.deepEqual(d.programs.filter((p) => ["e", "n"].includes(p.id)).map((p) => p.id), ["n"]);
+  const s = d.stretch;
+  S.createProgram(s, "x");
+  S.dropEmptyProgram(s, "x");
+  assert.equal(s.programs.some((p) => p.id === "x"), false);
+});
+
+test("one session at a time: a workout doesn't start while a stretching run goes on", async () => {
+  const { runningSession } = await import("../../src/model/workout.js");
+  const d = seed();
+  assert.equal(runningSession(d), null);
+  d.stretch.active = { programId: "p", done: false };
+  assert.equal(runningSession(d), "stretch");
+  A.startWorkout(d, d.programs[0], 1000);
+  assert.equal(d.active, null);
+  d.stretch.active.done = true; // a finished run waiting to be closed doesn't count
+  A.startWorkout(d, d.programs[0], 1000);
+  assert.equal(runningSession(d), "strength");
+});

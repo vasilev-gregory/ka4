@@ -61,3 +61,9 @@ export function recordSession(s, p, { programId, startedAt, finishedAt, complete
 export function removeSession(s, id) {
   s.sessions = s.sessions.filter((x) => x.id !== id);
 }
+
+// a program left with no name and nothing in it (made by «+ Новая программа», then left) is dropped
+export function dropEmptyProgram(s, id) {
+  const p = s.programs.find((x) => x.id === id);
+  if (p && !p.name.trim() && !p.items.length) removeProgram(s, id);
+}
