@@ -1,14 +1,16 @@
-// Strength program editor: name, exercises with how many sets to prefill, start, delete. Saved as you go.
+// Strength program editor: name, exercises with how many sets to prefill, the muscles they plan for, start, delete.
+// Saved as you go.
 import { useState } from "react";
 import { X, RefreshCw, GripVertical } from "lucide-react";
 import { startWorkout } from "../model/workoutActions.js";
 import { CARDIO_PLAN, programItem } from "../model/workout.js";
 import { fmtNum } from "../core/util.js";
 import { Picker } from "./ExerciseList.jsx";
+import { ProgramMuscles } from "./ProgramMuscles.jsx";
 import { Button, DeleteButton, ExImg, Header, SecStepper, Stepper, useApp, useUndo } from "../ui/kit.jsx";
 import { moveItem, useSortable } from "../ui/sortable.js";
 
-export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
+export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
   const { nm1, nm2 } = useApp();
   const [picker, setPicker] = useState(false);
   const undo = useUndo();
@@ -62,6 +64,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout }) {
       </div>
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить упражнение</Button>
       <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте, у кардио — план в минутах или километрах (тап по единице). Изменения сохраняются сразу.</p>
+      <ProgramMuscles programs={data.programs} program={p} exMap={exMap} open={open} />
 
       <Button block disabled={!!data.active || !p.items.length} className="mt-6"
         onClick={() => { up((d) => startWorkout(d, p)); goWorkout(); }}>
