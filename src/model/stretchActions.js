@@ -31,9 +31,9 @@ export function setProgramTiming(p, key, value) {
   p.timing = { ...stTiming(p), [key]: value };
 }
 
-// a stretch appears once per program; repeats come from rounds
+// stretches added to a program; one may be there more than once (done twice a round)
 export function addToProgram(p, exercises) {
-  exercises.forEach((ex) => { if (!p.items.some((it) => it.exerciseId === ex.id)) p.items.push({ exerciseId: ex.id }); });
+  exercises.forEach((ex) => p.items.push({ exerciseId: ex.id }));
 }
 
 export function setItemTiming(p, i, key, value) {
@@ -51,7 +51,9 @@ const PHASE_FIELD = { work: "work", rest: "rest", prep: "prep", switch: "sw", ro
 export function savePhaseLength(p, phase, seconds) {
   if (phase.k === "roundRest") { setProgramTiming(p, "roundRest", seconds); return; }
   const field = PHASE_FIELD[phase.k];
-  p.items.forEach((it) => { if (it.exerciseId === phase.ex.id) it.over = { ...(it.over || {}), [field]: seconds }; });
+  // the program item the phase came from (a stretch in the program twice keeps two own times)
+  const it = phase.item != null ? p.items[phase.item] : p.items.find((x) => x.exerciseId === phase.ex.id);
+  if (it) it.over = { ...(it.over || {}), [field]: seconds };
 }
 
 export function recordSession(s, p, { programId, startedAt, finishedAt, complete, work }) {

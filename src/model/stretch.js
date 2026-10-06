@@ -17,21 +17,22 @@ export const stTiming = (p, it) => ({ ...ST_DEFAULTS, ...(p.timing || {}), ...((
 // unrolls a program into a flat list of timed phases
 export function buildTimeline(p, exMap) {
   const T = stTiming(p);
-  const items = p.items.map((it) => ({ ex: exMap[it.exerciseId], t: stTiming(p, it) })).filter((x) => x.ex);
+  // item: the program item a phase comes from (a stretch may be in a program more than once)
+  const items = p.items.map((it, item) => ({ ex: exMap[it.exerciseId], t: stTiming(p, it), item })).filter((x) => x.ex);
   const out = [];
   const rounds = Math.max(1, T.rounds || 1);
   // the intro is time to get into position: at the start, and before a stretch nothing rests in front of (a rest
   // already shows what comes next, so a second pause there would only stall the run)
   const doItem = (x) => {
-    const { t, ex } = x;
+    const { t, ex, item } = x;
     const last = out[out.length - 1];
-    if (t.prep > 0 && (!last || (last.k !== "rest" && last.k !== "roundRest"))) out.push({ k: "prep", ex, dur: t.prep });
+    if (t.prep > 0 && (!last || (last.k !== "rest" && last.k !== "roundRest"))) out.push({ k: "prep", ex, item, dur: t.prep });
     const sides = ex.sides ? [LEFT, RIGHT] : [null];
     sides.forEach((side, i) => {
-      if (i > 0 && t.sw > 0) out.push({ k: "switch", ex, dur: t.sw });
-      out.push({ k: "work", ex, side, dur: t.work });
+      if (i > 0 && t.sw > 0) out.push({ k: "switch", ex, item, dur: t.sw });
+      out.push({ k: "work", ex, item, side, dur: t.work });
     });
-    if (t.rest > 0) out.push({ k: "rest", ex, dur: t.rest });
+    if (t.rest > 0) out.push({ k: "rest", ex, item, dur: t.rest });
   };
   if (T.mode === "sequence") {
     items.forEach((x) => { for (let r = 0; r < rounds; r++) doItem(x); });

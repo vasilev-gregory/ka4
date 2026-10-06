@@ -183,3 +183,20 @@ test("folded or not is kept with the run; starting while a run goes on unfolds i
   playProgram(s, "p", T0 + 1000);
   assert.equal(s.active.folded, false);
 });
+
+test("a stretch twice in a program: both run, each keeps its own time, ±5 changes only the one going on", async () => {
+  const { addToProgram } = await import("../../src/model/stretchActions.js");
+  const s = setup();
+  addToProgram(s.programs[0], [{ id: "st-figure-four" }]); // the figure four again, at the end
+  assert.equal(s.programs[0].items.length, 3);
+  playProgram(s, "p", T0);
+  const tl = runState(s, T0).tl;
+  assert.equal(tl.filter((ph) => ph.k === "work" && ph.ex.id === "st-figure-four").length, 4); // 2 items × 2 sides
+  const second = tl.findIndex((ph, i) => ph.k === "work" && ph.ex.id === "st-figure-four" && ph.item === 2);
+  goToPhase(s, second, T0);
+  adjustRunPhase(s, 5, T0);
+  assert.equal(s.programs[0].items[2].over.work, 35);
+  assert.equal(s.programs[0].items[0].over, undefined);
+  runFor(s, T0, T0 + 36_000);
+  assert.deepEqual(s.active.held, { "st-figure-four": 35 });
+});

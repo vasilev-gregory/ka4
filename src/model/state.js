@@ -39,11 +39,7 @@ export function migrate(d) {
   if (!d.stretch) d.stretch = seedStretch();
   ["exercises", "programs", "sessions"].forEach((k) => { if (!Array.isArray(d.stretch[k])) d.stretch[k] = []; });
   if (!d.stretch.defaults) d.stretch.defaults = { ...ST_DEFAULTS };
-  // a stretch appears once per program (repeats come from rounds)
-  d.stretch.programs.forEach((pr) => {
-    const seen = new Set();
-    pr.items = (pr.items || []).filter((it) => (seen.has(it.exerciseId) ? false : (seen.add(it.exerciseId), true)));
-  });
+  d.stretch.programs.forEach((pr) => { if (!Array.isArray(pr.items)) pr.items = []; });
   d.stretch.exercises.forEach((e) => {
     if (e.area === undefined && ST_AREA_DEFAULTS[e.id]) e.area = ST_AREA_DEFAULTS[e.id];
     const seedRow = ST_SEED.find((r) => r[0] === e.id);

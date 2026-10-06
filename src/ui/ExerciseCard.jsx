@@ -1,8 +1,9 @@
 // The parts of an exercise's card shared by strength exercises and stretches: the title with both names and ✎,
-// the name fields when editing, the picture with the numbers, and the list of sessions it was in.
+// the name fields when editing, the picture with the numbers, what it works, and the list of sessions it was in.
 import { Pencil } from "lucide-react";
 import { fmtDate } from "../core/util.js";
 import { ExImg, Header, useApp } from "./kit.jsx";
+import { BodyMap } from "./BodyMap.jsx";
 
 export function ExerciseTitle({ ex, back, editing, toggleEdit }) {
   const { nm1, nm2 } = useApp();
@@ -69,5 +70,17 @@ export function ExerciseRow({ ex, missing, text, note, onClick }) {
         {note}
       </div>
     </button>
+  );
+}
+
+// What an exercise works, as a card like the other blocks: the body map at its usual size (parts filled: main ones
+// full, helping ones half) and a line saying it in words.
+export function ExerciseBody({ title = "Мышцы", parts, fill, color, children }) {
+  return (
+    <div className="mb-4 rounded-xl bg-neutral-900 p-3">
+      <div className="mb-2 font-semibold">{title}</div>
+      <BodyMap parts={parts} fill={fill} color={color} title={title} />
+      <p className="mt-2 text-center text-xs text-neutral-400">{children}</p>
+    </div>
   );
 }

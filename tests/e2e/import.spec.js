@@ -22,6 +22,7 @@ test("Settings → load a Hevy export: preview, import adds workouts and keeps t
   await page.locator("input[type=file][accept*='.csv']").setInputFiles(HEVY);
   await expect(sheet.getByText(/уже есть в истории/)).toBeVisible();
   await sheet.getByRole("button", { name: "Закрыть" }).click();
+  await expect(sheet).toHaveCount(0); // its back step is done before the next file opens a sheet
 
   // GymKeeper on top: added as well, Hevy's workouts stay
   await page.locator("input[type=file][accept*='.csv']").setInputFiles("tests/fixtures/gymkeeper.csv");

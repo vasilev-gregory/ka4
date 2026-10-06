@@ -48,8 +48,8 @@ test("a built-in stretch's sides are always the catalog's; an own stretch keeps 
   assert.equal(m.find((e) => e.id === "st-mine").sides, true);
 });
 
-test("duplicate stretches in a program are merged", () => {
+test("a stretch may be in a program twice: migrate keeps both", () => {
   const d = seed();
   d.stretch.programs.push({ id: "p", name: "x", items: [{ exerciseId: "st-pizza" }, { exerciseId: "st-lat" }, { exerciseId: "st-pizza" }] });
-  assert.deepEqual(migrate(d).stretch.programs[0].items.map((i) => i.exerciseId), ["st-pizza", "st-lat"]);
+  assert.deepEqual(migrate(d).stretch.programs[0].items.map((i) => i.exerciseId), ["st-pizza", "st-lat", "st-pizza"]);
 });
