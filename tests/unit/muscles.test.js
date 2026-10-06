@@ -29,6 +29,18 @@ test("rules: the right heads and parts of the legs", () => {
   // the user's own exercise: by its name, else the group's default
   assert.deepEqual(musclesOf({ id: "x1", name: "Cable lateral raise 2", group: "плечи", kind: "reps" }), { sidedelt: 1 });
   assert.deepEqual(musclesOf({ id: "x2", name: "Мой жим", group: "грудь", kind: "reps" }), { chest: 1, frontdelt: 0.5, triceps: 0.5 });
+  // own exercises are mostly named in Russian: the rules know Russian stems
+  const own = (name, group) => musclesOf({ id: "x3", name, group, kind: "reps" });
+  assert.deepEqual(own("Махи гантелями в стороны", "плечи"), { sidedelt: 1 });
+  assert.deepEqual(own("Разведения в стороны сидя", "плечи"), { sidedelt: 1 });
+  assert.deepEqual(own("Протяжка", "плечи"), { sidedelt: 1, traps: 0.5 });
+  assert.deepEqual(own("Махи в наклоне", "плечи"), { reardelt: 1, traps: 0.5 });
+  assert.deepEqual(own("Махи перед собой", "плечи"), { frontdelt: 1 });
+  assert.deepEqual(own("Жим Арнольда", "плечи"), { frontdelt: 1, sidedelt: 0.5, triceps: 0.5 });
+  assert.deepEqual(own("Пуловер на блоке", "спина"), { lats: 1 });
+  assert.deepEqual(own("Болгарские выпады", "ноги"), { quads: 1, glutes: 1 });
+  assert.deepEqual(own("Сгибания ног лёжа", "ноги"), { hams: 1 });
+  assert.deepEqual(musclesOf({ id: "x4", name: "Side raise", ru: "Махи в стороны", group: "плечи", kind: "reps" }), { sidedelt: 1 });
 });
 
 test("the user's choice wins; a tap cycles main -> helping -> none; empty = back to the rules", () => {

@@ -13,44 +13,46 @@ export const MUSCLES = [
 ];
 export const MUSCLE_NAME = Object.fromEntries(MUSCLES.map(([id, name]) => [id, name]));
 
-// [group, pattern over the exercise's slug, muscles]: the first rule that matches wins; a rule without a
-// pattern is the group's default (also for the user's own exercises with names that match nothing)
+// [group, pattern, muscles]: the first rule that matches wins; a rule without a pattern is the group's default.
+// A pattern sees the slug of a built-in's English name, and also the lower-cased name of the user's own exercise —
+// those are mostly Russian, so each pattern has Russian stems too ("махи … в стороны").
 const RULES = [
-  ["ноги", /leg-extension/, { quads: 1 }],
-  ["ноги", /leg-curl/, { hams: 1 }],
-  ["ноги", /sumo-deadlift/, { glutes: 1, hams: 1, quads: 0.5, lowback: 0.5 }],
-  ["ноги", /romanian-deadlift|kettlebell/, { hams: 1, glutes: 1, lowback: 0.5 }],
-  ["ноги", /hip-thrust|glute-bridge/, { glutes: 1, hams: 0.5 }],
-  ["ноги", /abduction|side-leg-raise/, { glutes: 1 }],
-  ["ноги", /lunge|split-squat|single-leg-squat/, { quads: 1, glutes: 1 }],
+  ["ноги", /leg-extension|разгибан/, { quads: 1 }],
+  ["ноги", /leg-curl|сгибан/, { hams: 1 }],
+  ["ноги", /sumo-deadlift|сумо/, { glutes: 1, hams: 1, quads: 0.5, lowback: 0.5 }],
+  ["ноги", /romanian-deadlift|kettlebell|румын|мертв|гир/, { hams: 1, glutes: 1, lowback: 0.5 }],
+  ["ноги", /hip-thrust|glute-bridge|ягодичн|мост/, { glutes: 1, hams: 0.5 }],
+  ["ноги", /abduction|side-leg-raise|отведен|мах/, { glutes: 1 }],
+  ["ноги", /lunge|split-squat|single-leg-squat|выпад|болгар|сплит|пистолет|зашагив/, { quads: 1, glutes: 1 }],
   ["ноги", null, { quads: 1, glutes: 0.5 }],
-  ["плечи", /lateral-raise/, { sidedelt: 1 }],
-  ["плечи", /upright-row/, { sidedelt: 1, traps: 0.5 }],
-  ["плечи", /reverse|rear-delt/, { reardelt: 1, traps: 0.5 }],
-  ["плечи", /front-raise/, { frontdelt: 1 }],
+  // rear and front before lateral: "махи в наклоне", "махи перед собой" are not lateral raises
+  ["плечи", /reverse|rear-delt|задн|обратн|наклон/, { reardelt: 1, traps: 0.5 }],
+  ["плечи", /front-raise|перед собой|вперед/, { frontdelt: 1 }],
+  ["плечи", /upright-row|подбород|протяжк/, { sidedelt: 1, traps: 0.5 }],
+  ["плечи", /lateral-raise|мах|развед|в сторон/, { sidedelt: 1 }],
   ["плечи", null, { frontdelt: 1, sidedelt: 0.5, triceps: 0.5 }],
-  ["грудь", /dips/, { chest: 1, triceps: 1, frontdelt: 0.5 }],
-  ["грудь", /crossover|fly|svend/, { chest: 1, frontdelt: 0.5 }],
-  ["грудь", /close-grip/, { chest: 1, triceps: 1 }],
-  ["грудь", /incline/, { chest: 1, frontdelt: 1, triceps: 0.5 }],
+  ["грудь", /dips|брус/, { chest: 1, triceps: 1, frontdelt: 0.5 }],
+  ["грудь", /crossover|fly|svend|кроссовер|развод|развед|сведен|бабочк|пек|свенд/, { chest: 1, frontdelt: 0.5 }],
+  ["грудь", /close-grip|узк/, { chest: 1, triceps: 1 }],
+  ["грудь", /incline|наклон/, { chest: 1, frontdelt: 1, triceps: 0.5 }],
   ["грудь", null, { chest: 1, frontdelt: 0.5, triceps: 0.5 }],
-  ["спина", /cable-pullover|machine-pullover/, { lats: 1 }],
-  ["спина", /pullover/, { lats: 1, chest: 0.5 }],
-  ["спина", /shrug/, { traps: 1 }],
-  ["спина", /hyperextension/, { lowback: 1, glutes: 0.5, hams: 0.5 }],
-  ["спина", /chin-up/, { lats: 1, biceps: 1 }],
-  ["спина", /pulldown|pull-up/, { lats: 1, biceps: 0.5, traps: 0.5 }],
+  ["спина", /cable-pullover|machine-pullover|пуловер.*(блок|тренаж)|(блок|тренаж).*пуловер/, { lats: 1 }],
+  ["спина", /pullover|пуловер/, { lats: 1, chest: 0.5 }],
+  ["спина", /shrug|шраг/, { traps: 1 }],
+  ["спина", /hyperextension|гиперэкст/, { lowback: 1, glutes: 0.5, hams: 0.5 }],
+  ["спина", /chin-up|подтяг.*обратн|обратн.*подтяг/, { lats: 1, biceps: 1 }],
+  ["спина", /pulldown|pull-up|подтяг|верхн/, { lats: 1, biceps: 0.5, traps: 0.5 }],
   ["спина", null, { lats: 1, traps: 1, reardelt: 0.5, biceps: 0.5 }], // rows
   ["бицепс", null, { biceps: 1 }],
-  ["трицепс", /dips/, { triceps: 1, chest: 0.5, frontdelt: 0.5 }],
-  ["трицепс", /bench-press/, { triceps: 1, chest: 0.5 }],
+  ["трицепс", /dips|брус/, { triceps: 1, chest: 0.5, frontdelt: 0.5 }],
+  ["трицепс", /bench-press|жим/, { triceps: 1, chest: 0.5 }],
   ["трицепс", null, { triceps: 1 }],
   ["предплечья", null, { forearms: 1 }],
   ["икры", null, { calves: 1 }],
-  ["кор", /^deadlift/, { glutes: 1, hams: 1, lowback: 1, quads: 0.5, traps: 0.5 }],
-  ["кор", /walk|carry/, { forearms: 1, traps: 1, abs: 0.5 }],
+  ["кор", /^deadlift|^станов|^мертв/, { glutes: 1, hams: 1, lowback: 1, quads: 0.5, traps: 0.5 }],
+  ["кор", /walk|carry|прогулк|фермер|перенос/, { forearms: 1, traps: 1, abs: 0.5 }],
   ["кор", /bird-dog/, { lowback: 1, abs: 0.5 }],
-  ["кор", /burpee/, { quads: 1, chest: 0.5 }],
+  ["кор", /burpee|берпи/, { quads: 1, chest: 0.5 }],
   ["кор", null, { abs: 1 }],
 ];
 
@@ -58,9 +60,12 @@ const RULES = [
 export function musclesOf(ex) {
   if (!ex || ex.kind === "cardio") return {};
   if (ex.muscles && Object.keys(ex.muscles).length) return ex.muscles;
-  // built-in ids are slugs of the English name; the user's own exercises are matched by their name
-  const keys = [ex.id, slug(ex.name || "")];
-  const rule = RULES.find(([g, re]) => g === ex.group && (!re || keys.some((k) => re.test(k))));
+  // a built-in's id is the slug of its English name; the user's own exercise is matched by its names as typed
+  const name = slug(ex.name || "");
+  const own = ex.id !== name;
+  const lower = (s) => (s || "").toLowerCase().replace(/ё/g, "е");
+  const keys = own ? [name, lower(ex.name), lower(ex.ru)] : [ex.id];
+  const rule = RULES.find(([g, re]) => g === ex.group && (!re || keys.some((k) => k && re.test(k))));
   return rule ? rule[2] : {};
 }
 
