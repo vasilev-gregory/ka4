@@ -235,6 +235,12 @@ export const ST_OLD_NAMES = {
   "st-figure-four": "Figure four", "st-pizza": "Pizza", "st-lat": "Lat stretch",
 };
 
+// built-in stretches corrected later: [id, the old Russian name, what changes]; applied once, only to a stretch whose
+// Russian name is still the old one (the user didn't touch it)
+export const ST_FIXES = [
+  ["st-lat", "Широчайшие: на коленях, руки вперёд и в сторону", { ru: "Широчайшие: на коленях, руки вперёд, таз к пяткам", sides: false }],
+];
+
 // Thomas et al. 2018 (Int J Sports Med): ≥5 min of static stretching per muscle group per week for ROM gains,
 // more frequent (≈5 days/week) is better. Later meta-regressions: returns flatten around ~10 min/week per group.
 export const ST_WEEK_MIN = 5 * 60, ST_WEEK_MAX = 10 * 60;
@@ -247,5 +253,5 @@ export const ST_SEED = [
   ["st-figure-four", "Supine figure four", "Четвёрка лёжа (стопа на стене)", true],
   ["st-elephant-walk", "Elephant walk", "Походка слона", false],
   ["st-pizza", "Pizza (seated straddle fold)", "Пицца: сед ноги врозь, наклон вперёд", false],
-  ["st-lat", "Kneeling lat stretch", "Широчайшие: на коленях, руки вперёд и в сторону", true],
+  ["st-lat", "Kneeling lat stretch", "Широчайшие: на коленях, руки вперёд, таз к пяткам", false],
 ];

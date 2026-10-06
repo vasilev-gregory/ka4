@@ -19,9 +19,12 @@ export function buildTimeline(p, exMap) {
   const items = p.items.map((it) => ({ ex: exMap[it.exerciseId], t: stTiming(p, it) })).filter((x) => x.ex);
   const out = [];
   const rounds = Math.max(1, T.rounds || 1);
-  const doItem = (x, withPrep) => {
+  // the intro is time to get into position: at the start, and before a stretch nothing rests in front of (a rest
+  // already shows what comes next, so a second pause there would only stall the run)
+  const doItem = (x) => {
     const { t, ex } = x;
-    if (withPrep && t.prep > 0) out.push({ k: "prep", ex, dur: t.prep });
+    const last = out[out.length - 1];
+    if (t.prep > 0 && (!last || (last.k !== "rest" && last.k !== "roundRest"))) out.push({ k: "prep", ex, dur: t.prep });
     const sides = ex.sides ? [LEFT, RIGHT] : [null];
     sides.forEach((side, i) => {
       if (i > 0 && t.sw > 0) out.push({ k: "switch", ex, dur: t.sw });
@@ -30,10 +33,10 @@ export function buildTimeline(p, exMap) {
     if (t.rest > 0) out.push({ k: "rest", ex, dur: t.rest });
   };
   if (T.mode === "sequence") {
-    items.forEach((x) => { for (let r = 0; r < rounds; r++) doItem(x, r === 0); });
+    items.forEach((x) => { for (let r = 0; r < rounds; r++) doItem(x); });
   } else {
     for (let r = 0; r < rounds; r++) {
-      items.forEach((x) => doItem(x, true));
+      items.forEach((x) => doItem(x));
       if (r < rounds - 1 && T.roundRest > 0) out.push({ k: "roundRest", dur: T.roundRest });
     }
   }
