@@ -1,28 +1,12 @@
-// History periods (week / month / year) and an exercise's progress over time: ranges, summaries, chart series.
-import { DAY, num, weekStartOf } from "../core/util.js";
+// Strength over time: a month's / year's summary and an exercise's progress series for its chart.
+// The calendar itself (periods, paging, weekly averages) is in calendar.js.
+import { num } from "../core/util.js";
+import { averageWeeks, inPeriod } from "./calendar.js";
 import { setLoad, stats } from "./workout.js";
 import { weekLoad } from "./muscles.js";
 import { sessionE1rm } from "./records.js";
 import { PARTIAL_WEIGHT } from "./catalog.js";
 import { workoutKcal } from "./energy.js";
-
-// The period of the given zoom containing `ts`: { from, to } (to exclusive), local calendar boundaries.
-export function periodOf(zoom, ts) {
-  const d = new Date(ts);
-  if (zoom === "week") { const from = weekStartOf(ts); return { from, to: weekStartOf(from + 8 * DAY) }; }
-  if (zoom === "month") return { from: new Date(d.getFullYear(), d.getMonth(), 1).getTime(), to: new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime() };
-  return { from: new Date(d.getFullYear(), 0, 1).getTime(), to: new Date(d.getFullYear() + 1, 0, 1).getTime() };
-}
-
-// start of the period k periods away from the one containing ts
-export function shiftPeriod(zoom, ts, k) {
-  const d = new Date(periodOf(zoom, ts).from);
-  if (zoom === "week") return weekStartOf(d.getTime() + k * 7 * DAY + 3 * DAY); // mid-week: DST-safe
-  if (zoom === "month") return new Date(d.getFullYear(), d.getMonth() + k, 1).getTime();
-  return new Date(d.getFullYear() + k, 0, 1).getTime();
-}
-
-export const inPeriod = (workouts, { from, to }) => workouts.filter((w) => w.startedAt >= from && w.startedAt < to);
 
 // A month or a year at a glance: workouts, volume, sets, cardio minutes, kcal (estimate), and hard sets per muscle
 // averaged over the weeks of the period that have already started (weeks: how many; perWeek: muscle -> { sets, freq, by });
@@ -35,20 +19,7 @@ export function periodSummary(workouts, exMap, bwAt, range, now = Date.now()) {
     vol += st.vol; sets += st.sets; cardioMin += st.cardioMin; cardioKm += st.cardioKm;
     kcal += workoutKcal(w, exMap, bwAt, now) || 0;
   });
-  const muscles = {};
-  let weeks = 0;
-  for (let ws = weekStartOf(range.from); ws < range.to && ws <= now; ws = weekStartOf(ws + 8 * DAY)) {
-    weeks++;
-    Object.entries(weekLoad(list, exMap, ws).muscles).forEach(([m, p]) => {
-      const t = muscles[m] || (muscles[m] = { sets: 0, freq: 0, by: {} });
-      t.sets += p.sets;
-      t.freq += p.freq;
-      Object.entries(p.by).forEach(([id, n]) => { t.by[id] = (t.by[id] || 0) + n; });
-    });
-  }
-  const avg = (n) => Math.round((n / Math.max(1, weeks)) * 10) / 10;
-  const perWeek = {};
-  Object.entries(muscles).forEach(([m, t]) => { perWeek[m] = { sets: avg(t.sets), freq: avg(t.freq), by: t.by }; });
+  const { weeks, perWeek } = averageWeeks(range, now, (ws) => weekLoad(list, exMap, ws).muscles);
   const days = new Set(list.map((w) => new Date(w.startedAt).toDateString())).size;
   return { workouts: list.length, days, vol, sets, cardioMin, cardioKm, kcal, weeks, perWeek };
 }

@@ -1,30 +1,45 @@
-// Stretching history: the week panel (browsable by week) and the list of runs.
-import { useState } from "react";
-import { Trash2, ChevronLeft } from "lucide-react";
-import { DAY, fmtDate, fmtDur, weekStartOf } from "../core/util.js";
-import { stretchWeek } from "../model/stretch.js";
+// Stretching history: the shared calendar (ui/PeriodNav), minutes per muscle area for the period, and the runs.
+import { Trash2 } from "lucide-react";
+import { fmtDate, fmtDur, plural } from "../core/util.js";
+import { inPeriod } from "../model/calendar.js";
+import { stExMap, stretchPeriod, stretchWeek } from "../model/stretch.js";
 import { removeSession } from "../model/stretchActions.js";
 import { ConfirmButton, Header } from "../ui/kit.jsx";
-import { StretchWeekPanel } from "./StretchWeekPanel.jsx";
+import { PeriodCard, PeriodNav, TOTAL_NOTE, usePeriod } from "../ui/PeriodNav.jsx";
+import { StretchBreakdown, StretchWhy } from "./StretchBreakdown.jsx";
 
-const dayMonth = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+// week: minutes per area and days with stretching. month / year: runs, time and the average week per area.
+function PeriodPanel({ stretch, zoom, range }) {
+  let title, areas;
+  if (zoom === "week") {
+    const w = stretchWeek(stretch, range.from);
+    title = `дней с растяжкой: ${w.days} из 5`;
+    areas = w.areas;
+  } else {
+    const p = stretchPeriod(stretch, range);
+    title = p.sessions ? `${p.sessions} ${plural(p.sessions, "растяжка", "растяжки", "растяжек")}, ${fmtDur(p.time)}` : "";
+    areas = p.perWeek;
+  }
+  const any = Object.keys(areas).length > 0;
+  const empty = zoom === "week" ? "На этой неделе растяжки не было." : zoom === "month" ? "В этом месяце растяжки не было." : "В этом году растяжки не было.";
+  return (
+    <PeriodCard title={title} averaged={zoom !== "week" && any} why={<StretchWhy />}>
+      {any ? <StretchBreakdown areas={areas} week={zoom === "week"} exMap={stExMap(stretch)} byNote={TOTAL_NOTE[zoom]} />
+        : <p className="text-xs text-neutral-500">{empty}</p>}
+    </PeriodCard>
+  );
+}
 
 export function StretchHistory({ stretch, upStretch }) {
-  const list = stretch.sessions.slice().reverse();
-  const [ws, setWs] = useState(() => weekStartOf(Date.now()));
+  const period = usePeriod("stretch");
+  const list = inPeriod(stretch.sessions, period.range).reverse();
   return (
     <div className="p-4">
       <Header title="История растяжки" />
-      <div className="mb-2 flex items-center justify-between">
-        <button onClick={() => setWs(weekStartOf(ws - 3 * DAY))} className="p-2 text-neutral-400"><ChevronLeft size={20} /></button>
-        <div className="text-sm">{dayMonth(ws)} – {dayMonth(ws + 6 * DAY + 3600e3)}</div>
-        <button onClick={() => setWs(weekStartOf(ws + 8 * DAY))} className="rotate-180 p-2 text-neutral-400"><ChevronLeft size={20} /></button>
-      </div>
-      <div className="mb-5">
-        <StretchWeekPanel stretch={stretch} ws={ws} />
-        {list.length > 0 && !Object.keys(stretchWeek(stretch, ws).areas).length && <p className="text-xs text-neutral-500">На этой неделе растяжки не было.</p>}
-      </div>
-      {list.length === 0 && <p className="text-neutral-400">Здесь появятся пройденные растяжки.</p>}
+      <PeriodNav period={period} dates={stretch.sessions.map((s) => s.startedAt)}>
+        <PeriodPanel stretch={stretch} zoom={period.zoom} range={period.range} />
+      </PeriodNav>
+      {stretch.sessions.length === 0 && <p className="text-neutral-400">Здесь появятся пройденные растяжки.</p>}
       <div className="space-y-2">
         {list.map((s) => (
           <div key={s.id} className="flex items-center gap-2 rounded-xl bg-neutral-900 p-4">

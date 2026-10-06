@@ -1,6 +1,7 @@
 // Muscles: which muscles an exercise works (main = 1, helping = 0.5), hard sets per muscle over a period,
 // and the growth status of a weekly amount. Pure data and queries; the body picture lives in ui/BodyMap.
-import { DAY, slug } from "../core/util.js";
+import { slug } from "../core/util.js";
+import { weekEnd } from "./calendar.js";
 
 // [id, name, coarse group (catalog GROUPS)]; this order is the order of lists
 export const MUSCLES = [
@@ -136,8 +137,8 @@ export function programLoad(programs, exMap) {
   return { muscles: out };
 }
 
-// one calendar week from its Monday (an hour of slack for the DST switch)
-export const weekLoad = (workouts, exMap, ws) => muscleLoad(workouts, exMap, ws, ws + 7 * DAY + 3600e3);
+// one calendar week from its Monday
+export const weekLoad = (workouts, exMap, ws) => muscleLoad(workouts, exMap, ws, weekEnd(ws));
 
 // Rough evidence-based weekly targets per muscle (Schoenfeld et al. meta-analyses, RP volume landmarks): hard sets
 // taken close to failure; 10+ sets and 2+ sessions a week is the sweet spot, ~4–9 sets still grows, under 4 is

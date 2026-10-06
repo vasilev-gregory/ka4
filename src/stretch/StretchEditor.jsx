@@ -1,14 +1,15 @@
-// Stretching program editor: name, program timer, stretches (reorder, per-stretch times, area,
-// photo, sides), start, delete. Changes are saved as you go.
+// Stretching program editor: name, stretches (reorder, per-stretch times, area, photo, sides), the minutes per
+// area they plan for, program timer, start, delete. Changes are saved as you go.
 import { useState } from "react";
 import { X, GripVertical, ChevronDown } from "lucide-react";
 import { fmtDur, plural } from "../core/util.js";
 import { ST_AREAS, ST_FIELDS } from "../model/catalog.js";
-import { buildTimeline, stExMap, stTiming } from "../model/stretch.js";
+import { buildTimeline, stExMap, stTiming, stretchPlan } from "../model/stretch.js";
 import * as S from "../model/stretchActions.js";
 import { Button, DeleteButton, ExImg, Header, PhotoPicker, SecStepper, Segmented, exPhoto } from "../ui/kit.jsx";
 import { moveItem, useSortable } from "../ui/sortable.js";
 import { StretchPicker } from "./StretchPicker.jsx";
+import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
 export function StretchEditor({ stretch, upStretch, id, back, open }) {
   const [picker, setPicker] = useState(false);
@@ -22,6 +23,7 @@ export function StretchEditor({ stretch, upStretch, id, back, open }) {
   const T = stTiming(p);
   const tl = buildTimeline(p, exMap);
   const total = tl.reduce((x, ph) => x + ph.dur, 0);
+  const plan = stretchPlan(p, exMap);
   const setT = (k, v) => change((pp) => S.setProgramTiming(pp, k, v));
 
   return (
@@ -57,6 +59,12 @@ export function StretchEditor({ stretch, upStretch, id, back, open }) {
       </div>
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить растяжку</Button>
       {p.items.length > 0 && <p className="mt-2 text-xs text-neutral-500">Тап по растяжке — своё время для неё. Серым — как в программе.</p>}
+      {Object.keys(plan).length > 0 && (
+        <div className="mt-4 rounded-xl bg-neutral-900 p-3">
+          <div className="mb-2 font-semibold">Мышцы по плану</div>
+          <StretchBreakdown areas={plan} single exMap={exMap} byNote="в этой программе" />
+        </div>
+      )}
       <div className="mt-4 rounded-xl bg-neutral-900 p-3">
         <button onClick={() => setTimerOpen((x) => !x)} className="flex w-full items-center justify-between text-left">
           <span>

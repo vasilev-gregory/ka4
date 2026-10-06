@@ -1,7 +1,8 @@
 // History periods and exercise progress series.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { exerciseSeries, periodOf, periodSummary, shiftPeriod, windowStart } from "../../src/model/periods.js";
+import { exerciseSeries, periodSummary, windowStart } from "../../src/model/periods.js";
+import { periodOf, shiftPeriod } from "../../src/model/calendar.js";
 
 const at = (y, m, d, h = 12) => new Date(y, m, d, h).getTime();
 const bwAt = () => 80;

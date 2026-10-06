@@ -3,11 +3,11 @@
 import { useState, useEffect, useEffectEvent, useRef } from "react";
 import { X, ChevronLeft, Settings } from "lucide-react";
 import { fmtDur, progTitle, weekStartOf } from "../core/util.js";
-import { PHASE, buildTimeline, stExMap, stTiming } from "../model/stretch.js";
+import { PHASE, areaOf, buildTimeline, stExMap, stTiming, stretchWeek } from "../model/stretch.js";
 import { findProgram, recordSession, savePhaseLength } from "../model/stretchActions.js";
 import { Button, ExImg, exPhoto } from "../ui/kit.jsx";
 import { useWakeLock } from "../ui/useWakeLock.js";
-import { StretchWeekPanel } from "./StretchWeekPanel.jsx";
+import { StretchBreakdown } from "./StretchBreakdown.jsx";
 import { useStretchRun } from "./useStretchRun.js";
 
 export function StretchPlayer({ stretch, upStretch, sound, id, back, settings }) {
@@ -77,8 +77,7 @@ export function StretchPlayer({ stretch, upStretch, sound, id, back, settings })
           <div className="text-3xl font-bold text-accent-300">Готово</div>
           <div className="text-neutral-400">{fmtDur(st.finishedAt - st.startedAt)}</div>
           <div className="w-full max-w-md text-left">
-            <StretchWeekPanel stretch={stretch} ws={weekStartOf(st.finishedAt)}
-              only={[...new Set(tl.filter((x) => x.ex).map((x) => (x.ex.area || "без группы")))]} />
+            <RunWeek stretch={stretch} exMap={exMap} ws={weekStartOf(st.finishedAt)} only={[...new Set(tl.filter((x) => x.ex).map((x) => areaOf(x.ex)))]} />
           </div>
           <Button onClick={back} className="mt-2 px-8">Закрыть</Button>
         </div>
@@ -116,6 +115,21 @@ export function StretchPlayer({ stretch, upStretch, sound, id, back, settings })
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// the finished run's week for the areas it stretched
+function RunWeek({ stretch, exMap, ws, only }) {
+  const { areas, days } = stretchWeek(stretch, ws);
+  if (!only.some((a) => areas[a])) return null;
+  return (
+    <div className="rounded-xl bg-neutral-900 p-3">
+      <div className="mb-2 flex items-baseline justify-between">
+        <div className="font-semibold">Неделя</div>
+        <div className="text-xs text-neutral-400">дней с растяжкой: {days} из 5</div>
+      </div>
+      <StretchBreakdown areas={areas} only={only} week exMap={exMap} byNote="за неделю" />
     </div>
   );
 }
