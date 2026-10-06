@@ -11,6 +11,7 @@ import { bestE1rm, recordSets } from "../../model/records.js";
 import * as A from "../../model/workoutActions.js";
 import { useHoldReorder, useLongPress, useSwipeRows } from "../../ui/gestures.js";
 import { Button, DeleteButton, Sheet, useApp, useNow, useUndo } from "../../ui/kit.jsx";
+import { useRestorable } from "../../ui/navigation.js";
 import { useSortable } from "../../ui/sortable.js";
 import { Picker } from "../ExerciseList.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
@@ -23,7 +24,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const { bwAt } = useApp();
   const a = data.active;
   // {} = add, { group } = add, list opened on that group, { replace: ei } = swap that exercise
-  const [picker, setPicker] = useState(null);
+  const [picker, setPicker] = useRestorable("workout-picker", null);
   const [askUpdate, setAskUpdate] = useState(false);
   const [askFinish, setAskFinish] = useState(false);
   const [help, setHelp] = useState(false);

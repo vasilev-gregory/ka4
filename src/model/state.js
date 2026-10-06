@@ -1,6 +1,6 @@
 // Persistent state shape: seed for a fresh install and migrate() that upgrades any older saved data.
 import { slug, uid } from "../core/util.js";
-import { ASSIST_DEFAULTS, BW_DEFAULTS, SEED_EX, ST_AREA_DEFAULTS, ST_DEFAULTS, ST_FIXES, ST_OLD_NAMES, ST_SEED } from "./catalog.js";
+import { ASSIST_DEFAULTS, BW_DEFAULTS, EX_RENAMES, SEED_EX, ST_AREA_DEFAULTS, ST_DEFAULTS, ST_FIXES, ST_OLD_NAMES, ST_SEED } from "./catalog.js";
 
 export const KEY = "gymapp-state-v1";
 // bumped whenever migrate() learns a new upgrade step
@@ -35,6 +35,7 @@ export function migrate(d) {
     if (!e) d.exercises.push(se);
     else if (!e.ru) e.ru = se.ru;
   });
+  EX_RENAMES.forEach(([id, oldRu, ru]) => { if (byId[id] && byId[id].ru === oldRu) byId[id].ru = ru; });
   if (!Array.isArray(d.measurements)) d.measurements = [];
   if (!d.stretch) d.stretch = seedStretch();
   ["exercises", "programs", "sessions"].forEach((k) => { if (!Array.isArray(d.stretch[k])) d.stretch[k] = []; });

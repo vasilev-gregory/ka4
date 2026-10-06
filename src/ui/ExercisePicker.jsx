@@ -3,9 +3,9 @@
 // creating a new one (the section supplies its own form). The list itself comes from model/picker.js.
 import { useState } from "react";
 import { X, Check, Search } from "lucide-react";
-import { exactName, pickerSections } from "../model/picker.js";
+import { CLOSEST, exactName, pickerSections } from "../model/picker.js";
 import { Button, Chip, ExImg, Header, useApp } from "./kit.jsx";
-import { useBackCloses } from "./navigation.js";
+import { useBackCloses, useRestorable } from "./navigation.js";
 
 // items: exercises / stretches; groups, groupOf(e): the chips and sections; usage: model/picker usageOf;
 // already: ids in the program; tags(e, inMine): small words on the right; onPick(e) for one, onPickMany(list) for
@@ -16,11 +16,13 @@ export function ExercisePicker({ title, items, groups, groupOf, usage, already =
   const { nm1, nm2 } = useApp();
   useBackCloses(onClose); // the system back closes the picker, not the screen under it
   const multi = !!onPickMany;
-  const [q, setQ] = useState("");
-  const [filter, setFilter] = useState(group);
+  const [q, setQ] = useRestorable("picker-query", "");
+  const [filter, setFilter] = useRestorable("picker-group", group);
   const [creating, setCreating] = useState(null); // the name a new one starts with
-  const [chosen, setChosen] = useState([]);
-  const isChosen = (e) => chosen.some((x) => x.id === e.id);
+  const [chosenIds, setChosenIds] = useRestorable("picker-chosen", []); // ids: kept if the app is closed meanwhile
+  const chosen = chosenIds.map((id) => items.find((e) => e.id === id)).filter(Boolean);
+  const isChosen = (e) => chosenIds.includes(e.id);
+  const setChosen = (fn) => setChosenIds(fn(chosen).map((e) => e.id));
   const tap = (e) => (multi ? setChosen((c) => (isChosen(e) ? c.filter((x) => x.id !== e.id) : [...c, e])) : onPick(e));
   const sections = pickerSections(items, { query: q, group: filter, groupOf, groups, usage, nameOf: nm1 });
   const allGroups = [...groups, ...new Set(items.map(groupOf).filter((g) => !groups.includes(g)))];
@@ -49,7 +51,7 @@ export function ExercisePicker({ title, items, groups, groupOf, usage, already =
         {sections.length === 0 && <p className="mt-4 text-neutral-400">Ничего не нашлось.</p>}
         {sections.map(([g, list]) => (
           <div key={g} className="mt-4">
-            <div className={`mb-1 px-1 text-xs ${g === "твои" ? "font-semibold text-accent-400" : "text-neutral-500"}`}>{g === "твои" ? "Твои" : g}</div>
+            <div className={`mb-1 px-1 text-xs ${g === "твои" ? "font-semibold text-accent-400" : "text-neutral-500"}`}>{{ твои: "Твои", [CLOSEST]: "Точно такого нет, ближе всего:" }[g] || g}</div>
             <div className="divide-y divide-neutral-800 rounded-xl bg-neutral-900">
               {list.map((e) => (
                 <button key={e.id} onClick={() => tap(e)}

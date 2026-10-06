@@ -1,11 +1,11 @@
 // Stretching "Тренировка" tab: the programs (shared rows, ui/ProgramRows) with their length, and a run without one:
 // pick the stretches and go.
-import { useState } from "react";
 import { fmtDur, uid } from "../core/util.js";
 import { buildTimeline, stExMap } from "../model/stretch.js";
 import { createProgram } from "../model/stretchActions.js";
 import { Header, useApp } from "../ui/kit.jsx";
 import { ProgramRows } from "../ui/ProgramRows.jsx";
+import { useRestorable } from "../ui/navigation.js";
 import { StretchPicker } from "./StretchPicker.jsx";
 
 // play(programId): starts a program (or opens the run going on); playNow(exerciseIds): a quick run of those stretches
@@ -13,7 +13,7 @@ import { StretchPicker } from "./StretchPicker.jsx";
 export function StretchHome({ stretch, upStretch, open, play, playNow, busy }) {
   const { nm1 } = useApp();
   const exMap = stExMap(stretch);
-  const [picking, setPicking] = useState(false);
+  const [picking, setPicking] = useRestorable("quick-stretch-picker", false);
   const create = () => {
     const id = uid();
     upStretch((s) => createProgram(s, id));

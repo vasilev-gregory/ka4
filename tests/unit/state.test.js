@@ -53,3 +53,12 @@ test("a stretch may be in a program twice: migrate keeps both", () => {
   d.stretch.programs.push({ id: "p", name: "x", items: [{ exerciseId: "st-pizza" }, { exerciseId: "st-lat" }, { exerciseId: "st-pizza" }] });
   assert.deepEqual(migrate(d).stretch.programs[0].items.map((i) => i.exerciseId), ["st-pizza", "st-lat", "st-pizza"]);
 });
+
+test("a renamed built-in exercise gets its new Russian name, unless the user renamed it", () => {
+  const d = seed();
+  d.exercises.find((e) => e.id === "reverse-pec-deck").ru = "Пекдек на заднюю дельту";
+  d.exercises.find((e) => e.id === "one-arm-reverse-pec-deck").ru = "Мой пекдек";
+  const m = migrate(d);
+  assert.match(m.exercises.find((e) => e.id === "reverse-pec-deck").ru, /^Обратные разведения в тренажёре/);
+  assert.equal(m.exercises.find((e) => e.id === "one-arm-reverse-pec-deck").ru, "Мой пекдек");
+});

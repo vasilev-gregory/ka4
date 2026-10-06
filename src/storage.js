@@ -77,6 +77,14 @@ export const storage = {
   },
 };
 
+// Where the user was (tab, screens, an open picker): a small synchronous copy, so an app the system closed in the
+// background opens where it was left (ui/navigation.js). Not app data: losing it only means starting at the main screen.
+const UI_KEY = "kach-ui";
+export const uiPlace = {
+  get() { try { return JSON.parse(localStorage.getItem(UI_KEY) || "null"); } catch (e) { return null; } },
+  set(v) { try { localStorage.setItem(UI_KEY, JSON.stringify(v)); } catch (e) {} },
+};
+
 // Browser-level storage facts: whether the data is protected from eviction, and how much is used.
 export async function storageStatus() {
   const out = { persisted: null, usage: null, quota: null };
