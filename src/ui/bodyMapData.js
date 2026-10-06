@@ -1,7 +1,8 @@
-// Outline of the body for the muscle map, front and back, in a 100 × 200 box: [muscle ids, polygons as x, y, …].
-// A region with no ids (knees, inner thigh) and the head ("head", not a muscle) are drawn in the body colour. The lateral delt is the
-// outer cap of the shoulder on both views. Polygons from react-body-highlighter by GV79 (MIT License, Copyright (c) 2020 GV79),
-// https://github.com/GV79/react-body-highlighter; coordinates rounded to 0.1.
+// Outline of the body for the muscle map, front and back, in a 100 × 200 box: [ids, polygons as x, y, …].
+// Ids are the strength muscles (model/muscles.js) plus parts only stretching names (hip flexors, adductors). A map
+// shows the ids it is given as live; other regions, regions with no ids (knees) and the head are drawn in the body
+// colour. The lateral delt is the outer cap of the shoulder on both views. Polygons from react-body-highlighter by
+// GV79 (MIT License, Copyright (c) 2020 GV79), https://github.com/GV79/react-body-highlighter; coordinates rounded to 0.1.
 export const FRONT = [
   // chest
   [["chest"], [
@@ -52,8 +53,13 @@ export const FRONT = [
   [["head"], [
     [42.4, 2.9, 40, 11.8, 42, 19.6, 46.1, 23.3, 49.8, 25.3, 54.7, 22.4, 57.6, 19.2, 59.2, 10.2, 57.1, 2.4, 49.8, 0],
   ]],
-  // abductors
-  [[], [
+  // hip flexors in the groin, between the obliques and the thigh (drawn here, not in the source)
+  [["hipflex"], [
+    [60.4, 84.5, 65.7, 80.5, 67.6, 87, 66.2, 92.5, 64.9, 94.3, 60, 92.7, 59.2, 88],
+    [39.6, 84.5, 34.3, 80.5, 32.4, 87, 33.4, 92.5, 34.7, 93.9, 39.6, 92.2, 40.6, 88],
+  ]],
+  // inner thigh (the source calls it abductors; these are the adductors)
+  [["adductors"], [
     [52.7, 110.2, 54.3, 124.9, 60, 110.2, 62, 100, 64.9, 94.3, 60, 92.7, 56.7, 104.5],
     [47.8, 110.6, 44.9, 125.3, 42, 115.9, 40.4, 113.1, 39.6, 107.3, 38, 102.4, 34.7, 93.9, 39.6, 92.2, 41.6, 99.2, 43.7, 105.3],
   ]],

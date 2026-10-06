@@ -2,6 +2,7 @@
 // one runs out, clicks 3-2-1, signals phase changes, pauses, and counts the seconds actually held.
 import { useState, useEffect, useEffectEvent, useRef } from "react";
 import { beep, blip, tick } from "../core/sound.js";
+import { countsHold } from "../model/stretch.js";
 
 export function useStretchRun(initialTimeline, { sound, onFinish }) {
   const [tl, setTl] = useState(initialTimeline);
@@ -25,7 +26,7 @@ export function useStretchRun(initialTimeline, { sound, onFinish }) {
   // credit the time actually spent in the current work phase before leaving it
   const creditPhase = () => {
     const ph = tl[st.idx];
-    if (!ph || ph.k !== "work" || ph.side === "правая сторона") return;
+    if (!countsHold(ph)) return;
     const spent = Math.min(ph.dur, Math.max(0, (Date.now() - phaseStart.current - pausedMs.current) / 1000));
     held.current[ph.ex.id] = (held.current[ph.ex.id] || 0) + Math.round(spent);
   };
