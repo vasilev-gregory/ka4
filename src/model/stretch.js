@@ -86,6 +86,15 @@ export function stretchLoad(s, from, to) {
 
 export const stretchWeek = (s, ws) => stretchLoad(s, ws, weekEnd(ws));
 
+// one session: seconds of hold per area { area: { sec, by } } and in all
+export function sessionAreas(s, session) {
+  const exMap = stExMap(s);
+  const areas = {};
+  Object.entries(session.work || {}).forEach(([exId, sec]) => credit(areas, exMap[exId], exId, sec));
+  return areas;
+}
+export const heldTotal = (session) => Object.values(session.work || {}).reduce((t, n) => t + n, 0);
+
 // A month or a year at a glance: sessions, time spent, and seconds per area averaged over the started weeks
 // (perWeek: area -> { sec, freq, by }; by is the whole period's)
 export function stretchPeriod(s, range, now = Date.now()) {

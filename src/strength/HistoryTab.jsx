@@ -1,6 +1,6 @@
 // Strength history tab: the shared calendar (ui/PeriodNav), the period's analysis (hard sets per muscle, totals)
 // and its workouts.
-import { fmtDate, fmtNum, plural } from "../core/util.js";
+import { fmtNum, plural } from "../core/util.js";
 import { fmtTotals, fmtWDur, stats } from "../model/workout.js";
 import { weekLoad } from "../model/muscles.js";
 import { workoutKcal } from "../model/energy.js";
@@ -8,6 +8,7 @@ import { periodSummary } from "../model/periods.js";
 import { inPeriod } from "../model/calendar.js";
 import { Header, useApp } from "../ui/kit.jsx";
 import { PeriodCard, PeriodNav, TOTAL_NOTE, usePeriod } from "../ui/PeriodNav.jsx";
+import { HistoryRow } from "../ui/Session.jsx";
 import { MuscleBreakdown, MusclesWhy } from "./MuscleBreakdown.jsx";
 
 // week: hard sets per muscle. month / year: totals and the average week per muscle.
@@ -54,11 +55,8 @@ export function HistoryTab({ data, exMap, open }) {
           const st = stats(w, exMap, bwAt);
           const kcal = workoutKcal(w, exMap, bwAt);
           return (
-            <button key={w.id} onClick={() => open({ type: "workout", id: w.id })} className="w-full rounded-xl bg-neutral-900 p-4 text-left active:bg-neutral-800">
-              <div className="text-xs text-neutral-400">{fmtDate(w.startedAt)}</div>
-              <div className="font-semibold">{w.name}</div>
-              <div className="mt-1 text-xs text-neutral-400 tabular-nums">{fmtWDur(st)}, {fmtTotals(st)}{kcal != null && `, ≈${kcal} ккал`}</div>
-            </button>
+            <HistoryRow key={w.id} startedAt={w.startedAt} name={w.name} onClick={() => open({ type: "workout", id: w.id })}
+              summary={`${fmtWDur(st)}, ${fmtTotals(st)}${kcal != null ? `, ≈${kcal} ккал` : ""}`} />
           );
         })}
       </div>

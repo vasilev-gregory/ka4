@@ -1,8 +1,9 @@
 // One finished workout: totals, the muscles it worked (and its week), rest, exercises with progress notes.
 import { Trophy } from "lucide-react";
-import { fmtDate, fmtDur, fmtKg, fmtNum } from "../core/util.js";
+import { fmtDur, fmtKg, fmtNum } from "../core/util.js";
 import { fmtSets, restStats, stats } from "../model/workout.js";
 import { WorkoutMuscles } from "./WorkoutMuscles.jsx";
+import { SessionHeader, StatTiles } from "../ui/Session.jsx";
 import { bestE1rm, previousSession, sessionE1rm } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
 import { ConfirmButton, ExImg, Header, useApp } from "../ui/kit.jsx";
@@ -42,29 +43,14 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
   ].filter(Boolean);
   return (
     <div className="p-4 pb-28">
-      <Header title={w.name} back={back} />
-      <p className="-mt-3 mb-4 text-neutral-400">{fmtDate(w.startedAt)}</p>
-      <div className={`mb-5 grid gap-2 ${tiles.length === 4 ? "grid-cols-2" : "grid-cols-3"}`}>
-        {tiles.map(([v, l]) => (
-          <div key={l} className="rounded-xl bg-neutral-900 p-3">
-            <div className="text-lg font-bold tabular-nums">{v}</div>
-            <div className="text-xs text-neutral-400">{l}</div>
-          </div>
-        ))}
-      </div>
+      <SessionHeader name={w.name} startedAt={w.startedAt} back={back} />
+      <StatTiles tiles={tiles} />
       <WorkoutMuscles data={data} w={w} exMap={exMap} open={open} />
       {(() => {
         const rs = restStats(w);
         if (!rs.nSets && !rs.nEx) return null;
         return (
-          <div className="-mt-3 mb-5 grid grid-cols-2 gap-2">
-            {[[rs.nSets ? fmtDur(rs.sets) : "—", "средний отдых между подходами"], [rs.nEx ? fmtDur(rs.ex) : "—", "между упражнениями"]].map(([v, l]) => (
-              <div key={l} className="rounded-xl bg-neutral-900 p-3">
-                <div className="text-lg font-bold tabular-nums">{v}</div>
-                <div className="text-xs text-neutral-400">{l}</div>
-              </div>
-            ))}
-          </div>
+          <StatTiles className="-mt-3 mb-5" tiles={[[rs.nSets ? fmtDur(rs.sets) : "—", "средний отдых между подходами"], [rs.nEx ? fmtDur(rs.ex) : "—", "между упражнениями"]]} />
         );
       })()}
       <div className="space-y-2">

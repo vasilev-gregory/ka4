@@ -119,7 +119,7 @@ test("a quick run without a program: default times, into history, can be kept as
   assert.equal(s.active.program.items[0].over.work, 25);
   runFor(s, T0, T0 + 60_000); // 25 + 10 + 20
   assert.equal(s.active.done, true);
-  assert.equal(s.sessions[0].name, "Быстрая растяжка");
+  assert.equal(s.sessions[0].name, "Свободная растяжка");
   keepQuickProgram(s);
   assert.equal(s.programs.length, 2);
   assert.deepEqual(s.programs[1].items.map((it) => it.exerciseId), ["st-pizza", "st-lat"]);

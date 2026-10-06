@@ -55,3 +55,11 @@ test("stretch period: sessions, time and the average week per area", async () =>
   assert.equal(p.weeks, 2); // weeks of 28 Sep and 5 Oct
   assert.deepEqual(p.perWeek["широчайшие"], { sec: 90, freq: 1, by: { "st-lat": 180 } });
 });
+
+test("one session: hold per area and in all", async () => {
+  const { sessionAreas, heldTotal } = await import("../../src/model/stretch.js");
+  const s = seed().stretch;
+  const x = { work: { "st-hip-flexor-forward": 60, "st-hip-flexor-tall": 30, "st-lat": 45 } };
+  assert.deepEqual(sessionAreas(s, x)["сгибатели бедра"], { sec: 90, by: { "st-hip-flexor-forward": 60, "st-hip-flexor-tall": 30 } });
+  assert.equal(heldTotal(x), 135);
+});

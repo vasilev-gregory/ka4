@@ -1,13 +1,13 @@
-// Stretching program editor: name, stretches (reorder, per-stretch times, area, photo, sides), the minutes per
-// area they plan for, program timer, start, delete. Changes are saved as you go.
+// Stretching program editor on the shared parts (ui/ProgramEdit): stretches (per-stretch times; the stretch itself:
+// area, photo, own ones' sides), the minutes per area they plan for, program timer, start, delete. Saved as you go.
 import { useState } from "react";
-import { X, GripVertical, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { fmtDur, plural } from "../core/util.js";
 import { ST_AREAS, ST_FIELDS, isBuiltInStretch } from "../model/catalog.js";
 import { buildTimeline, stExMap, stTiming, stretchPlan } from "../model/stretch.js";
 import * as S from "../model/stretchActions.js";
-import { Button, DeleteButton, ExImg, Header, PhotoPicker, SecStepper, Segmented, exPhoto } from "../ui/kit.jsx";
-import { moveItem, useSortable } from "../ui/sortable.js";
+import { Button, ExImg, Header, PhotoPicker, SecStepper, Segmented, exPhoto } from "../ui/kit.jsx";
+import { ProgramFooter, ProgramItems, ProgramName } from "../ui/ProgramEdit.jsx";
 import { StretchPicker } from "./StretchPicker.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
@@ -17,7 +17,6 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
   const [openItem, setOpenItem] = useState(null);
   const [timerOpen, setTimerOpen] = useState(false);
   const change = (fn) => upStretch((s) => { const p = S.findProgram(s, id); if (p) fn(p); });
-  const sort = useSortable((from, to) => change((p) => moveItem(p.items, from, to)));
   const p = S.findProgram(stretch, id);
   if (!p) return <div className="p-4"><Header title="Программа удалена" back={back} /></div>;
   const exMap = stExMap(stretch);
@@ -31,34 +30,24 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
     <div className="p-4 pb-28">
       <Header title={inRun ? "Настройки программы" : "Программа растяжки"} back={back} />
       {inRun && <p className="-mt-3 mb-3 text-xs text-neutral-500">Изменения сразу идут в эту растяжку и сохраняются в программе.</p>}
-      <input value={p.name} placeholder="Название программы" autoFocus={!p.name}
-        onChange={(e) => { const name = e.target.value; change((pp) => { pp.name = name; }); }}
-        className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-hidden focus:ring-2 focus:ring-accent-400" />
-
-      <div className="space-y-2">
-        {p.items.map((it, i) => {
-          const ex = exMap[it.exerciseId];
-          const t = stTiming(p, it);
-          const isOpen = openItem === i;
-          return (
-            <div key={i + it.exerciseId} ref={sort.itemRef(i)} style={sort.itemStyle(i)}
-              className={`rounded-xl p-2 ${sort.dragFrom === i ? "bg-neutral-800" : "bg-neutral-900"}`}>
-              <div className="flex items-center gap-1">
-                <button {...sort.handleProps(i, p.items.length)} className="cursor-grab p-1 text-neutral-500" aria-label="Перетащить"><GripVertical size={18} /></button>
-                {ex && exPhoto(ex) && <ExImg ex={ex} size={34} />}
-                <button onClick={() => setOpenItem(isOpen ? null : i)} className="ml-1 min-w-0 flex-1 py-1 text-left">
-                  <div className="truncate">{ex ? ex.ru || ex.name : "Удалённая растяжка"}</div>
-                  <div className={`truncate text-xs ${it.over && Object.keys(it.over).length ? "text-accent-300" : "text-neutral-500"}`}>
-                    {ex && ex.area ? `${ex.area} · ` : ""}{t.work} с{ex && ex.sides ? " × 2 стороны" : ""}, отдых {t.rest} с
-                  </div>
-                </button>
-                <button onClick={() => change((pp) => { pp.items.splice(i, 1); })} className="p-1 text-neutral-500" aria-label="Убрать"><X size={18} /></button>
+      <ProgramName value={p.name} onChange={(name) => change((pp) => { pp.name = name; })} />
+      <ProgramItems items={p.items} change={change} removed="Растяжка убрана" row={(it, i) => {
+        const ex = exMap[it.exerciseId];
+        const t = stTiming(p, it);
+        const isOpen = openItem === i;
+        return {
+          body: <>
+            {ex && exPhoto(ex) && <ExImg ex={ex} size={34} />}
+            <button onClick={() => setOpenItem(isOpen ? null : i)} className="ml-1 min-w-0 flex-1 py-1 text-left">
+              <div className="truncate">{ex ? ex.ru || ex.name : "Удалённая растяжка"}</div>
+              <div className={`truncate text-xs ${it.over && Object.keys(it.over).length ? "text-accent-300" : "text-neutral-500"}`}>
+                {ex && ex.area ? `${ex.area} · ` : ""}{t.work} с{ex && ex.sides ? " × 2 стороны" : ""}, отдых {t.rest} с
               </div>
-              {isOpen && ex && <ItemPanel it={it} t={t} ex={ex} change={(fn) => change((pp) => fn(pp, i))} upStretch={upStretch} />}
-            </div>
-          );
-        })}
-      </div>
+            </button>
+          </>,
+          below: isOpen && ex && <ItemPanel it={it} t={t} ex={ex} change={(fn) => change((pp) => fn(pp, i))} upStretch={upStretch} />,
+        };
+      }} />
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить растяжку</Button>
       {p.items.length > 0 && <p className="mt-2 text-xs text-neutral-500">Тап по растяжке — своё время для неё. Серым — как в программе.</p>}
       {Object.keys(plan).length > 0 && (
@@ -103,12 +92,8 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
         <Button block onClick={back} className="mt-6">Продолжить растяжку</Button>
         {onAppSettings && <Button variant="quiet" block onClick={onAppSettings} className="mt-2">Общие настройки: звук и другое</Button>}
       </> : <>
-        <Button block disabled={!tl.length} onClick={() => play(id)} className="mt-6">
-          {stretch.active && !stretch.active.done ? "Вернуться к растяжке" : `Начать${total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}`}
-        </Button>
-        <DeleteButton onConfirm={() => { upStretch((s) => S.removeProgram(s, id)); back(); }} confirmText="Удалить программу?">
-          Удалить программу
-        </DeleteButton>
+        <ProgramFooter canStart={tl.length > 0} onStart={() => play(id)} onDelete={() => { upStretch((s) => S.removeProgram(s, id)); back(); }}
+          startLabel={stretch.active && !stretch.active.done ? "Вернуться к растяжке" : `Начать${total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}`} />
       </>}
 
       {picker && (

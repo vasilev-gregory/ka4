@@ -1,8 +1,9 @@
-// No workout running: the programs to start from, and yesterday's auto-closed workout asking to update its program.
-import { Play } from "lucide-react";
+// No workout running: the programs to start from (shared rows, ui/ProgramRows), and yesterday's auto-closed
+// workout asking to update its program.
 import { fmtDate, progTitle, uid } from "../../core/util.js";
 import { resolvePendingProgramUpdate, startWorkout } from "../../model/workoutActions.js";
 import { Button, Card, Header, useApp } from "../../ui/kit.jsx";
+import { ProgramRows } from "../../ui/ProgramRows.jsx";
 
 export function ProgramList({ data, up, exMap, open }) {
   const { nm1 } = useApp();
@@ -29,25 +30,9 @@ export function ProgramList({ data, up, exMap, open }) {
           </div>
         </Card>
       )}
-      <div className="space-y-2">
-        {data.programs.map((p) => (
-          <div key={p.id} className="flex items-stretch gap-2 rounded-xl bg-neutral-900 p-2 pl-4">
-            <button onClick={() => open({ type: "program", id: p.id })} className="min-w-0 flex-1 py-2 text-left">
-              <div className="text-base font-semibold">{progTitle(p)}</div>
-              <div className="mt-1 text-xs text-neutral-400">
-                {p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений"}
-              </div>
-            </button>
-            <button onClick={() => start(p)} aria-label="Начать" className="flex w-14 shrink-0 items-center justify-center rounded-lg bg-accent-400 text-black">
-              <Play size={22} />
-            </button>
-          </div>
-        ))}
-        <div className="flex gap-2">
-          <Button variant="dashed" size="lg" className="flex-1" onClick={create}>+ Новая программа</Button>
-          <Button variant="dashed" size="lg" className="flex-1" onClick={() => start(null)}>Без программы</Button>
-        </div>
-      </div>
+      <ProgramRows onOpen={(id) => open({ type: "program", id })} onCreate={create} onWithout={() => start(null)}
+        onStart={(id) => start(data.programs.find((x) => x.id === id))}
+        programs={data.programs.map((p) => ({ id: p.id, name: p.name, meta: p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений" }))} />
     </div>
   );
 }
