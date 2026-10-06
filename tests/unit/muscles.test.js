@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../../src/model/state.js";
-import { cycleMuscle, growthStatus, hardSets, MUSCLES, muscleLoad, musclesOf, weekHint } from "../../src/model/muscles.js";
+import { cycleMuscle, growthStatus, hardSets, MUSCLES, muscleLoad, musclesOf, programLoad, weekHint } from "../../src/model/muscles.js";
 
 const exs = seed().exercises;
 const ex = (id) => exs.find((e) => e.id === id);
@@ -78,4 +78,15 @@ test("growth status and what the week still needs", () => {
   assert.deepEqual(growthStatus(21, 3), ["high", "очень много"]);
   assert.equal(weekHint(2.5, 1), "ещё 1,5 подх. до роста");
   assert.equal(weekHint(12, 1), "объём есть, нужна ещё одна тренировка на неделе");
+});
+
+test("planned load of programs: sets per muscle, freq = programs where it is a main one", () => {
+  const exMap = { squat: ex("squat"), "hip-thrust": ex("hip-thrust"), run: { id: "running", kind: "cardio", group: "кардио" } };
+  const a = { id: "a", items: [{ exerciseId: "squat", sets: 3 }, { exerciseId: "run", sets: 1, min: 20 }] };
+  const b = { id: "b", items: [{ exerciseId: "hip-thrust", sets: 4 }, { exerciseId: "squat", sets: 2 }] };
+  assert.deepEqual(programLoad([a], exMap).muscles, { quads: { sets: 3, freq: 1, by: { squat: 3 } }, glutes: { sets: 1.5, freq: 0, by: { squat: 1.5 } } });
+  const both = programLoad([a, b], exMap).muscles;
+  assert.deepEqual(both.quads, { sets: 5, freq: 2, by: { squat: 5 } });
+  assert.deepEqual(both.glutes, { sets: 6.5, freq: 1, by: { squat: 2.5, "hip-thrust": 4 } });
+  assert.deepEqual(both.hams, { sets: 2, freq: 0, by: { "hip-thrust": 2 } });
 });

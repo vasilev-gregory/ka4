@@ -117,6 +117,25 @@ export function muscleLoad(workouts, exMap, from, to) {
   return { days: days.size, muscles: out };
 }
 
+// Planned hard sets per muscle of programs, as if each were done once (a week of a split when all are given):
+// { muscles: { id: { sets, freq, by } } }; freq: programs where the muscle is a main one. Cardio adds nothing.
+export function programLoad(programs, exMap) {
+  const muscles = {};
+  programs.forEach((p) => p.items.forEach((it) => {
+    const share = Object.entries(musclesOf(exMap[it.exerciseId]));
+    if (!it.sets || !share.length) return;
+    share.forEach(([m, k]) => {
+      const t = muscles[m] || (muscles[m] = { sets: 0, progs: new Set(), by: {} });
+      t.sets += it.sets * k;
+      t.by[it.exerciseId] = (t.by[it.exerciseId] || 0) + it.sets * k;
+      if (k >= 1) t.progs.add(p.id);
+    });
+  }));
+  const out = {};
+  Object.entries(muscles).forEach(([m, t]) => { out[m] = { sets: t.sets, freq: t.progs.size, by: t.by }; });
+  return { muscles: out };
+}
+
 // one calendar week from its Monday (an hour of slack for the DST switch)
 export const weekLoad = (workouts, exMap, ws) => muscleLoad(workouts, exMap, ws, ws + 7 * DAY + 3600e3);
 
