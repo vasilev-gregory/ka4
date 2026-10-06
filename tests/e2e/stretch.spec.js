@@ -117,7 +117,7 @@ test("stretching uses the same body map: history by week / month, what made up a
   await expect(page.getByTestId("muscle-exercises").getByText("Пицца: сед ноги врозь, наклон вперёд")).toBeVisible();
 
   await page.getByRole("button", { name: "Месяц" }).click();
-  await expect(page.getByText("1 растяжка, 10:00")).toBeVisible();
+  await expect(page.getByText("1 растяжка, время 10:00")).toBeVisible();
   await expect(page.getByText("в среднем за неделю")).toBeVisible();
   await page.getByText("Утро").click(); // the run's own card, like a workout's
   await expect(page.getByText("удержание, на сторону")).toBeVisible();
@@ -156,8 +156,8 @@ test("the run survives a reload, folds away to a strip while browsing, and ends 
   await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toContainText("Работа · Пицца");
   await page.getByRole("button", { name: "Развернуть растяжку" }).click();
   await page.getByRole("button", { name: "Пауза" }).click();
-  await expect(page.getByRole("button", { name: "Отменить, не сохранять" })).toBeVisible();
-  await page.getByRole("button", { name: /Закончить растяжку/ }).click();
+  await expect(page.getByRole("button", { name: "Отменить", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Завершить — сохранится/ }).click();
   await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toHaveCount(0);
   await expect.poll(async () => (await stored(page)).stretch.active).toBeUndefined();
 });
@@ -172,8 +172,8 @@ test("a run can be cancelled without saving (two taps)", async ({ page }) => {
   for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "+ круг" }).click(); // longer than what we wait
   await page.clock.runFor(70_000); // past the minute after which leaving would save it
   await page.getByRole("button", { name: "Пауза" }).click();
-  await page.getByRole("button", { name: "Отменить, не сохранять" }).click();
-  await page.getByRole("button", { name: "Точно не сохранять?" }).click();
+  await page.getByRole("button", { name: "Отменить", exact: true }).click();
+  await page.getByRole("button", { name: "Не сохранять?" }).click();
   await expect.poll(async () => (await stored(page)).stretch.active).toBeUndefined();
   expect((await stored(page)).stretch.sessions).toHaveLength(0);
 });

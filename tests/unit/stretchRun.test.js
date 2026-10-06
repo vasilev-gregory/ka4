@@ -173,3 +173,13 @@ test("a week ends at the next Monday 00:00: a Monday 00:30 session is in one wee
   const ws = weekStartOf(new Date(2026, 9, 7).getTime());
   assert.equal(weekEnd(ws), new Date(2026, 9, 12).getTime());
 });
+
+test("folded or not is kept with the run; starting while a run goes on unfolds it", async () => {
+  const { setRunFolded } = await import("../../src/model/stretchRunActions.js");
+  const s = setup();
+  playProgram(s, "p", T0);
+  setRunFolded(s, true);
+  assert.equal(s.active.folded, true);
+  playProgram(s, "p", T0 + 1000);
+  assert.equal(s.active.folded, false);
+});

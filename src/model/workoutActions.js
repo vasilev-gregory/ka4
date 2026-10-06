@@ -285,3 +285,9 @@ export function closeStaleWorkout(d0, now = Date.now()) {
   finishWorkout(d, false, last);
   return d;
 }
+
+// a program left with no name and nothing in it (made by «+ Новая программа», then left) is dropped
+export function dropEmptyProgram(d, id) {
+  const p = d.programs.find((x) => x.id === id);
+  if (p && !p.name.trim() && !p.items.length) removeProgram(d, id);
+}

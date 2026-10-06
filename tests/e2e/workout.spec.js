@@ -1,6 +1,6 @@
 // Strength workout: swipes on set rows, weekly panel, body weight from measurements.
 import { test, expect } from "@playwright/test";
-import { openApp, seedStorage, startWorkout, stored, tab } from "./helpers.js";
+import { finishWorkout, openApp, seedStorage, startWorkout, stored, tab } from "./helpers.js";
 
 test("swipe right marks a set done, swipe left deletes it with undo", async ({ page, context }) => {
   const errors = await openApp(page);
@@ -25,8 +25,8 @@ test("swipe right marks a set done, swipe left deletes it with undo", async ({ p
   await page.getByText("Вернуть").click();
   await expect(checks).toHaveCount(n0);
 
-  await page.getByRole("button", { name: "Удалить", exact: true }).click();
-  await page.getByRole("button", { name: "Удалить тренировку?" }).click();
+  await page.getByRole("button", { name: "Отменить", exact: true }).click();
+  await page.getByRole("button", { name: "Не сохранять?" }).click();
   await expect(page.getByText("+ Новая программа")).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -35,7 +35,7 @@ test("finished workout shows its muscles and its week; stretch mode hides streng
   await openApp(page);
   await startWorkout(page);
   await page.getByRole("button", { name: "Подход сделан" }).first().click();
-  await page.getByRole("button", { name: "Завершить" }).click();
+  await finishWorkout(page);
   const keep = page.getByText("Оставить программу как была");
   if (await keep.count()) await keep.click();
   // the workout's own muscles first: one squat set, quads its main muscle; no growth status for a single workout
@@ -106,7 +106,7 @@ test("hints, last time's values, numbers only, records, undo of a swipe mark, pr
   await page.getByText("Вернуть").click();
   await expect(page.locator("button[aria-label='Подход сделан'].bg-accent-400")).toHaveCount(1);
 
-  await page.getByRole("button", { name: "Завершить" }).click();
+  await finishWorkout(page);
   const keep = page.getByText("Оставить программу как была");
   if (await keep.count()) await keep.click();
   await expect(page.getByText("рекорд", { exact: true })).toBeVisible();

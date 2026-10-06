@@ -86,13 +86,16 @@ export function ByList({ title, entries }) {
   return (
     <div className="px-1.5 pb-2" data-testid="muscle-exercises">
       <div className="mb-1 text-[11px] text-neutral-500">{title}:</div>
-      {entries.slice().sort((a, b) => b.value - a.value).map((e) => (
-        <button key={e.id} onClick={e.onClick} className="flex w-full items-center gap-2 rounded-md py-1 text-left text-xs active:bg-neutral-700">
+      {entries.slice().sort((a, b) => b.value - a.value).map((e) => {
+        const row = <>
           <span className="min-w-0 flex-1 truncate text-neutral-200">{e.name}</span>
           {e.tag && <span className="text-[11px] text-neutral-500">{e.tag}</span>}
           <span className="w-16 shrink-0 text-right tabular-nums text-neutral-300">{e.text}</span>
-        </button>
-      ))}
+        </>;
+        // a row opens something only when it can; otherwise it doesn't pretend to be a button
+        return e.onClick ? <button key={e.id} onClick={e.onClick} className="flex w-full items-center gap-2 rounded-md py-1 text-left text-xs active:bg-neutral-700">{row}</button>
+          : <div key={e.id} className="flex w-full items-center gap-2 py-1 text-xs">{row}</div>;
+      })}
     </div>
   );
 }
@@ -101,6 +104,6 @@ export function ByList({ title, entries }) {
 export function WhyButton({ on, toggle }) {
   return (
     <button onClick={toggle} aria-label="Как считается"
-      className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold ${on ? "bg-neutral-600 text-white" : "bg-neutral-800"}`}>?</button>
+      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${on ? "bg-neutral-600 text-white" : "bg-neutral-800"}`}>?</button>
   );
 }

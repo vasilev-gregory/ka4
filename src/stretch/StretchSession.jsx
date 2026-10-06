@@ -3,14 +3,14 @@
 import { fmtDur, plural, weekStartOf } from "../core/util.js";
 import { heldTotal, sessionAreas, stExMap, stretchWeek } from "../model/stretch.js";
 import { removeSession } from "../model/stretchActions.js";
-import { DeleteButton, ExImg, Header, exPhoto, useApp } from "../ui/kit.jsx";
+import { DeleteButton, Header } from "../ui/kit.jsx";
 import { SessionHeader, StatTiles, ViewsCard } from "../ui/Session.jsx";
+import { ExerciseRow } from "../ui/ExerciseCard.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
 const VIEWS = [["run", "Растяжка"], ["week", "Неделя"]];
 
-export function StretchSession({ stretch, upStretch, id, back }) {
-  const { nm1 } = useApp();
+export function StretchSession({ stretch, upStretch, id, back, open }) {
   const x = stretch.sessions.find((y) => y.id === id);
   if (!x) return <div className="p-4"><Header title="Растяжка удалена" back={back} /></div>;
   const exMap = stExMap(stretch);
@@ -26,21 +26,16 @@ export function StretchSession({ stretch, upStretch, id, back }) {
       ]} />
       {held.length > 0 && (
         <ViewsCard title="Мышцы" views={VIEWS} className="-mt-3 mb-5">
-          {(view) => (view === "run" ? <StretchBreakdown key="run" areas={areas} single exMap={exMap} byNote="в этой растяжке" />
-            : <StretchBreakdown key="week" areas={stretchWeek(stretch, weekStartOf(x.startedAt)).areas} week exMap={exMap} byNote="за неделю" />)}
+          {(view) => (view === "run" ? <StretchBreakdown key="run" areas={areas} single exMap={exMap} byNote="в этой растяжке" open={open} />
+            : <StretchBreakdown key="week" areas={stretchWeek(stretch, weekStartOf(x.startedAt)).areas} week exMap={exMap} byNote="за неделю" open={open} />)}
         </ViewsCard>
       )}
       <div className="space-y-2">
         {held.map(([exId, sec]) => {
           const ex = exMap[exId];
           return (
-            <div key={exId} className="flex items-center gap-3 rounded-xl bg-neutral-900 p-3">
-              {ex && exPhoto(ex) && <ExImg ex={ex} />}
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold">{nm1(ex, "Удалённая растяжка")}</div>
-                <div className="text-xs text-neutral-400">{ex && ex.area ? `${ex.area} · ` : ""}удержание {fmtDur(sec * 1000)}{ex && ex.sides ? " на сторону" : ""}</div>
-              </div>
-            </div>
+            <ExerciseRow key={exId} ex={ex} missing="Удалённая растяжка" onClick={() => open({ type: "stretchExercise", id: exId })}
+              text={`${ex && ex.area ? `${ex.area} · ` : ""}удержание ${fmtDur(sec * 1000)}${ex && ex.sides ? " на сторону" : ""}`} />
           );
         })}
       </div>

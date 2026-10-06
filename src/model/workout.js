@@ -28,17 +28,21 @@ export function itemsOf(w, program) {
   });
 }
 
+// The sets an exercise starts with: last time's warm-ups (as warm-ups), then n working sets (default: as many as
+// last time, at least 3) — warm-ups never take a planned set. Last time's values are hints (shown gray), not entries.
 export function buildSets(d, exId, n) {
   const last = lastSession(d.workouts, exId);
   const prev = last ? last.sets : [];
-  const count = n || Math.max(prev.length, 3);
-  return Array.from({ length: count }, (_, i) => {
-    const s = prev[i] || prev[prev.length - 1];
-    // values from last time are hints (shown gray), not entered values
-    return {
-      w: "", r: "", p: "", t: s && s.t === "w" ? "w" : "",
-      ...(prev[i] && prev[i].g ? { g: prev[i].g } : {}), hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "", done: false };
-  });
+  const warm = prev.filter((s) => s.t === "w");
+  const work = prev.filter((s) => s.t !== "w");
+  const hint = (s) => ({ hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "" });
+  return [
+    ...warm.map((s) => ({ w: "", r: "", p: "", t: "w", ...hint(s), done: false })),
+    ...Array.from({ length: n || Math.max(work.length, 3) }, (_, i) => {
+      const s = work[i] || work[work.length - 1];
+      return { w: "", r: "", p: "", t: "", ...(work[i] && work[i].g ? { g: work[i].g } : {}), ...hint(s), done: false };
+    }),
+  ];
 }
 
 // A workout can be paused and continued later the same day (gym, then sets at home).
@@ -192,9 +196,11 @@ export const setColumns = (settings) => columnConfig(settings).filter((c) => c.k
 export const restShown = (settings) => columnConfig(settings).some((c) => c.key === "rest" && c.on);
 
 // Sets merged into one (drop set, ladder) share a group id `g` and sit next to each other.
+// numbers of the working sets: 1, 2, 3 (a drop set / ladder: 2a, 2b); warm-ups aren't counted
 export function setLabels(sets) {
   let n = 0, sub = 0;
   return sets.map((s, i) => {
+    if (s.t === "w") return "";
     const cont = s.g && i > 0 && sets[i - 1].g === s.g;
     if (cont) sub++; else { n++; sub = 0; }
     const grouped = s.g && (cont || (i < sets.length - 1 && sets[i + 1].g === s.g));

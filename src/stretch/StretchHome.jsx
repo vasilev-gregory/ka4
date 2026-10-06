@@ -22,7 +22,7 @@ export function StretchHome({ stretch, upStretch, open, play, playNow }) {
     <div className="p-4">
       <Header title="Растяжка" />
       <ProgramRows onOpen={(id) => open({ type: "stretchProgram", id })} onStart={play} onCreate={create}
-        onWithout={() => (stretch.active && !stretch.active.done ? play(stretch.active.programId) : setPicking(true))}
+        onWithout={() => setPicking(true)} running={stretch.active && !stretch.active.done ? stretch.active.programId : null}
         programs={stretch.programs.map((p) => {
           const total = buildTimeline(p, exMap).reduce((x, ph) => x + ph.dur, 0);
           const names = p.items.map((it) => exMap[it.exerciseId]).filter(Boolean).map((e) => nm1(e)).join(", ");

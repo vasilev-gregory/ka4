@@ -32,7 +32,10 @@ export function ProgramList({ data, up, exMap, open }) {
       )}
       <ProgramRows onOpen={(id) => open({ type: "program", id })} onCreate={create} onWithout={() => start(null)}
         onStart={(id) => start(data.programs.find((x) => x.id === id))}
-        programs={data.programs.map((p) => ({ id: p.id, name: p.name, meta: p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений" }))} />
+        programs={data.programs.map((p) => ({
+          id: p.id, name: p.name, canStart: p.items.length > 0,
+          meta: p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений",
+        }))} />
     </div>
   );
 }

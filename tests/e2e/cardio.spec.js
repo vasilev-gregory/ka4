@@ -1,6 +1,6 @@
 // Cardio inside a strength workout and as a program of its own; calories in the workout card and the history list.
 import { test, expect } from "@playwright/test";
-import { openApp, seedStorage, stored, tab } from "./helpers.js";
+import { finishWorkout, openApp, seedStorage, stored, tab } from "./helpers.js";
 
 test("a cardio-only program: no warm-up, the planned minutes as the hint, calories in the card and in history", async ({ page }) => {
   await openApp(page);
@@ -17,7 +17,7 @@ test("a cardio-only program: no warm-up, the planned minutes as the hint, calori
   await km.fill("4,5");
   await page.getByRole("button", { name: "Подход сделан" }).click(); // the planned 30 minutes are taken
   await expect(page.getByText(/кардио 30 мин · 4,5 км/)).toBeVisible();
-  await page.getByRole("button", { name: "Завершить" }).click();
+  await finishWorkout(page);
 
   await expect(page.getByText("≈200")).toBeVisible(); // 5 MET × 80 kg × 0,5 h
   await expect(page.getByText("кардио, 4,5 км")).toBeVisible();

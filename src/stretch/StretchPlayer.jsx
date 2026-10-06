@@ -110,9 +110,9 @@ export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
           </div>
           {a.pausedLeft != null && (
             <div className="-mt-3 flex flex-col items-center gap-1 pb-5">
-              <button onClick={act.close} className="py-1 text-sm text-neutral-300">Закончить растяжку — сохранится то, что успел</button>
-              <ConfirmButton onConfirm={act.discard} confirmText="Точно не сохранять?" className="py-1 text-sm text-neutral-500"
-                armedClassName="rounded-lg bg-red-600 px-4 py-1 text-sm text-white">Отменить, не сохранять</ConfirmButton>
+              <button onClick={act.close} className="py-1 text-sm text-neutral-300">Завершить — сохранится то, что успел</button>
+              <ConfirmButton onConfirm={act.discard} confirmText="Не сохранять?" className="py-1 text-sm text-neutral-500"
+                armedClassName="rounded-lg bg-red-600 px-4 py-1 text-sm text-white">Отменить</ConfirmButton>
             </div>
           )}
         </>

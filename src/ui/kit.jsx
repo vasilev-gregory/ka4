@@ -98,12 +98,12 @@ export function Header({ title, back, right }) {
 }
 
 export function Stepper({ value, onChange, step = 1, min = 1, fmt = (v) => v, compact }) {
-  const btn = compact ? "p-1.5 text-neutral-300" : "p-2 text-neutral-300";
+  const btn = compact ? "p-2 text-neutral-300" : "p-2.5 text-neutral-300";
   return (
     <div className="flex items-center rounded-lg bg-neutral-800">
-      <button className={btn} onClick={() => onChange(Math.max(min, value - step))}><Minus size={compact ? 14 : 16} /></button>
+      <button className={btn} aria-label="Меньше" onClick={() => onChange(Math.max(min, value - step))}><Minus size={compact ? 14 : 16} /></button>
       <span className={`${compact ? "w-6" : "w-12"} text-center tabular-nums`}>{fmt(value)}</span>
-      <button className={btn} onClick={() => onChange(value + step)}><Plus size={compact ? 14 : 16} /></button>
+      <button className={btn} aria-label="Больше" onClick={() => onChange(value + step)}><Plus size={compact ? 14 : 16} /></button>
     </div>
   );
 }
@@ -111,9 +111,9 @@ export function Stepper({ value, onChange, step = 1, min = 1, fmt = (v) => v, co
 export function SecStepper({ value, onChange, dim, min = 0, step = 5, unit = "с", fmt = (v) => v }) {
   return (
     <div className={`flex items-center rounded-lg bg-neutral-800 ${dim ? "opacity-50" : ""}`}>
-      <button className="p-1.5 text-neutral-300" aria-label="Меньше" onClick={() => onChange(Math.max(min, value - step))}><Minus size={14} /></button>
+      <button className="p-2 text-neutral-300" aria-label="Меньше" onClick={() => onChange(Math.max(min, value - step))}><Minus size={14} /></button>
       <span className="w-12 text-center text-xs tabular-nums">{fmt(value)} {unit}</span>
-      <button className="p-1.5 text-neutral-300" aria-label="Больше" onClick={() => onChange(value + step)}><Plus size={14} /></button>
+      <button className="p-2 text-neutral-300" aria-label="Больше" onClick={() => onChange(value + step)}><Plus size={14} /></button>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Play } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
-import { fmtDur, progTitle } from "../../core/util.js";
+import { fmtDur, plural, progTitle } from "../../core/util.js";
 import {
   durations, fmtTotals, lastSession, liveRestKey, programDiff, restBefore, restShown, segmentsOf, setColumns, stats,
 } from "../../model/workout.js";
@@ -25,6 +25,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   // {} = add, { group } = add, list opened on that group, { replace: ei } = swap that exercise
   const [picker, setPicker] = useState(null);
   const [askUpdate, setAskUpdate] = useState(false);
+  const [askFinish, setAskFinish] = useState(false);
   const [help, setHelp] = useState(false);
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge / delete
   const undo = useUndo();
@@ -45,7 +46,13 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const program = a.programId ? data.programs.find((p) => p.id === a.programId) : null;
   const hasDone = a.exercises.some((e) => e.sets.some((s) => s.done));
 
-  const finish = () => (programDiff(a, data.programs) ? setAskUpdate(true) : doFinish(false));
+  // sets not ticked are dropped on finishing: with some left, ask first
+  const unticked = a.exercises.reduce((n, e) => n + e.sets.filter((x) => !x.done && x.t !== "w").length, 0);
+  const finish = () => {
+    if (unticked && !askFinish) { setAskFinish(true); return; }
+    setAskFinish(false);
+    if (programDiff(a, data.programs)) setAskUpdate(true); else doFinish(false);
+  };
   const doFinish = (updateProgram) => {
     setAskUpdate(false);
     const id = a.id;
@@ -147,7 +154,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
       </div>
 
       <div className="mt-6 flex gap-2">
-        <DeleteButton inline onConfirm={() => up(A.discardWorkout)} confirmText="Удалить тренировку?">Удалить</DeleteButton>
+        <DeleteButton inline onConfirm={() => up(A.discardWorkout)} confirmText="Не сохранять?">Отменить</DeleteButton>
         {a.paused ? (
           <>
             <Button className="flex-1" onClick={() => up((d) => A.resumeWorkout(d))}>Продолжить</Button>
@@ -161,6 +168,15 @@ export function ActiveWorkout({ data, up, exMap, open }) {
         )}
       </div>
 
+      {askFinish && (
+        <Sheet title="Завершить тренировку?" onClose={() => setAskFinish(false)}>
+          <p className="mb-4 text-xs text-neutral-400">
+            Не отмечено {unticked} {plural(unticked, "подход", "подхода", "подходов")} — они не сохранятся. Отмеченные останутся в истории.
+          </p>
+          <Button block onClick={finish} className="mb-2">Завершить</Button>
+          <Button variant="quiet" block onClick={() => setAskFinish(false)}>Продолжить тренировку</Button>
+        </Sheet>
+      )}
       {askUpdate && (
         <Sheet title="Обновить программу?" onClose={() => setAskUpdate(false)}>
           <p className="mb-4 text-xs text-neutral-400">

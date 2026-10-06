@@ -18,9 +18,10 @@ import { WorkoutTab } from "./strength/workout/WorkoutTab.jsx";
 import { StretchEditor } from "./stretch/StretchEditor.jsx";
 import { StretchHistory } from "./stretch/StretchHistory.jsx";
 import { StretchSession } from "./stretch/StretchSession.jsx";
+import { StretchDetail } from "./stretch/StretchDetail.jsx";
 import { StretchHome } from "./stretch/StretchHome.jsx";
 import { StretchRun } from "./stretch/StretchRun.jsx";
-import { playProgram, playQuick } from "./model/stretchRunActions.js";
+import { playProgram, playQuick, setRunFolded } from "./model/stretchRunActions.js";
 import { AppCtx, Button, DeleteButton, FloatingStack } from "./ui/kit.jsx";
 import { useWakeLock } from "./ui/useWakeLock.js";
 import { useNavigation } from "./ui/navigation.js";
@@ -65,10 +66,11 @@ function Shell({ data, up, replace, saved }) {
   };
   const restore = (d) => { replace(d); nav.reset(); };
 
-  // the stretching run lives in the data; the app only keeps whether its player is unfolded
-  const [runOpen, setRunOpen] = useState(true);
-  const play = (programId) => { upStretch((s) => playProgram(s, programId, Date.now())); setRunOpen(true); };
-  const playNow = (exerciseIds) => { upStretch((s) => playQuick(s, exerciseIds, Date.now())); setRunOpen(true); };
+  // the stretching run lives in the data, folded or not too
+  const runOpen = !(data.stretch.active && data.stretch.active.folded);
+  const setRunOpen = (open) => upStretch((s) => setRunFolded(s, !open));
+  const play = (programId) => upStretch((s) => playProgram(s, programId, Date.now()));
+  const playNow = (exerciseIds) => upStretch((s) => playQuick(s, exerciseIds, Date.now()));
 
   const sound = data.settings.sound !== false;
   // strips above the tab bar: the content leaves room for them
@@ -82,6 +84,7 @@ function Shell({ data, up, replace, saved }) {
   const SCREENS = {
     stretchProgram: (v) => <StretchEditor {...stretchProps} id={v.id} />,
     stretchSession: (v) => <StretchSession {...stretchProps} id={v.id} />,
+    stretchExercise: (v) => <StretchDetail {...stretchProps} id={v.id} />,
     settings: () => settings(back),
     measure: (v) => <MeasureEditor {...common} id={v.id} />,
     exercise: (v) => <ExerciseDetail {...common} id={v.id} />,
@@ -120,7 +123,8 @@ function Shell({ data, up, replace, saved }) {
           </div>
         )}
         <SharedImport data={data} up={up} replace={restore} onImported={() => nav.setTab("history")} />
-        <TabBar tab={tab} onTab={nav.setTab} onSwipe={() => switchMode()} stretchMode={stretchMode} workoutRunning={!!data.active} />
+        <TabBar tab={tab} onTab={nav.setTab} onSwipe={() => switchMode()} stretchMode={stretchMode}
+          running={stretchMode ? !!(data.stretch.active && !data.stretch.active.done) : !!data.active} />
       </div>
     </AppCtx.Provider>
   );

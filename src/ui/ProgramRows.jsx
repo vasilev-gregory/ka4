@@ -5,17 +5,18 @@ import { Play } from "lucide-react";
 import { progTitle } from "../core/util.js";
 import { Button } from "./kit.jsx";
 
-// programs: [{ id, name, meta, canStart }]; onOpen(id), onStart(id), onCreate(), onWithout()
-export function ProgramRows({ programs, onOpen, onStart, onCreate, onWithout }) {
+// programs: [{ id, name, meta, canStart }]; onOpen(id), onStart(id), onCreate(), onWithout(); running: the id of the
+// program whose session is going on — its ▶ goes back to it, the others wait (one session at a time)
+export function ProgramRows({ programs, onOpen, onStart, onCreate, onWithout, running = null }) {
   return (
     <div className="space-y-2">
       {programs.map((p) => (
         <div key={p.id} className="flex items-stretch gap-2 rounded-xl bg-neutral-900 p-2 pl-4">
           <button onClick={() => onOpen(p.id)} className="min-w-0 flex-1 py-2 text-left">
-            <div className="text-base font-semibold">{progTitle(p)}</div>
+            <div className="text-base font-semibold">{progTitle(p)}{running === p.id && <span className="ml-2 text-xs font-normal text-accent-400">идёт</span>}</div>
             <div className="mt-1 text-xs text-neutral-400">{p.meta}</div>
           </button>
-          <button disabled={p.canStart === false} onClick={() => onStart(p.id)} aria-label="Начать"
+          <button disabled={running ? running !== p.id : p.canStart === false} onClick={() => onStart(p.id)} aria-label={running === p.id ? "Вернуться" : "Начать"}
             className="flex w-14 shrink-0 items-center justify-center rounded-lg bg-accent-400 text-black disabled:opacity-30">
             <Play size={22} />
           </button>
@@ -23,7 +24,7 @@ export function ProgramRows({ programs, onOpen, onStart, onCreate, onWithout }) 
       ))}
       <div className="flex gap-2">
         <Button variant="dashed" size="lg" className="flex-1" onClick={onCreate}>+ Новая программа</Button>
-        <Button variant="dashed" size="lg" className="flex-1" onClick={onWithout}>Без программы</Button>
+        <Button variant="dashed" size="lg" className="flex-1" disabled={!!running} onClick={onWithout}>Без программы</Button>
       </div>
     </div>
   );

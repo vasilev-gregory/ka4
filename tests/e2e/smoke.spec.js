@@ -1,6 +1,6 @@
 // Clicks through every main screen and fails on JS errors.
 import { test, expect } from "@playwright/test";
-import { openApp, startWorkout, switchMode, tab } from "./helpers.js";
+import { finishWorkout, openApp, startWorkout, switchMode, tab } from "./helpers.js";
 
 test("every screen renders, strength and stretching", async ({ page }) => {
   const errors = await openApp(page);
@@ -28,7 +28,7 @@ test("every screen renders, strength and stretching", async ({ page }) => {
   await page.getByRole("button", { name: "Назад" }).click();
 
   await page.getByRole("button", { name: "Пауза" }).click();
-  await page.getByRole("button", { name: "Завершить" }).click();
+  await finishWorkout(page);
   const keep = page.getByText("Оставить программу как была");
   if (await keep.count()) await keep.click();
   await tab(page, "История");

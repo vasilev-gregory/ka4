@@ -10,6 +10,17 @@ test("set labels and group normalization", () => {
   normalizeGroups(ss);
   assert.equal(ss[3].g, undefined);
   assert.deepEqual(setLabels(ss), ["1", "2a", "2b", "3", "4"]);
+  assert.deepEqual(setLabels([{ t: "w" }, {}, {}]), ["", "1", "2"]); // warm-ups aren't numbered
+});
+
+test("starting sets: last time's warm-ups come on top of the planned working sets", async () => {
+  const { buildSets } = await import("../../src/model/workout.js");
+  const d = { workouts: [{ startedAt: 1, exercises: [{ exerciseId: "sq", sets: [
+    { w: "40", r: "10", t: "w", done: true }, { w: "100", r: "5", done: true }, { w: "100", r: "5", done: true }, { w: "100", r: "4", done: true },
+  ] }] }] };
+  const s = buildSets(d, "sq", 3);
+  assert.deepEqual(s.map((x) => [x.t, x.hw, x.hr]), [["w", "40", "10"], ["", "100", "5"], ["", "100", "5"], ["", "100", "4"]]);
+  assert.equal(buildSets(d, "sq", 4).filter((x) => x.t !== "w").length, 4);
 });
 
 test("volume: partials 30%, warm-ups excluded, drop set = one set, bodyweight share", () => {

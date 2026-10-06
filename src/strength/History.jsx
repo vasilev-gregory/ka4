@@ -4,9 +4,10 @@ import { fmtDur, fmtKg, fmtNum, plural } from "../core/util.js";
 import { fmtSets, previousOfProgram, restStats, stats } from "../model/workout.js";
 import { WorkoutMuscles } from "./WorkoutMuscles.jsx";
 import { SessionHeader, StatTiles } from "../ui/Session.jsx";
+import { ExerciseRow } from "../ui/ExerciseCard.jsx";
 import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
-import { DeleteButton, ExImg, Header, useApp } from "../ui/kit.jsx";
+import { DeleteButton, Header, useApp } from "../ui/kit.jsx";
 import { removeWorkout } from "../model/workoutActions.js";
 
 // "+2,5 кг", "−1 кг", "так же"
@@ -20,7 +21,7 @@ function progressNote(data, w, e, ex, bwAt) {
 }
 
 export function WorkoutDetail({ data, up, exMap, id, back, open }) {
-  const { bwAt, nm1 } = useApp();
+  const { bwAt } = useApp();
   const w = data.workouts.find((x) => x.id === id);
   if (!w) return <div className="p-4"><Header title="Тренировка удалена" back={back} /></div>;
   const st = stats(w, exMap, bwAt);
@@ -51,21 +52,16 @@ export function WorkoutDetail({ data, up, exMap, id, back, open }) {
       })()}
       <div className="space-y-2">
         {w.exercises.map((e, i) => {
-          const ex = exMap[e.exerciseId] || { name: "Удалённое упражнение", kind: "reps" };
-          const note = exMap[e.exerciseId] && progressNote(data, w, e, ex, bwAt);
+          const ex = exMap[e.exerciseId];
+          const note = ex && progressNote(data, w, e, ex, bwAt);
           return (
-            <button key={i} onClick={() => open({ type: "exercise", id: e.exerciseId })} className="flex w-full items-center gap-3 rounded-xl bg-neutral-900 p-3 text-left active:bg-neutral-800">
-              <ExImg ex={exMap[e.exerciseId]} />
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold">{nm1(ex) || ex.name}</div>
-                <div className="text-xs text-neutral-300 tabular-nums">{fmtSets(e.sets, ex.kind)}</div>
-                {note && (
-                  <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>
-                    {note.text === "рекорд" && <Trophy size={12} className="mr-1 inline -mt-0.5" />}{note.text}
-                  </div>
-                )}
-              </div>
-            </button>
+            <ExerciseRow key={i} ex={ex} missing="Удалённое упражнение" text={fmtSets(e.sets, ex ? ex.kind : "reps")}
+              onClick={() => open({ type: "exercise", id: e.exerciseId })}
+              note={note && (
+                <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>
+                  {note.text === "рекорд" && <Trophy size={12} className="mr-1 inline -mt-0.5" />}{note.text}
+                </div>
+              )} />
           );
         })}
       </div>

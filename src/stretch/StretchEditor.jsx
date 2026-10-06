@@ -1,23 +1,24 @@
-// Stretching program editor on the shared parts (ui/ProgramEdit): stretches (per-stretch times; the stretch itself:
-// area, photo, own ones' sides), the minutes per area they plan for, program timer, start, delete. Saved as you go.
+// Stretching program editor on the shared parts (ui/ProgramEdit): stretches with their own times here (the stretch
+// itself is its card, StretchDetail), the minutes per area they plan for, program timer, start, delete. Saved as you go.
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { fmtDur, plural } from "../core/util.js";
-import { ST_AREAS, ST_FIELDS, isBuiltInStretch } from "../model/catalog.js";
+import { ST_FIELDS } from "../model/catalog.js";
 import { buildTimeline, stExMap, stTiming, stretchPlan } from "../model/stretch.js";
 import * as S from "../model/stretchActions.js";
-import { Button, Chip, ExImg, Header, PhotoPicker, SecStepper, Segmented, exPhoto, useApp } from "../ui/kit.jsx";
-import { ProgramFooter, ProgramItems, ProgramName } from "../ui/ProgramEdit.jsx";
+import { Button, ExImg, Header, SecStepper, Segmented, useApp } from "../ui/kit.jsx";
+import { ProgramFooter, ProgramItems, ProgramName, useDropIfEmpty } from "../ui/ProgramEdit.jsx";
 import { StretchPicker } from "./StretchPicker.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
 // inRun: opened over the player (its settings): no start / delete; onAppSettings opens the app's settings
-export function StretchEditor({ stretch, upStretch, id, back, play, inRun = false, onAppSettings }) {
+export function StretchEditor({ stretch, upStretch, id, back, open, play, inRun = false, onAppSettings }) {
   const { nm1 } = useApp();
   const [picker, setPicker] = useState(false);
   const [openItem, setOpenItem] = useState(null);
   const [timerOpen, setTimerOpen] = useState(false);
   const change = (fn) => upStretch((s) => { const p = S.findProgram(s, id); if (p) fn(p); });
+  useDropIfEmpty(() => { if (!inRun) upStretch((s) => S.dropEmptyProgram(s, id)); });
   const p = S.findProgram(stretch, id);
   if (!p) return <div className="p-4"><Header title="Программа удалена" back={back} /></div>;
   const exMap = stExMap(stretch);
@@ -38,15 +39,15 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
         const isOpen = openItem === i;
         return {
           body: <>
-            {ex && exPhoto(ex) && <ExImg ex={ex} size={34} />}
+            <ExImg ex={ex} size={34} />
             <button onClick={() => setOpenItem(isOpen ? null : i)} className="ml-1 min-w-0 flex-1 py-1 text-left">
-              <div className="truncate">{nm1(ex, "Удалённая растяжка")}</div>
+              <div className="line-clamp-2 leading-tight">{nm1(ex, "Удалённая растяжка")}</div>
               <div className={`truncate text-xs ${it.over && Object.keys(it.over).length ? "text-accent-300" : "text-neutral-500"}`}>
                 {ex && ex.area ? `${ex.area} · ` : ""}{t.work} с{ex && ex.sides ? " × 2 стороны" : ""}, отдых {t.rest} с
               </div>
             </button>
           </>,
-          below: isOpen && ex && <ItemPanel it={it} t={t} ex={ex} change={(fn) => change((pp) => fn(pp, i))} upStretch={upStretch} />,
+          below: isOpen && ex && <ItemPanel it={it} t={t} ex={ex} change={(fn) => change((pp) => fn(pp, i))} open={inRun ? null : open} />,
         };
       }} />
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить растяжку</Button>
@@ -54,7 +55,7 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
       {Object.keys(plan).length > 0 && (
         <div className="mt-4 rounded-xl bg-neutral-900 p-3">
           <div className="mb-2 font-semibold">Мышцы по плану</div>
-          <StretchBreakdown areas={plan} single exMap={exMap} byNote="в этой программе" />
+          <StretchBreakdown areas={plan} single exMap={exMap} byNote="в этой программе" open={inRun ? null : open} />
         </div>
       )}
       <div className="mt-4 rounded-xl bg-neutral-900 p-3">
@@ -62,7 +63,8 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
           <span>
             <span className="block text-xs text-neutral-400">Таймер программы</span>
             <span className="text-sm">
-              {T.prep} / {T.work} / {T.sw} / {T.rest} с · {T.mode === "circuit" ? `${T.rounds} ${plural(T.rounds, "круг", "круга", "кругов")}` : `по порядку × ${T.rounds}`}
+              вступление {T.prep} · работа {T.work} · смена {T.sw} · отдых {T.rest} с ·{" "}
+              {T.mode === "circuit" ? `${T.rounds} ${plural(T.rounds, "круг", "круга", "кругов")}` : `по порядку × ${T.rounds}`}
             </span>
           </span>
           <ChevronDown size={18} className={`text-neutral-500 transition-transform ${timerOpen ? "rotate-180" : ""}`} />
@@ -94,7 +96,7 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
         {onAppSettings && <Button variant="quiet" block onClick={onAppSettings} className="mt-2">Общие настройки: звук и другое</Button>}
       </> : <>
         <ProgramFooter canStart={tl.length > 0} onStart={() => play(id)} onDelete={() => { upStretch((s) => S.removeProgram(s, id)); back(); }}
-          startLabel={stretch.active && !stretch.active.done ? "Вернуться к растяжке" : `Начать${total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}`} />
+          startLabel={stretch.active && !stretch.active.done ? "Вернуться к растяжке" : `Начать растяжку${total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}`} />
       </>}
 
       {picker && (
@@ -105,10 +107,9 @@ export function StretchEditor({ stretch, upStretch, id, back, play, inRun = fals
   );
 }
 
-// One stretch opened in the editor: its own times (grey = as in the program), and the stretch itself
-// (muscle area, photo, one side or both), which applies everywhere it's used.
-function ItemPanel({ it, t, ex, change, upStretch }) {
-  const updateEx = (patch) => upStretch((s) => S.updateExercise(s, ex.id, patch));
+// One stretch opened in the editor: its own times in this program (grey = as in the program); the stretch itself
+// (names, area, photo, sides, history) is its card, one tap away (not from over the player).
+function ItemPanel({ it, t, ex, change, open }) {
   return (
     <div className="mt-2 space-y-1.5 border-t border-neutral-800 pt-2">
       {ST_FIELDS.map(([k, l]) => {
@@ -123,18 +124,10 @@ function ItemPanel({ it, t, ex, change, upStretch }) {
           </div>
         );
       })}
-      <div className="mt-2 border-t border-neutral-800 pt-2 text-[11px] text-neutral-500">Сама растяжка — меняется во всех программах</div>
-      <div className="mt-1 text-xs text-neutral-400">Группа мышц</div>
-      <div className="flex flex-wrap gap-1.5">
-        {ST_AREAS.map((ar) => (
-          <Chip key={ar} on={ex.area === ar} onClick={() => updateEx({ area: ar })}>{ar}</Chip>
-        ))}
-      </div>
-      <div className="mt-1 text-xs text-neutral-400">Фото</div>
-      <PhotoPicker ex={ex} onChange={(v) => updateEx({ photo: v || undefined })} />
-      {/* one side or two is what a stretch is: fixed for built-in ones, the user's own say it themselves */}
-      {!isBuiltInStretch(ex.id) && (
-        <Chip on={ex.sides} onClick={() => updateEx({ sides: !ex.sides })} className="mt-1">на обе стороны: {ex.sides ? "да" : "нет"}</Chip>
+      {open && (
+        <button onClick={() => open({ type: "stretchExercise", id: ex.id })} className="mt-1 w-full rounded-lg py-2 text-left text-xs text-accent-300 active:bg-neutral-800">
+          Сама растяжка: группа мышц, фото, история →
+        </button>
       )}
     </div>
   );
