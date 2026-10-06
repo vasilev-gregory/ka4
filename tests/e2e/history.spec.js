@@ -85,6 +85,7 @@ test("exercise chart: metric, time window, drag to zoom and reset", async ({ pag
 
   await page.getByRole("button", { name: "всё" }).click();
   await page.getByRole("button", { name: "макс. вес" }).click();
+  await page.getByTestId("trend").scrollIntoViewIfNeeded(); // below the muscles card: drag where it's on screen
   const box = await page.getByTestId("trend").boundingBox();
   await expect(page.locator(".recharts-cartesian-grid")).toBeVisible();
   const y = box.y + box.height / 2;
