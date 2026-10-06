@@ -44,7 +44,29 @@ test("history: month by default, paging, year overview drills down to a month an
   await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\. · 1 раз/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /ягодицы.*1 подх\./ })).toBeVisible(); // helping: half a set each
   await page.locator('[data-muscle="quads"]').first().click();
-  await expect(page.getByRole("button", { name: /квадрицепс/ })).toHaveClass(/bg-neutral-800/);
+  // the picked muscle opens up: the exercises its sets came from this week
+  await expect(page.getByRole("button", { name: /квадрицепс/ })).toHaveAttribute("aria-expanded", "true");
+  const from = page.getByTestId("muscle-exercises");
+  await expect(from).toContainText("Засчитались за неделю:");
+  await expect(from.getByRole("button", { name: /Приседания со штангой.*основная.*2 подх\./ })).toBeVisible();
+  // the front view has the upper traps and the edge of the lats too; the head is not a muscle, it jokes
+  const front = page.getByRole("img", { name: "Спереди" });
+  await expect(front.locator('[data-muscle="traps"]')).toHaveCount(2);
+  await expect(front.locator('[data-muscle="lats"]')).toHaveCount(2);
+  // the lateral delt is a shape of its own on both views
+  await expect(front.locator('[data-muscle="sidedelt"]')).toHaveCount(2);
+  await expect(page.getByRole("img", { name: "Сзади" }).locator('[data-muscle="sidedelt"]')).toHaveCount(2);
+  await front.locator('[data-muscle="head"]').click();
+  await expect(page.getByText(/^Голова: /)).toBeVisible();
+
+  // a month counts the exercises' sets over the whole month, and an exercise opens its card
+  await page.getByRole("button", { name: "Месяц" }).click();
+  await page.getByRole("button", { name: /ягодицы/ }).click();
+  await expect(from).toContainText("Засчитались за месяц, всего:");
+  await from.getByRole("button", { name: /Приседания со штангой.*помогает.*1 подх\./ }).click();
+  await expect(page.getByText("Мышцы: квадрицепс; помогают: ягодицы")).toBeVisible();
+  await page.goBack();
+  await page.getByRole("button", { name: "Неделя" }).click();
 
   // the zoom is kept while a workout card is open
   await page.getByText("Октябрьская").click();

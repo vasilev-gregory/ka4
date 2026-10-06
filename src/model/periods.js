@@ -25,7 +25,8 @@ export function shiftPeriod(zoom, ts, k) {
 export const inPeriod = (workouts, { from, to }) => workouts.filter((w) => w.startedAt >= from && w.startedAt < to);
 
 // A month or a year at a glance: workouts, volume, sets, cardio minutes, kcal (estimate), and hard sets per muscle
-// averaged over the weeks of the period that have already started (weeks: how many; perWeek: muscle -> { sets, freq }).
+// averaged over the weeks of the period that have already started (weeks: how many; perWeek: muscle -> { sets, freq, by });
+// by (exerciseId -> sets) is the whole period's, not averaged.
 export function periodSummary(workouts, exMap, bwAt, range, now = Date.now()) {
   const list = inPeriod(workouts, range);
   let vol = 0, sets = 0, cardioMin = 0, cardioKm = 0, kcal = 0;
@@ -39,14 +40,15 @@ export function periodSummary(workouts, exMap, bwAt, range, now = Date.now()) {
   for (let ws = weekStartOf(range.from); ws < range.to && ws <= now; ws = weekStartOf(ws + 8 * DAY)) {
     weeks++;
     Object.entries(weekLoad(list, exMap, ws).muscles).forEach(([m, p]) => {
-      const t = muscles[m] || (muscles[m] = { sets: 0, freq: 0 });
+      const t = muscles[m] || (muscles[m] = { sets: 0, freq: 0, by: {} });
       t.sets += p.sets;
       t.freq += p.freq;
+      Object.entries(p.by).forEach(([id, n]) => { t.by[id] = (t.by[id] || 0) + n; });
     });
   }
   const avg = (n) => Math.round((n / Math.max(1, weeks)) * 10) / 10;
   const perWeek = {};
-  Object.entries(muscles).forEach(([m, t]) => { perWeek[m] = { sets: avg(t.sets), freq: avg(t.freq) }; });
+  Object.entries(muscles).forEach(([m, t]) => { perWeek[m] = { sets: avg(t.sets), freq: avg(t.freq), by: t.by }; });
   const days = new Set(list.map((w) => new Date(w.startedAt).toDateString())).size;
   return { workouts: list.length, days, vol, sets, cardioMin, cardioKm, kcal, weeks, perWeek };
 }

@@ -31,15 +31,19 @@ test("swipe right marks a set done, swipe left deletes it with undo", async ({ p
   expect(errors).toEqual([]);
 });
 
-test("finished workout shows the weekly panel; stretch mode hides strength settings", async ({ page }) => {
+test("finished workout shows its muscles and its week; stretch mode hides strength settings", async ({ page }) => {
   await openApp(page);
   await startWorkout(page);
   await page.getByRole("button", { name: "Подход сделан" }).first().click();
   await page.getByRole("button", { name: "Завершить" }).click();
   const keep = page.getByText("Оставить программу как была");
   if (await keep.count()) await keep.click();
-  await expect(page.getByText("Неделя по мышцам")).toBeVisible();
-  await expect(page.getByText("квадрицепс")).toBeVisible(); // the first set was a squat: quads are its main muscle
+  // the workout's own muscles first: one squat set, quads its main muscle; no growth status for a single workout
+  await expect(page.getByRole("img", { name: "Спереди" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /квадрицепс.*1 подх\.$/ })).toBeVisible();
+  await expect(page.getByText("мало")).toHaveCount(0);
+  await page.getByRole("button", { name: "Неделя", exact: true }).click();
+  await expect(page.getByRole("button", { name: /квадрицепс.*мало/ })).toBeVisible();
   await expect(page.getByText("ещё 3 подх. до роста")).toBeVisible();
   await expect.poll(async () => (await stored(page)).workouts.length).toBe(1);
   expect((await stored(page)).active).toBeNull();
