@@ -24,13 +24,52 @@ test("±5, + round and the settings overlay", async ({ page }) => {
   await expect(page.locator("div.text-8xl").first()).toHaveText(/^0:3[45]$/);
   await page.getByRole("button", { name: "+ круг" }).click();
   await expect.poll(async () => Number((await total.innerText()).split(" / ")[1])).toBeGreaterThan(before);
+  // the gear opens this program's settings over the run; the app's settings are one more step
   await page.getByRole("button", { name: "Настройки" }).first().click();
+  await expect(page.getByText("Настройки программы")).toBeVisible();
+  await page.getByRole("button", { name: "Общие настройки: звук и другое" }).click();
   await expect(page.getByText("Звук таймера")).toBeVisible();
   await page.getByRole("button", { name: "Назад" }).first().click();
+  await expect(page.getByText("Настройки программы")).toBeVisible();
+  await page.getByRole("button", { name: "Продолжить растяжку" }).click();
   await expect(page.locator("div.text-8xl")).toHaveCount(1); // the run survived
   await page.getByRole("button", { name: "Закрыть" }).first().click();
   await expect(page.getByText("35 с").first()).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("editing the program mid-run: the current stretch takes its new time, a stretch made one-sided loses its sides", async ({ page }) => {
+  await openApp(page);
+  await switchMode(page, "Растяжка");
+  await (await newProgram(page, ["Сгибатели бедра: выпад"]))();
+  await page.getByRole("button", { name: "Начать" }).last().click();
+  await page.getByRole("button", { name: "Пропустить" }).click(); // -> work, left side
+  await expect(page.getByText("левая сторона")).toBeVisible();
+  await page.getByRole("button", { name: "Пауза" }).click();
+  await page.getByRole("button", { name: "Настройки" }).first().click();
+  await page.getByRole("button", { name: /Сгибатели бедра: выпад, корпус вперёд/ }).click(); // open the stretch: its own times
+  await page.locator("div.justify-between", { has: page.getByText("работа", { exact: true }) }).getByRole("button", { name: "Больше" }).click();
+  await page.getByRole("button", { name: /на обе стороны: да/ }).click();
+  await page.getByRole("button", { name: "Продолжить растяжку" }).click();
+  await expect(page.getByText("левая сторона")).toHaveCount(0);
+  await expect(page.locator("div.text-8xl").first()).toHaveText(/^0:3[45]$/); // 30 + 5 s, still paused
+});
+
+test("a skipped hold doesn't count; after a rest the next stretch starts without an intro", async ({ page }) => {
+  await page.clock.install();
+  await openApp(page);
+  await switchMode(page, "Растяжка");
+  await (await newProgram(page, ["Пицца", "Четвёрка"]))();
+  await page.getByRole("button", { name: "Начать" }).last().click();
+  await page.getByRole("button", { name: "Пропустить" }).click(); // the intro
+  await page.clock.runFor(12_000); // 12 s into the pizza's 30 …
+  await page.getByRole("button", { name: "Пропустить" }).click(); // … and skipped
+  await expect(page.getByText("Отдых", { exact: true })).toBeVisible();
+  await page.clock.runFor(16_000); // the rest runs out: straight to work, no intro
+  await expect(page.getByText("левая сторона")).toBeVisible();
+  await page.clock.runFor(70_000); // both sides of the figure four
+  await expect(page.getByText("Готово")).toBeVisible();
+  await expect.poll(async () => (await stored(page)).stretch.sessions[0]?.work).toEqual({ "st-figure-four": 30 });
 });
 
 test("phases run out on their own and the run is saved", async ({ page }) => {

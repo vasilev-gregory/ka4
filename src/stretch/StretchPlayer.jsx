@@ -1,5 +1,6 @@
 // Interval player for a stretching program: big countdown, what's now / next, ±5 s (saved in the
-// program), + round (this run only), pause / back / skip, settings over the player, results at the end.
+// program), + round (this run only), pause / back / skip, the program's own settings over the player (edits
+// apply to the run going on), results at the end.
 import { useState, useEffect, useEffectEvent, useRef } from "react";
 import { X, ChevronLeft, Settings } from "lucide-react";
 import { fmtDur, progTitle, weekStartOf } from "../core/util.js";
@@ -8,12 +9,14 @@ import { findProgram, recordSession, savePhaseLength } from "../model/stretchAct
 import { Button, ExImg, exPhoto } from "../ui/kit.jsx";
 import { useWakeLock } from "../ui/useWakeLock.js";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
+import { StretchEditor } from "./StretchEditor.jsx";
 import { useStretchRun } from "./useStretchRun.js";
 
 export function StretchPlayer({ stretch, upStretch, sound, id, back, settings }) {
   const p = findProgram(stretch, id);
   const exMap = stExMap(stretch);
-  const [showSettings, setShowSettings] = useState(false);
+  const [overlay, setOverlay] = useState(null); // "program" | "app"
+  const [extraRounds, setExtraRounds] = useState(0);
   const saved = useRef(false);
   useWakeLock();
 
@@ -38,11 +41,19 @@ export function StretchPlayer({ stretch, upStretch, sound, id, back, settings })
     run.setPhaseLength(seconds);
   };
   // one more full round at the end, for this run only
+  const extraRound = () => {
+    const T = stTiming(p);
+    return [...(T.roundRest > 0 ? [{ k: "roundRest", dur: T.roundRest }] : []), ...buildTimeline({ ...p, timing: { ...T, rounds: 1, mode: "circuit" } }, exMap)];
+  };
   const addRound = () => {
     if (!p) return;
-    const T = stTiming(p);
-    const round = buildTimeline({ ...p, timing: { ...T, rounds: 1, mode: "circuit" } }, exMap);
-    run.extend([...(T.roundRest > 0 ? [{ k: "roundRest", dur: T.roundRest }] : []), ...round]);
+    run.extend(extraRound());
+    setExtraRounds((n) => n + 1);
+  };
+  // leaving the program's settings: the run goes on in the edited program (with the rounds added in this run)
+  const closeProgram = () => {
+    setOverlay(null);
+    if (p) run.replace([...buildTimeline(p, exMap), ...Array.from({ length: extraRounds }, extraRound).flat()]);
   };
 
   // during rest the screen is about what's coming, not what just ended
@@ -55,9 +66,12 @@ export function StretchPlayer({ stretch, upStretch, sound, id, back, settings })
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
-      {showSettings && settings && (
+      {overlay && (
         <div className="fixed inset-0 z-60 overflow-y-auto bg-black" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-          <div className="mx-auto max-w-md">{settings(() => setShowSettings(false))}</div>
+          <div className="mx-auto max-w-md">
+            {overlay === "app" ? settings(() => setOverlay("program"))
+              : <StretchEditor stretch={stretch} upStretch={upStretch} id={id} back={closeProgram} inRun onAppSettings={settings && (() => setOverlay("app"))} />}
+          </div>
         </div>
       )}
       <div className="flex items-center justify-between p-4">
@@ -67,7 +81,7 @@ export function StretchPlayer({ stretch, upStretch, sound, id, back, settings })
         </div>
         <div className="flex items-center gap-1">
           {!st.done && <button onClick={addRound} className="rounded-lg bg-neutral-900 px-3 py-2 text-xs font-semibold text-neutral-300">+ круг</button>}
-          <button onClick={() => setShowSettings(true)} className="p-2 text-neutral-400" aria-label="Настройки"><Settings size={22} /></button>
+          <button onClick={() => setOverlay("program")} className="p-2 text-neutral-400" aria-label="Настройки"><Settings size={22} /></button>
           <button onClick={back} className="p-2 text-neutral-400" aria-label="Закрыть"><X size={24} /></button>
         </div>
       </div>

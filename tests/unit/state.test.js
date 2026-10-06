@@ -28,6 +28,17 @@ test("built-in stretch renamed only if the user kept the old name", () => {
   assert.equal(m.stretch.exercises.find((e) => e.id === "st-lat").name, "Моя широчайшая");
 });
 
+test("a corrected built-in stretch is fixed once, unless the user renamed it", () => {
+  const d = seed();
+  Object.assign(d.stretch.exercises.find((e) => e.id === "st-lat"), { ru: "Широчайшие: на коленях, руки вперёд и в сторону", sides: true });
+  const lat = migrate(d).stretch.exercises.find((e) => e.id === "st-lat");
+  assert.equal(lat.ru, "Широчайшие: на коленях, руки вперёд, таз к пяткам");
+  assert.equal(lat.sides, false);
+  const mine = seed();
+  Object.assign(mine.stretch.exercises.find((e) => e.id === "st-lat"), { ru: "Моя широчайшая", sides: true });
+  assert.equal(migrate(mine).stretch.exercises.find((e) => e.id === "st-lat").sides, true);
+});
+
 test("duplicate stretches in a program are merged", () => {
   const d = seed();
   d.stretch.programs.push({ id: "p", name: "x", items: [{ exerciseId: "st-pizza" }, { exerciseId: "st-lat" }, { exerciseId: "st-pizza" }] });

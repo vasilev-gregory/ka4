@@ -4,13 +4,15 @@ import assert from "node:assert/strict";
 import { buildTimeline, stExMap } from "../../src/model/stretch.js";
 import { seed } from "../../src/model/state.js";
 
-test("stretch timeline: circuit, sides, no trailing rest, prep each round", () => {
+test("stretch timeline: circuit, sides, no trailing rest; the intro only where no rest comes before", () => {
   const d = seed();
   const p = { timing: { prep: 10, work: 30, sw: 5, rest: 15, rounds: 2, roundRest: 60, mode: "circuit" },
     items: [{ exerciseId: "st-figure-four" }, { exerciseId: "st-pizza" }] };
-  const tl = buildTimeline(p, stExMap(d.stretch));
-  assert.deepEqual(tl.map((x) => x.k).join(","),
-    "prep,work,switch,work,rest,prep,work,roundRest,prep,work,switch,work,rest,prep,work");
+  const kinds = (q) => buildTimeline(q, stExMap(d.stretch)).map((x) => x.k).join(",");
+  assert.equal(kinds(p), "prep,work,switch,work,rest,work,roundRest,work,switch,work,rest,work");
+  // no rest between stretches: each one gets its intro; in order, a stretch's repeats rest in between
+  assert.equal(kinds({ ...p, timing: { ...p.timing, rest: 0, roundRest: 0, rounds: 1 } }), "prep,work,switch,work,prep,work");
+  assert.equal(kinds({ ...p, timing: { ...p.timing, mode: "sequence" } }), "prep,work,switch,work,rest,work,switch,work,rest,work,rest,work");
 });
 
 test("stretch load per area: per side, days per area, what made it up; a program's plan counts the same way", async () => {

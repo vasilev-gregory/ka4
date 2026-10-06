@@ -11,7 +11,8 @@ import { moveItem, useSortable } from "../ui/sortable.js";
 import { StretchPicker } from "./StretchPicker.jsx";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 
-export function StretchEditor({ stretch, upStretch, id, back, open }) {
+// inRun: opened over the player (its settings): no start / delete; onAppSettings opens the app's settings
+export function StretchEditor({ stretch, upStretch, id, back, open, inRun = false, onAppSettings }) {
   const [picker, setPicker] = useState(false);
   const [openItem, setOpenItem] = useState(null);
   const [timerOpen, setTimerOpen] = useState(false);
@@ -28,7 +29,8 @@ export function StretchEditor({ stretch, upStretch, id, back, open }) {
 
   return (
     <div className="p-4 pb-28">
-      <Header title="Программа растяжки" back={back} />
+      <Header title={inRun ? "Настройки программы" : "Программа растяжки"} back={back} />
+      {inRun && <p className="-mt-3 mb-3 text-xs text-neutral-500">Изменения сразу идут в эту растяжку и сохраняются в программе.</p>}
       <input value={p.name} placeholder="Название программы" autoFocus={!p.name}
         onChange={(e) => { const name = e.target.value; change((pp) => { pp.name = name; }); }}
         className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-hidden focus:ring-2 focus:ring-accent-400" />
@@ -97,12 +99,17 @@ export function StretchEditor({ stretch, upStretch, id, back, open }) {
         )}
       </div>
 
-      <Button block disabled={!tl.length} onClick={() => open({ type: "stretchPlay", id })} className="mt-6">
-        Начать{total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}
-      </Button>
-      <DeleteButton onConfirm={() => { upStretch((s) => S.removeProgram(s, id)); back(); }} confirmText="Удалить программу?">
-        Удалить программу
-      </DeleteButton>
+      {inRun ? <>
+        <Button block onClick={back} className="mt-6">Продолжить растяжку</Button>
+        {onAppSettings && <Button variant="quiet" block onClick={onAppSettings} className="mt-2">Общие настройки: звук и другое</Button>}
+      </> : <>
+        <Button block disabled={!tl.length} onClick={() => open({ type: "stretchPlay", id })} className="mt-6">
+          Начать{total ? ` · ≈ ${fmtDur(total * 1000)}` : ""}
+        </Button>
+        <DeleteButton onConfirm={() => { upStretch((s) => S.removeProgram(s, id)); back(); }} confirmText="Удалить программу?">
+          Удалить программу
+        </DeleteButton>
+      </>}
 
       {picker && (
         <StretchPicker stretch={stretch} upStretch={upStretch} onClose={() => setPicker(false)} already={p.items.map((x) => x.exerciseId)}
