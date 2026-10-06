@@ -3,7 +3,7 @@
 // tab bar (system back folds it too). Always in the stretching colours, whatever the mode.
 import { useEffect, useEffectEvent, useRef } from "react";
 import { beep, blip, tick } from "../core/sound.js";
-import { addRunRound, adjustRunPhase, closeRun, goToPhase, keepQuickProgram, runState, syncRun, tickRun, togglePauseRun } from "../model/stretchRunActions.js";
+import { addRunRound, adjustRunPhase, closeRun, discardRun, goToPhase, keepQuickProgram, runState, syncRun, tickRun, togglePauseRun } from "../model/stretchRunActions.js";
 import { useNow } from "../ui/kit.jsx";
 import { useWakeLock } from "../ui/useWakeLock.js";
 import { StretchMiniBar, StretchPlayer } from "./StretchPlayer.jsx";
@@ -65,6 +65,7 @@ function ActiveRun({ stretch, upStretch, sound, open, setOpen, settings }) {
     adjust: (d) => upStretch((s) => adjustRunPhase(s, d, Date.now())),
     addRound: () => upStretch(addRunRound),
     close: () => { upStretch((s) => closeRun(s, Date.now())); setOpen(true); },
+    discard: () => { upStretch(discardRun); setOpen(true); },
     keep: () => upStretch(keepQuickProgram),
     fold: () => setOpen(false),
     unfold: () => setOpen(true),

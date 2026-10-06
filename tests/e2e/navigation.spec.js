@@ -28,7 +28,7 @@ test("system back folds a running stretch into the strip; it goes on and ends fr
   await page.clock.install();
   await openApp(page);
   await switchMode(page, "Растяжка");
-  await page.getByText("+ Новая программа растяжки").click();
+  await page.getByRole("button", { name: "+ Новая программа" }).click();
   await page.getByText("Добавить растяжку").click();
   await page.getByText("Пицца").first().click();
   await page.getByRole("button", { name: "Добавить (1)" }).click();
@@ -43,5 +43,5 @@ test("system back folds a running stretch into the strip; it goes on and ends fr
   await expect.poll(async () => (await stored(page)).stretch.sessions.length).toBe(1);
   expect((await stored(page)).stretch.sessions[0].complete).toBe(false);
   await page.goBack(); // the entry the player had is gone with it: back leaves the editor
-  await expect(page.getByText("+ Новая программа растяжки")).toBeVisible();
+  await expect(page.getByRole("button", { name: "+ Новая программа" })).toBeVisible();
 });

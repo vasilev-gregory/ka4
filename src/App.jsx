@@ -17,6 +17,7 @@ import { RestBar } from "./strength/workout/RestBar.jsx";
 import { WorkoutTab } from "./strength/workout/WorkoutTab.jsx";
 import { StretchEditor } from "./stretch/StretchEditor.jsx";
 import { StretchHistory } from "./stretch/StretchHistory.jsx";
+import { StretchSession } from "./stretch/StretchSession.jsx";
 import { StretchHome } from "./stretch/StretchHome.jsx";
 import { StretchRun } from "./stretch/StretchRun.jsx";
 import { playProgram, playQuick } from "./model/stretchRunActions.js";
@@ -76,6 +77,7 @@ function Shell({ data, up, replace, saved }) {
   const settings = (close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={restore} />;
   const SCREENS = {
     stretchProgram: (v) => <StretchEditor {...stretchProps} id={v.id} />,
+    stretchSession: (v) => <StretchSession {...stretchProps} id={v.id} />,
     settings: () => settings(back),
     measure: (v) => <MeasureEditor {...common} id={v.id} />,
     exercise: (v) => <ExerciseDetail {...common} id={v.id} />,

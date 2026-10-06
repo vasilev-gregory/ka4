@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 import { openApp, seedStorage, switchMode, stored, tab } from "./helpers.js";
 
 async function newProgram(page, names) {
-  await page.getByText("+ Новая программа растяжки").click();
+  await page.getByRole("button", { name: "+ Новая программа" }).click();
   return async () => {
     await page.getByText("Добавить растяжку").click();
     for (const n of names) await page.getByText(n).first().click();
@@ -119,7 +119,15 @@ test("stretching uses the same body map: history by week / month, what made up a
   await page.getByRole("button", { name: "Месяц" }).click();
   await expect(page.getByText("1 растяжка, 10:00")).toBeVisible();
   await expect(page.getByText("в среднем за неделю")).toBeVisible();
-  await expect(page.getByText("Утро")).toBeVisible();
+  await page.getByText("Утро").click(); // the run's own card, like a workout's
+  await expect(page.getByText("удержание, на сторону")).toBeVisible();
+  await expect(page.getByText("6:00", { exact: true })).toBeVisible(); // 4:00 + 2:00 held
+  await expect(page.getByText(/приводящие · удержание 2:00/)).toBeVisible();
+  await page.getByRole("button", { name: "Неделя", exact: true }).last().click();
+  await expect(page.getByText("до минимума ещё 1:00")).toBeVisible();
+  await page.getByRole("button", { name: "Удалить растяжку" }).click();
+  await page.getByRole("button", { name: "Удалить из истории?" }).click();
+  await expect.poll(async () => (await stored(page)).stretch.sessions.length).toBe(0);
 
   await tab(page, "Тренировка");
   await page.getByText("Бёдра").click();
@@ -130,7 +138,7 @@ test("stretching uses the same body map: history by week / month, what made up a
 test("the run survives a reload, folds away to a strip while browsing, and ends early from pause", async ({ page }) => {
   await openApp(page);
   await switchMode(page, "Растяжка");
-  await page.getByRole("button", { name: "Быстрая растяжка — без программы" }).click();
+  await page.getByRole("button", { name: "Без программы" }).click();
   await page.getByText("Пицца").first().click();
   await page.getByText("Четвёрка").first().click();
   await page.getByRole("button", { name: "Начать (2)" }).click();
@@ -148,7 +156,24 @@ test("the run survives a reload, folds away to a strip while browsing, and ends 
   await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toContainText("Работа · Пицца");
   await page.getByRole("button", { name: "Развернуть растяжку" }).click();
   await page.getByRole("button", { name: "Пауза" }).click();
+  await expect(page.getByRole("button", { name: "Отменить, не сохранять" })).toBeVisible();
   await page.getByRole("button", { name: /Закончить растяжку/ }).click();
   await expect(page.getByRole("button", { name: "Развернуть растяжку" })).toHaveCount(0);
   await expect.poll(async () => (await stored(page)).stretch.active).toBeUndefined();
+});
+
+test("a run can be cancelled without saving (two taps)", async ({ page }) => {
+  await page.clock.install();
+  await openApp(page);
+  await switchMode(page, "Растяжка");
+  await page.getByRole("button", { name: "Без программы" }).click();
+  await page.getByText("Пицца").first().click();
+  await page.getByRole("button", { name: "Начать (1)" }).click();
+  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "+ круг" }).click(); // longer than what we wait
+  await page.clock.runFor(70_000); // past the minute after which leaving would save it
+  await page.getByRole("button", { name: "Пауза" }).click();
+  await page.getByRole("button", { name: "Отменить, не сохранять" }).click();
+  await page.getByRole("button", { name: "Точно не сохранять?" }).click();
+  await expect.poll(async () => (await stored(page)).stretch.active).toBeUndefined();
+  expect((await stored(page)).stretch.sessions).toHaveLength(0);
 });

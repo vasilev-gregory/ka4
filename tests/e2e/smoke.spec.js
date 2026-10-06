@@ -35,7 +35,7 @@ test("every screen renders, strength and stretching", async ({ page }) => {
   await expect(page.getByText("I. Ноги и плечи").first()).toBeVisible();
 
   await switchMode(page, "Растяжка");
-  await page.getByText("+ Новая программа растяжки").click();
+  await page.getByRole("button", { name: "+ Новая программа" }).click();
   await page.getByText("Добавить растяжку").click();
   await page.getByText("Четвёрка").first().click();
   await page.getByText("Пицца").first().click();

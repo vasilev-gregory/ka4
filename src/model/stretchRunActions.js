@@ -93,7 +93,7 @@ export function playProgram(s, programId, now) {
 export function playQuick(s, exerciseIds, now) {
   if (s.active && s.active.done) delete s.active;
   if (s.active || !exerciseIds.length) return;
-  const program = { id: QUICK, name: "Быстрая растяжка", timing: { ...s.defaults }, items: exerciseIds.map((id) => ({ exerciseId: id })) };
+  const program = { id: QUICK, name: "Свободная растяжка", timing: { ...s.defaults }, items: exerciseIds.map((id) => ({ exerciseId: id })) };
   const a = { programId: QUICK, program, startedAt: now, extraRounds: 0, held: {} };
   const tl = runTimeline(s, a);
   if (!tl.length) return;
@@ -107,7 +107,7 @@ export function keepQuickProgram(s) {
   if (!a || a.programId !== QUICK || a.savedAs) return;
   const id = uid();
   const { timing, items } = a.program;
-  s.programs.push({ id, name: "Быстрая растяжка", timing: { ...timing }, items: items.map((it) => ({ ...it, ...(it.over ? { over: { ...it.over } } : {}) })) });
+  s.programs.push({ id, name: "Свободная растяжка", timing: { ...timing }, items: items.map((it) => ({ ...it, ...(it.over ? { over: { ...it.over } } : {}) })) });
   a.savedAs = id;
 }
 
@@ -184,4 +184,9 @@ export function closeRun(s, now) {
     record(s, false, now);
   }
   delete s.active;
+}
+
+// cancelled: the run is dropped and nothing of it goes into history
+export function discardRun(s) {
+  if (s.active && !s.active.done) delete s.active;
 }
