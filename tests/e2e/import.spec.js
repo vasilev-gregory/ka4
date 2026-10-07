@@ -22,7 +22,9 @@ test("Settings → load a Hevy export: preview, import adds workouts and keeps t
   await page.locator("input[type=file][accept*='.csv']").setInputFiles(HEVY);
   await expect(sheet.getByText(/уже есть в истории/)).toBeVisible();
   await sheet.getByRole("button", { name: "Закрыть" }).click();
-  await expect(sheet).toHaveCount(0); // its back step is done before the next file opens a sheet
+  await expect(sheet).toHaveCount(0);
+  // the closed sheet drops its history entry right after; a sheet opened before that would be closed by it
+  await expect.poll(() => page.evaluate(() => history.state && history.state.overlay)).toBeFalsy();
 
   // GymKeeper on top: added as well, Hevy's workouts stay
   await page.locator("input[type=file][accept*='.csv']").setInputFiles("tests/fixtures/gymkeeper.csv");
