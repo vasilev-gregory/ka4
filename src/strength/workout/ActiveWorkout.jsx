@@ -80,6 +80,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
     addSet: () => up((d) => A.addSet(d, ei)),
     editSet: (si, patch) => up((d) => A.setSet(d, ei, si, patch)),
     toggleSet: (si) => { unlockAudio(); up((d) => A.toggleSet(d, ei, si)); },
+    rirSet: (si, n) => { unlockAudio(); up((d) => A.markSetRir(d, ei, si, n)); },
     swipeSet: (si, dir) => {
       const s = a.exercises[ei]?.sets[si];
       if (!s) return;

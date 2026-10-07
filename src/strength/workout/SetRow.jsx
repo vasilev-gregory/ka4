@@ -1,8 +1,10 @@
-// One set: number (tap = warm-up, hold = select), the enabled columns, and ✓ with the rest time inside.
+// One set: number (tap = warm-up, hold = select), the enabled columns, and ✓ with the rest time inside (hold ✓ and
+// slide: done with a RIR, RirDial).
 // The row swipes: right = done / undone, left = delete.
 import { useEffect, useRef } from "react";
 import { Check, Trophy } from "lucide-react";
 import { fmtDur, numericInput } from "../../core/util.js";
+import { useRirDial } from "./RirDial.jsx";
 
 const BOX = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-hidden placeholder:text-neutral-600 focus:ring-2 focus:ring-accent-400";
 
@@ -44,8 +46,9 @@ function Cell({ col, s, ex, edit }) {
 }
 
 // label: "1", "2a", …; rest: ms before this set or "drop"; live: the running stopwatch is here (ms so far);
-// record: this set beat the exercise's best estimated 1RM
-export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, record, swipe, swipeProps, numberProps, edit, toggle }) {
+// record: this set beat the exercise's best estimated 1RM; rir(n): done with RIR n (the dial on ✓)
+export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, record, swipe, swipeProps, numberProps, edit, toggle, rir }) {
+  const dial = useRirDial({ onTap: toggle, onPick: rir, enabled: cols.includes("rir") && s.t !== "w" });
   const shownRest = rest === "drop" || rest >= 1000 ? rest : null; // under a second (warm-up closed by this tick): nothing to show
   // a short flash when the set gets confirmed (phones without vibration still notice)
   const rowRef = useRef(null);
@@ -72,7 +75,7 @@ export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, reco
           <span className={selected ? "" : s.t === "w" ? "text-sky-400" : s.done ? "text-accent-400" : "text-neutral-500"}>{s.t === "w" ? "Р" : label}</span>
         </button>
         {cols.map((c) => <Cell key={c} col={c} s={s} ex={ex} edit={edit} />)}
-        <button onClick={toggle} aria-label="Подход сделан"
+        <button {...dial.bind} aria-label="Подход сделан" style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
           className={`relative flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg leading-none ${
             s.done ? "bg-accent-400 text-neutral-900" : live != null ? "bg-neutral-800 text-accent-400" : "bg-neutral-800 text-neutral-400"}`}>
           {live != null ? (
@@ -90,6 +93,7 @@ export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, reco
           )}
         </button>
       </div>
+      {dial.dial}
     </div>
   );
 }

@@ -71,7 +71,7 @@ export function ExerciseCard({ e, ei, ex, exData, last, step, records, cols, com
                   swipe={g.swipe && g.swipe.key === key ? g.swipe : null}
                   swipeProps={g.swipeBind(key, (dir) => act.swipeSet(si, dir))}
                   numberProps={g.numberProps(si)}
-                  edit={(patch) => act.editSet(si, patch)} toggle={() => act.toggleSet(si)} />
+                  edit={(patch) => act.editSet(si, patch)} toggle={() => act.toggleSet(si)} rir={(n) => act.rirSet(si, n)} />
               );
             })}
             {selHere ? (

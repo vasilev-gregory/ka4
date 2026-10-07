@@ -96,6 +96,12 @@ export function toggleSet(d, ei, si, now = Date.now()) {
   a.restEndsAt = midGroup || !countdown || cardio ? null : now + d.settings.restSec * 1000;
 }
 
+// the hold-and-slide dial on ✓: marks the set done (as ✓ does, unless it is already) with the RIR picked
+export function markSetRir(d, ei, si, rir, now = Date.now()) {
+  if (!d.active.exercises[ei].sets[si].done) toggleSet(d, ei, si, now);
+  d.active.exercises[ei].sets[si].rir = rir;
+}
+
 // a new set takes its hints from the last one
 export function addSet(d, ei) {
   const ss = d.active.exercises[ei].sets, l = ss[ss.length - 1];
