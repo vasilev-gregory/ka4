@@ -18,7 +18,7 @@ export function ProgramRows({ programs, onOpen, onStart, onCreate, onWithout, ru
     <div className="space-y-2">
       {blocked && <p className="rounded-xl bg-neutral-900 px-4 py-3 text-xs text-accent-300">{blocked}</p>}
       {programs.map((p) => (
-        <div key={p.id} className={`flex items-stretch gap-2 rounded-xl p-2 pl-4 ${select?.ids.includes(p.id) ? "bg-neutral-700" : "bg-neutral-900"} ${
+        <div key={p.id} className={`flex select-none items-stretch gap-2 rounded-xl p-2 pl-4 ${select?.ids.includes(p.id) ? "bg-neutral-700" : "bg-neutral-900"} ${
           p.next ? "ring-2 ring-accent-400" : ""}`}>
           <button {...(select ? press.bind({ onTap: () => (picking ? select.toggle(p.id) : onOpen(p.id)), onLong: () => select.toggle(p.id) }) : { onClick: () => onOpen(p.id) })}
             style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }} className="min-w-0 flex-1 py-2 text-left">
