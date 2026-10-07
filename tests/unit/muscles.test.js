@@ -108,3 +108,8 @@ test("one workout on its own scale, the week beside it as context", async () => 
   assert.equal(sessionHint(6), "ещё 1 подх. — «сильный рост»"); // a program's plan: no week
   assert.equal(sessionHint(11, 9), "взято всё — можно переключаться на другую группу · за неделю 9 из 10");
 });
+
+test("the basement-gym nick beside a workout's sets: one per hard set, and past 11 «кто ты, тварь?»", async () => {
+  const { sessionNick } = await import("../../src/model/muscles.js");
+  assert.deepEqual([0, 1.5, 3, 6, 11, 12].map(sessionNick), ["амёба", "инфузория", "пацан", "качок", "животное", "кто ты, тварь?"]);
+});
