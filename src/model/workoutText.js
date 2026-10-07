@@ -3,7 +3,7 @@
 import { fmtDate, fmtDur, fmtNum, num, plural, weekStartOf } from "../core/util.js";
 import { fmtTotals, restBefore, restStats, segmentsOf, setLabels, stats } from "./workout.js";
 import { sessionProgress } from "./records.js";
-import { growthStatus, MUSCLE_NAME, MUSCLES, muscleLoad, musclesOf, sessionHint, sessionStatus, sessionWindows, weekHint, weekLoad } from "./muscles.js";
+import { growthStatus, MUSCLE_NAME, MUSCLES, muscleLoad, musclesOf, sessionHint, sessionStatus, weekHint, weekLoad } from "./muscles.js";
 
 const hm = (t) => new Date(t).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
@@ -53,9 +53,8 @@ export function workoutText(data, w, exMap, bwAt, nameOf, live = false) {
   const rowsOf = (load, line) => MUSCLES.filter(([m]) => load[m]).map(([m, name]) => `   ${name}: ${line(m, load[m])}`);
   const rows = (load, line) => rowsOf(load, (m, l) => line(l));
   if (Object.keys(own).length) {
-    const win = sessionWindows(data, exMap);
-    out.push("", `Мышцы за тренировку (тяжёлые подходы; оптимум на тренировку — от ${(data.settings && data.settings.perWeek) || 3} тренировок в неделю):`);
-    out.push(...rowsOf(own, (m, l) => `${fmtNum(l.sets)} подх. — ${sessionStatus(l.sets, win(m))[1]}; ${sessionHint(l.sets, win(m))}`));
+    out.push("", "Мышцы за тренировку (тяжёлые подходы; рост — от 2, оптимум — от 4, максимум — 8–11):");
+    out.push(...rowsOf(own, (m, l) => `${fmtNum(l.sets)} подх. — ${sessionStatus(l.sets)[1]}; ${sessionHint(l.sets, week[m] ? week[m].sets : 0)}`));
     out.push("", "Мышцы за неделю (рост — от 4 подходов, оптимум — от 10, максимум — 20–30):");
     const times = (n) => (n ? ` · ${n} ${plural(n, "раз", "раза", "раз")}` : "");
     out.push(...rows(week, (l) => `${fmtNum(l.sets)} подх.${times(l.freq)} — ${growthStatus(l.sets)[1]}; ${weekHint(l.sets)}`));

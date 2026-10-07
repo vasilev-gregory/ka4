@@ -44,7 +44,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
       })} />
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить упражнение</Button>
       <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте, у кардио — план в минутах или километрах (тап по единице). Изменения сохраняются сразу.</p>
-      <ProgramMuscles data={data} program={p} exMap={exMap} open={open} />
+      <ProgramMuscles program={p} exMap={exMap} open={open} />
 
       <ProgramFooter canStart={!runningSession(data) && p.items.length > 0}
         startLabel={{ strength: "Уже идёт тренировка", stretch: "Идёт растяжка" }[runningSession(data)] || "Начать тренировку"}

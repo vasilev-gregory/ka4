@@ -159,7 +159,7 @@ export function stillCounted(workouts, w, exMap) {
 // growth rises with weekly hard sets with diminishing returns and no detectable gain past ~30 a week; frequency adds
 // next to nothing once the volume is the same. Per session (Remmert et al.): more sets help up to ~11 fractional sets,
 // past that no detectable gain. Under ~4 a week is roughly maintenance.
-export const WEEK_GROW = 4, WEEK_GOOD = 10, WEEK_GREAT = 20, WEEK_CAP = 30, SESSION_CAP = 11;
+export const WEEK_GROW = 4, WEEK_GOOD = 10, WEEK_GREAT = 20, WEEK_CAP = 30;
 
 // A week's hard sets for a muscle: [key, label]: "low" | "grow" | "optimal" | "high". Worded as steps up, not as a
 // shortfall: «старт» → «рост» (growing already) → «оптимум» → «максимум»; past 30 «предел».
@@ -180,45 +180,26 @@ export function weekHint(sets) {
   return "больше 30 в неделю прироста уже почти не даёт";
 }
 
-// One workout's window for a muscle, from how often the muscle is trained in a week: the week's «оптимум» (10) and
-// «максимум» (20) split over those workouts, never above what one session can use (11). hits: workouts a week that
-// train the muscle. Returns { lo: today's оптимум, hi: today's максимум }.
-export function sessionWindow(hits) {
-  const h = Math.max(1, hits);
-  const half = (x) => Math.round(x * 2) / 2;
-  const lo = half(Math.min(SESSION_CAP, WEEK_GOOD / h));
-  return { lo, hi: half(Math.min(SESSION_CAP, Math.max(lo, WEEK_GREAT / h))) };
+// One workout on its own scale, whatever the week looks like: per session growth rises with hard sets up to ~11
+// (Remmert et al.: no detectable gain past that); the lower steps are practical guides — 2 sets already stimulate
+// growth, 4–7 is a solid session for a muscle, 8–11 as much as one session uses.
+export const SESSION_GROW = 2, SESSION_GOOD = 4, SESSION_MAX = 8, SESSION_CAP = 11;
+export function sessionStatus(sets) {
+  if (sets < SESSION_GROW) return ["low", "старт"];
+  if (sets < SESSION_GOOD) return ["grow", "рост"];
+  if (sets < SESSION_MAX) return ["optimal", "оптимум"];
+  if (sets <= SESSION_CAP) return ["optimal", "максимум"];
+  return ["high", "перебор за раз"];
+}
+// what one workout gave a muscle and the next step; week: the muscle's sets of that week so far (this workout
+// included), shown as context, or null (a program's plan has no week)
+export function sessionHint(sets, week = null) {
+  const wk = week == null ? "" : ` · за неделю ${fmtNum(week)} из ${WEEK_GOOD}`;
+  if (sets < SESSION_GROW) return `начало есть · до роста ещё ${fmtSets(SESSION_GROW - sets)}${wk}`;
+  if (sets < SESSION_GOOD) return `уже растёт ✓ · до оптимума ещё ${fmtSets(SESSION_GOOD - sets)}${wk}`;
+  if (sets < SESSION_MAX) return `оптимум ✓${wk}`;
+  if (sets <= SESSION_CAP) return `максимум за тренировку ✓${wk}`;
+  return `больше 11 за раз прироста почти не даёт — лучше на другой день${wk}`;
 }
 
-// How many workouts a week train each muscle: the user's workouts a week (settings.perWeek, default 3) times the
-// share of the programs that give it sets at all — as a main muscle or a helping one (front delts get sets on chest
-// days too). No programs: every workout. Returns muscle -> window.
-export const PER_WEEK = 3;
-export function sessionWindows(d, exMap) {
-  const perWeek = (d.settings && d.settings.perWeek) || PER_WEEK;
-  const progs = (d.programs || []).filter((p) => p.items.length);
-  if (!progs.length) return () => sessionWindow(perWeek);
-  const loads = progs.map((p) => programLoad([p], exMap).muscles);
-  return (m) => {
-    const n = loads.filter((l) => l[m]).length;
-    return sessionWindow(n ? perWeek * (n / progs.length) : perWeek);
-  };
-}
-
-// One workout's sets for a muscle against its window: [key, label]
-// (the same steps as a week: «старт» → «рост» → «оптимум» → «максимум»)
-export function sessionStatus(sets, w) {
-  if (sets < w.lo / 2) return ["low", "старт"];
-  if (sets < w.lo) return ["grow", "рост"];
-  if (sets > SESSION_CAP) return ["high", "перебор за раз"];
-  return ["optimal", sets >= w.hi ? "максимум" : "оптимум"];
-}
-export function sessionHint(sets, w) {
-  const range = `(оптимум ${fmtNum(w.lo)}–${fmtNum(w.hi)})`;
-  if (sets < w.lo / 2) return `начало есть · до оптимума на тренировку ещё ${fmtSets(w.lo - sets)} ${range}`;
-  if (sets < w.lo) return `уже растёт ✓ · до оптимума ещё ${fmtSets(w.lo - sets)} ${range}`;
-  if (sets < w.hi) return `оптимум ✓ · до максимума ещё ${fmtSets(w.hi - sets)}`;
-  if (sets <= SESSION_CAP) return "максимум за тренировку ✓";
-  return "больше 11 за раз прироста почти не даёт — лучше на другой день";
-}
 const fmtSets = (n) => `${fmtNum(Math.ceil(n * 2) / 2)} подх.`;
