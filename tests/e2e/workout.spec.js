@@ -197,22 +197,26 @@ test("rest: stays past its end with the overtime, hides, comes back; a typed val
   await expect(weight).toHaveValue("65");
 });
 
-test("live muscles in the running workout: this workout on the per-session scale, and its week", async ({ page }) => {
+test("«Итог сейчас»: the running workout's card without finishing it — muscles live, the text, back to the workout", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await openApp(page);
   await startWorkout(page);
-  await page.getByRole("button", { name: "Мышцы", exact: true }).click();
-  const sheet = page.getByRole("dialog", { name: "Мышцы сейчас" });
-  await expect(sheet.getByText(/Отметь подход/)).toBeVisible();
-  await page.mouse.click(10, 10);
   for (let i = 0; i < 2; i++) {
     await page.locator("input[inputmode=decimal]").nth(i).fill("60");
     await page.locator("input[inputmode=numeric]").nth(i).fill("5");
     await page.getByRole("button", { name: "Подход сделан" }).nth(i).click();
   }
-  await page.getByRole("button", { name: "Мышцы", exact: true }).click();
-  await expect(sheet.getByRole("button", { name: /квадрицепс.*2 подх\..*в работе/ })).toBeVisible();
-  await expect(sheet.getByText("ещё 4 подх. до полной дозы за тренировку")).toBeVisible();
-  await sheet.getByRole("button", { name: "Неделя" }).click();
-  await expect(sheet.getByRole("button", { name: /квадрицепс.*2 подх\. · 1 раз.*мало/ })).toBeVisible();
-  await page.screenshot({ path: "/tmp/claude-0/live.png" });
+  await page.getByRole("button", { name: "Итог сейчас" }).click();
+  await expect(page.getByText("I. Ноги и плечи · итог сейчас")).toBeVisible();
+  await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\..*в работе/ })).toBeVisible();
+  await expect(page.getByText("ещё 4 подх. до полной дозы за тренировку")).toBeVisible();
+  await expect(page.getByText("Удалить тренировку")).toHaveCount(0); // it isn't finished: nothing to delete
+  await page.getByRole("button", { name: "Скопировать текстом" }).click();
+  await expect(page.getByRole("button", { name: "Скопировано" })).toBeVisible();
+  const text = await page.evaluate(() => navigator.clipboard.readText());
+  expect(text).toMatch(/Тренировка «I\. Ноги и плечи» — .* \(идёт\)/);
+  expect(text).toMatch(/1\) 60 кг × 5 · \d\d:\d\d/);
+  await page.goBack();
+  await expect(page.getByRole("button", { name: "Итог сейчас" })).toBeVisible(); // still running
+  expect((await stored(page)).active).not.toBeNull();
 });

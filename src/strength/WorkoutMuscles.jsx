@@ -7,13 +7,12 @@ import { MuscleBreakdown } from "./MuscleBreakdown.jsx";
 
 const VIEWS = [["workout", "Тренировка"], ["week", "Неделя"]];
 
-// empty: what to show when nothing counts yet (null: hide the card); className: the card's
-export function WorkoutMuscles({ data, w, exMap, open, empty = null, className = "-mt-3 mb-5" }) {
+export function WorkoutMuscles({ data, w, exMap, open }) {
   const own = muscleLoad([w], exMap, -Infinity, Infinity).muscles;
-  if (!Object.keys(own).length) return empty; // cardio only, or no hard sets (yet)
+  if (!Object.keys(own).length) return null; // cardio only, or no hard sets (yet)
   const all = data.workouts.includes(w) ? data.workouts : [...data.workouts, w]; // the running one counts in its week
   return (
-    <ViewsCard title="Мышцы" views={VIEWS} className={className}>
+    <ViewsCard title="Мышцы" views={VIEWS} className="-mt-3 mb-5">
       {(view) => (view === "workout" ? <MuscleBreakdown key="workout" load={own} single exMap={exMap} open={open} byNote="в этой тренировке" />
         : <MuscleBreakdown key="week" load={weekLoad(all, exMap, weekStartOf(w.startedAt)).muscles}
           note={(r) => weekHint(r.sets, r.freq)} exMap={exMap} open={open} byNote="за неделю" />)}

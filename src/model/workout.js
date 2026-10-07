@@ -79,6 +79,13 @@ export function closeSegment(w, t = Date.now()) {
   if (!last.end) last.end = t;
 }
 
+// The running workout as its card would show it if it were finished now: ticked sets only, the time up to now.
+export function workoutSoFar(a, now = Date.now()) {
+  const w = { ...a, finishedAt: now, exercises: a.exercises.map((e) => ({ ...e, sets: e.sets.filter((s) => s.done) })).filter((e) => e.sets.length) };
+  closeSegment(w, now);
+  return w;
+}
+
 
 // Gaps between consecutive confirmed sets. Steps of a drop set don't count, nor gaps across a pause
 // or longer than 15 min (that's not rest, that's a break).

@@ -93,6 +93,7 @@ function Shell({ data, up, replace, saved }) {
     measure: (v) => <MeasureEditor {...common} id={v.id} />,
     exercise: (v) => <ExerciseDetail {...common} id={v.id} />,
     workout: (v) => <WorkoutDetail {...common} id={v.id} />,
+    workoutNow: () => <WorkoutDetail {...common} live />, // the running workout's card as if finished now
     program: (v) => <ProgramEditor {...common} id={v.id} goWorkout={() => nav.setTab("workout")} />,
   };
   const TABS = {
