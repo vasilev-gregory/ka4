@@ -24,6 +24,7 @@
  * @property {boolean} [sound]            timer sounds on (default) / off
  * @property {"strength"|"stretch"} [mode]
  * @property {boolean} [namesRu]          Russian exercise names first (default); false = English first
+ * @property {number} [perWeek]           strength workouts a week the user does (default 3): one workout's norm per muscle
  * @property {boolean} [gestureHintSeen]  the gestures hint on the first workout was dismissed
  * @property {string} [bodyWeight]        manual body weight, used when there are no measurements
  * @property {{ key: "w"|"r"|"p"|"rir"|"rest", on: boolean }[]} [columns] set columns, in order

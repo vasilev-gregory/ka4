@@ -155,38 +155,63 @@ export function stillCounted(workouts, w, exMap) {
   return { sets, muscles, nth };
 }
 
-// Rough evidence-based weekly targets per muscle (Schoenfeld et al. meta-analyses, RP volume landmarks): hard sets
-// taken close to failure; 10+ sets and 2+ sessions a week is the sweet spot, ~4–9 sets still grows, under 4 is
-// roughly maintenance, past 20 recovery suffers. Returns [key, label]: "low" | "grow" | "optimal" | "high".
-// ongoing: the week isn't over yet, so "мало" is only "пока мало".
-export function growthStatus(sets, freq, ongoing = false) {
-  if (sets < 4) return ["low", ongoing ? "пока мало" : "мало"];
-  if (sets > 20) return ["high", "очень много"];
-  if (sets >= 10 && freq >= 2) return ["optimal", "оптимум"];
-  return ["grow", "рост"];
-}
+// Evidence (Pelland et al. 2024/25, 67 studies, sets counted fractionally — a helping muscle gets half — as here):
+// growth rises with weekly hard sets with diminishing returns and no detectable gain past ~30 a week; frequency adds
+// next to nothing once the volume is the same. Per session (Remmert et al.): more sets help up to ~11 fractional sets,
+// past that no detectable gain. Under ~4 a week is roughly maintenance.
+export const WEEK_GROW = 4, WEEK_GOOD = 10, WEEK_GREAT = 20, WEEK_CAP = 30, SESSION_CAP = 11;
 
-// One workout (or one run of a program) is judged on its own scale: per session ~6 hard sets for a muscle is the
-// productive dose, past ~10 the extra sets add little and cost recovery (per-session volume studies, "junk volume").
-export const SESSION_DOSE = 6, SESSION_MAX = 10;
-export function sessionStatus(sets) {
-  if (sets < 2) return ["low", "мало"];
-  if (sets < SESSION_DOSE) return ["grow", "в работе"];
-  if (sets <= SESSION_MAX) return ["optimal", "полная доза"];
-  return ["high", "перебор за раз"];
-}
-export function sessionHint(sets) {
-  if (sets < SESSION_DOSE) return `ещё ${fmtSets(SESSION_DOSE - sets)} до полной дозы за тренировку`;
-  if (sets <= SESSION_MAX) return "на сегодня мышце хватит";
-  return "дальше за раз почти ничего не добавит — лучше на другой день";
+// A week's hard sets for a muscle: [key, label]: "low" | "grow" | "optimal" | "high".
+// ongoing: the week isn't over yet, so "мало" is only "пока мало".
+export function growthStatus(sets, ongoing = false) {
+  if (sets < WEEK_GROW) return ["low", ongoing ? "пока мало" : "мало"];
+  if (sets < WEEK_GOOD) return ["grow", "рост"];
+  if (sets < WEEK_GREAT) return ["optimal", "хорошо"];
+  if (sets <= WEEK_CAP) return ["optimal", "отлично"];
+  return ["high", "предел"];
 }
 
 // what a muscle's week still needs
-export function weekHint(sets, freq) {
-  if (sets < 4) return `ещё ${fmtSets(4 - sets)} до роста`;
-  if (sets < 10) return `ещё ${fmtSets(10 - sets)} до оптимума`;
-  if (sets > 20) return "больше уже мешает восстановлению";
-  if (freq < 2) return "объём есть, нужна ещё одна тренировка на неделе";
-  return "неделя закрыта";
+export function weekHint(sets) {
+  if (sets < WEEK_GROW) return `ещё ${fmtSets(WEEK_GROW - sets)} до роста`;
+  if (sets < WEEK_GOOD) return `ещё ${fmtSets(WEEK_GOOD - sets)} до хорошей недели`;
+  if (sets < WEEK_GREAT) return `хорошо; до отличной ещё ${fmtSets(WEEK_GREAT - sets)}`;
+  if (sets <= WEEK_CAP) return "отличная неделя";
+  return "больше 30 в неделю прироста уже почти не даёт";
+}
+
+// One workout's window for a muscle, from how often the muscle is trained in a week: the week's "хорошо" (10) and
+// "отлично" (20) split over those workouts, never above what one session can use (11). hits: workouts a week that
+// train the muscle. Returns { lo: enough today, hi: as good as it gets today }.
+export function sessionWindow(hits) {
+  const h = Math.max(1, hits);
+  const half = (x) => Math.round(x * 2) / 2;
+  const lo = half(Math.min(SESSION_CAP, WEEK_GOOD / h));
+  return { lo, hi: half(Math.min(SESSION_CAP, Math.max(lo, WEEK_GREAT / h))) };
+}
+
+// How many workouts a week train each muscle: the user's workouts a week (settings.perWeek, default 3) times the
+// share of the programs where the muscle is a main one (no programs, or a muscle that only helps in them: every
+// workout — its sets come by the way). Returns muscle -> window.
+export const PER_WEEK = 3;
+export function sessionWindows(d, exMap) {
+  const perWeek = (d.settings && d.settings.perWeek) || PER_WEEK;
+  const progs = (d.programs || []).filter((p) => p.items.length);
+  const share = progs.length ? programLoad(progs, exMap).muscles : null;
+  return (m) => sessionWindow(share && share[m] && share[m].freq ? perWeek * (share[m].freq / progs.length) : perWeek);
+}
+
+// One workout's sets for a muscle against its window: [key, label]
+export function sessionStatus(sets, w) {
+  if (sets < w.lo / 2) return ["low", "мало"];
+  if (sets < w.lo) return ["grow", "почти"];
+  if (sets > SESSION_CAP) return ["high", "перебор за раз"];
+  return ["optimal", sets >= w.hi ? "отлично" : "норма"];
+}
+export function sessionHint(sets, w) {
+  if (sets < w.lo) return `до нормы на тренировку ещё ${fmtSets(w.lo - sets)} (норма ${fmtNum(w.lo)}–${fmtNum(w.hi)})`;
+  if (sets < w.hi) return `норма; до отличного ещё ${fmtSets(w.hi - sets)}`;
+  if (sets <= SESSION_CAP) return "лучше за тренировку не бывает";
+  return "больше 11 за раз прироста почти не даёт — лучше на другой день";
 }
 const fmtSets = (n) => `${fmtNum(Math.ceil(n * 2) / 2)} подх.`;

@@ -78,12 +78,13 @@ test("hard sets per muscle: helping muscles get half, sessions count only as a m
 });
 
 test("growth status and what the week still needs", () => {
-  assert.deepEqual(growthStatus(3.5, 1), ["low", "мало"]);
-  assert.deepEqual(growthStatus(10, 2), ["optimal", "оптимум"]);
-  assert.deepEqual(growthStatus(10, 1), ["grow", "рост"]);
-  assert.deepEqual(growthStatus(21, 3), ["high", "очень много"]);
-  assert.equal(weekHint(2.5, 1), "ещё 1,5 подх. до роста");
-  assert.equal(weekHint(12, 1), "объём есть, нужна ещё одна тренировка на неделе");
+  assert.deepEqual(growthStatus(3.5), ["low", "мало"]);
+  assert.deepEqual(growthStatus(6), ["grow", "рост"]);
+  assert.deepEqual(growthStatus(10), ["optimal", "хорошо"]); // frequency doesn't matter once the volume is there
+  assert.deepEqual(growthStatus(25), ["optimal", "отлично"]);
+  assert.deepEqual(growthStatus(31), ["high", "предел"]);
+  assert.equal(weekHint(2.5), "ещё 1,5 подх. до роста");
+  assert.equal(weekHint(12), "хорошо; до отличной ещё 8 подх.");
 });
 
 test("planned load of programs: sets per muscle, freq = programs where it is a main one", () => {
@@ -97,16 +98,28 @@ test("planned load of programs: sets per muscle, freq = programs where it is a m
   assert.deepEqual(both.hams, { sets: 2, freq: 0, by: { "hip-thrust": 2 } });
 });
 
-test("one workout has its own scale: a session's dose, not the week's", async () => {
-  const { sessionStatus, sessionHint } = await import("../../src/model/muscles.js");
-  assert.deepEqual([1, 3, 6, 10, 12].map((n) => sessionStatus(n)[0]), ["low", "grow", "optimal", "optimal", "high"]);
-  assert.equal(sessionHint(4), "ещё 2 подх. до полной дозы за тренировку");
-  assert.equal(sessionHint(7), "на сегодня мышце хватит");
+test("one workout's norm per muscle: the week's 10–20 split over the workouts that train it, at most 11", async () => {
+  const { sessionWindow, sessionWindows, sessionStatus, sessionHint } = await import("../../src/model/muscles.js");
+  assert.deepEqual(sessionWindow(3), { lo: 3.5, hi: 6.5 }); // full body three times a week
+  assert.deepEqual(sessionWindow(1.5), { lo: 6.5, hi: 11 }); // a split: the muscle in half of three workouts
+  assert.deepEqual(sessionWindow(1), { lo: 10, hi: 11 });
+  const w = sessionWindow(2); // { lo: 5, hi: 10 }
+  assert.deepEqual([1, 3, 5, 10, 12].map((n) => sessionStatus(n, w)[1]), ["мало", "почти", "норма", "отлично", "перебор за раз"]);
+  assert.equal(sessionHint(2.5, w), "до нормы на тренировку ещё 2,5 подх. (норма 5–10)");
+  assert.equal(sessionHint(7, w), "норма; до отличного ещё 3 подх.");
+  // from the programs: legs in 2 of 4 programs, 4 workouts a week -> legs twice a week
+  const exMap = { squat: { id: "squat", name: "Squat", group: "ноги", kind: "reps" }, bench: { id: "bench", name: "Bench press", group: "грудь", kind: "reps" } };
+  let n = 0;
+  const P = (ids) => ({ id: `p${n++}`, items: ids.map((id) => ({ exerciseId: id, sets: 3 })) });
+  const d = { settings: { perWeek: 4 }, programs: [P(["squat"]), P(["bench"]), P(["squat"]), P(["bench"])] };
+  assert.deepEqual(sessionWindows(d, exMap)("quads"), { lo: 5, hi: 10 });
+  assert.deepEqual(sessionWindows({ settings: {}, programs: [] }, exMap)("quads"), sessionWindow(3)); // no programs: every workout
+  assert.deepEqual(sessionWindows(d, exMap)("glutes"), sessionWindow(4)); // only helps in the programs: every workout
 });
 
 test("a week not over yet says «пока мало», not «мало»", async () => {
   const { growthStatus } = await import("../../src/model/muscles.js");
-  assert.deepEqual(growthStatus(2.5, 1, true), ["low", "пока мало"]);
-  assert.deepEqual(growthStatus(2.5, 1), ["low", "мало"]);
-  assert.equal(growthStatus(6, 1, true)[0], "grow");
+  assert.deepEqual(growthStatus(2.5, true), ["low", "пока мало"]);
+  assert.deepEqual(growthStatus(2.5), ["low", "мало"]);
+  assert.equal(growthStatus(6, true)[0], "grow");
 });
