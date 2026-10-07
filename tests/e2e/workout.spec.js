@@ -269,6 +269,14 @@ test("hold ✓ and slide to a RIR: the set is done with it; let go at the centre
   await page.mouse.move(cx, cy);
   await page.mouse.down();
   await expect(page.getByTestId("rir-dial")).toBeVisible(); // opens after a hold
+  // the fan stays on ✓ when the page moves under it (a scroll, the warm-up card folding)
+  await page.evaluate(() => window.scrollBy(0, 30));
+  const zero = page.getByTestId("rir-dial").getByText("0", { exact: true });
+  await expect.poll(async () => {
+    const [z, c] = [await zero.boundingBox(), await check.boundingBox()];
+    return Math.round(c.y + c.height / 2 - (z.y + z.height / 2));
+  }).toBe(72);
+  await page.evaluate(() => window.scrollBy(0, -30));
   await page.mouse.move(cx, cy - 20); // still at the centre
   await page.mouse.up();
   await expect(page.getByTestId("rir-dial")).toHaveCount(0);

@@ -20,83 +20,100 @@ function pickAt(dx, dy) {
   OPTIONS.forEach((n, i) => { const p = posOf(i); const k = Math.hypot(dx - p.x, dy - p.y); if (k < dist) { dist = k; best = n; } });
   return best;
 }
-const block = (e) => e.preventDefault(); // while the dial is open the page must not scroll under the finger
+// while a dial is open (one at a time) the page must not scroll under the finger; listened from the press on, so the
+// browser has not started a scroll by the time the dial opens
+let opened = false;
+const block = (e) => { if (opened) e.preventDefault(); };
 
 // onTap: a plain tap (✓); onPick(rir): a value picked on the dial; enabled: false = a plain ✓ (warm-up, cardio)
-// → { bind: props for ✓, dial: the fan to render }
+// → { bind: props for ✓, dial: the fan to render }. The fan follows ✓ on screen every frame while shown: the page
+// can still move under it (the warm-up card folding as the first set is ticked, a scroll begun before the hold).
 export function useRirDial({ onTap, onPick, enabled }) {
-  const [dial, setDial] = useState(null); // { cx, cy, pick, flash }
+  const [dial, setDial] = useState(null); // { pick, flash }
+  const [at, setAt] = useState(null); // { cx, cy }: the centre of ✓ now
+  const btn = useRef(null);
   const st = useRef(null);
   const fired = useRef(false);
   const flashT = useRef(null);
-  const close = () => {
-    if (st.current) clearTimeout(st.current.timer);
-    st.current = null;
-    document.removeEventListener("touchmove", block);
-    setDial(null);
-  };
+  const centre = () => { const r = btn.current.getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; };
+  useEffect(() => {
+    if (!dial || !btn.current) return;
+    let raf;
+    const follow = () => {
+      const c = centre();
+      setAt((o) => (o && o.cx === c.cx && o.cy === c.cy ? o : c));
+      raf = requestAnimationFrame(follow);
+    };
+    follow();
+    return () => cancelAnimationFrame(raf);
+  }, [dial]);
+  const release = () => { if (st.current) clearTimeout(st.current.timer); st.current = null; opened = false; document.removeEventListener("touchmove", block); };
+  const close = () => { release(); setDial(null); };
   useEffect(() => () => { document.removeEventListener("touchmove", block); clearTimeout(flashT.current); }, []);
-  const centre = (el) => { const r = el.getBoundingClientRect(); return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 }; };
   const bind = {
+    ref: btn,
     onContextMenu: (e) => e.preventDefault(),
     onPointerDown: (e) => {
       if (!enabled) return;
       e.stopPropagation(); // a press on ✓ is not the start of a row swipe
       fired.current = false;
-      const c = centre(e.currentTarget);
-      const s = { x: e.clientX, y: e.clientY, ...c, open: false, pick: null };
+      const s = { x: e.clientX, y: e.clientY, open: false, pick: null };
       s.timer = setTimeout(() => {
         s.open = true;
+        opened = true;
         fired.current = true;
-        document.addEventListener("touchmove", block, { passive: false });
         vibrate(20);
-        setDial({ ...c, pick: null });
+        setAt(centre());
+        setDial({ pick: null });
       }, HOLD);
       st.current = s;
+      document.addEventListener("touchmove", block, { passive: false });
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {}
     },
     onPointerMove: (e) => {
       const s = st.current;
       if (!s) return;
       if (!s.open) {
-        if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > SLOP) { clearTimeout(s.timer); st.current = null; }
+        if (Math.hypot(e.clientX - s.x, e.clientY - s.y) > SLOP) release();
         return;
       }
-      const pick = pickAt(e.clientX - s.cx, e.clientY - s.cy);
+      const c = centre();
+      const pick = pickAt(e.clientX - c.cx, e.clientY - c.cy);
       if (pick !== s.pick) {
         s.pick = pick;
         if (pick != null) vibrate(10);
-        setDial({ cx: s.cx, cy: s.cy, pick });
+        setDial({ pick });
       }
     },
     onPointerUp: () => {
       const s = st.current;
       if (s && s.open && s.pick != null) onPick(s.pick);
       if (s && s.open) close();
-      else if (s) { clearTimeout(s.timer); st.current = null; }
+      else release();
     },
     onPointerCancel: close,
-    onClick: (e) => {
+    onClick: () => {
       if (fired.current) { fired.current = false; return; } // the dial had it
       onTap();
       if (!enabled) return;
-      setDial({ ...centre(e.currentTarget), pick: null, flash: true });
+      setAt(centre());
+      setDial({ pick: null, flash: true });
       clearTimeout(flashT.current);
       flashT.current = setTimeout(() => setDial((d) => (d && d.flash ? null : d)), 180);
     },
   };
-  const view = dial && createPortal(
+  const view = dial && at && createPortal(
     <div className="pointer-events-none fixed inset-0 z-50" data-testid="rir-dial">
       {!dial.flash && <div className="absolute inset-0 bg-black/40" />}
       {!dial.flash && (
-        <div style={{ left: dial.cx - R - 34, top: dial.cy }} className="absolute -translate-x-full -translate-y-1/2 text-right text-[11px] leading-tight text-neutral-300">
+        <div style={{ left: at.cx - R - 34, top: at.cy }} className="absolute -translate-x-full -translate-y-1/2 text-right text-[11px] leading-tight text-neutral-300">
           RIR<br />в запасе
         </div>
       )}
       {OPTIONS.map((n, i) => {
         const p = posOf(i);
         return (
-          <div key={n} style={{ left: dial.cx + p.x, top: dial.cy + p.y }}
+          <div key={n} style={{ left: at.cx + p.x, top: at.cy + p.y }}
             className={`absolute flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-base font-semibold shadow-lg ${
               dial.pick === n ? "scale-110 bg-accent-400 text-black" : "bg-neutral-800 text-neutral-100"} ${dial.flash ? "opacity-60" : ""}`}>
             {n === 4 ? "4+" : n}
