@@ -6,13 +6,14 @@ import { weekLoad } from "../model/muscles.js";
 import { workoutKcal } from "../model/energy.js";
 import { periodSummary } from "../model/periods.js";
 import { inPeriod } from "../model/calendar.js";
-import { Header, useApp } from "../ui/kit.jsx";
+import { Header, useApp, useNow } from "../ui/kit.jsx";
 import { PeriodCard, PeriodNav, TOTAL_NOTE, usePeriod } from "../ui/PeriodNav.jsx";
 import { HistoryRow } from "../ui/Session.jsx";
 import { MuscleBreakdown, MusclesWhy } from "./MuscleBreakdown.jsx";
 
 // week: hard sets per muscle. month / year: totals and the average week per muscle.
 function PeriodPanel({ zoom, range, workouts, exMap, open }) {
+  const now = useNow(60e3);
   const { bwAt } = useApp();
   let title, load, empty;
   if (zoom === "week") {
@@ -30,7 +31,8 @@ function PeriodPanel({ zoom, range, workouts, exMap, open }) {
   const any = Object.keys(load).length > 0;
   return (
     <PeriodCard title={title} averaged={zoom !== "week" && any} why={<MusclesWhy />}>
-      {any ? <MuscleBreakdown load={load} exMap={exMap} open={open} byNote={TOTAL_NOTE[zoom]} /> : <p className="text-xs text-neutral-500">{empty}</p>}
+      {any ? <MuscleBreakdown load={load} exMap={exMap} open={open} byNote={TOTAL_NOTE[zoom]} ongoing={zoom === "week" && range.to > now} />
+        : <p className="text-xs text-neutral-500">{empty}</p>}
     </PeriodCard>
   );
 }

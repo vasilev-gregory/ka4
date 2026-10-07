@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Trophy } from "lucide-react";
 import { fmtDur, fmtKg, fmtNum, plural } from "../core/util.js";
-import { fmtSets, previousOfProgram, restStats, stats, workoutSoFar } from "../model/workout.js";
+import { previousOfProgram, restBefore, restStats, stats, workoutSoFar } from "../model/workout.js";
+import { SetTable } from "./SetTable.jsx";
 import { workoutText } from "../model/workoutText.js";
 import { WorkoutMuscles } from "./WorkoutMuscles.jsx";
 import { SessionHeader, StatTiles } from "../ui/Session.jsx";
@@ -30,6 +31,7 @@ export function WorkoutDetail({ data, up, exMap, id, back, open, live = false })
   const w = live ? data.active && workoutSoFar(data.active, now) : data.workouts.find((x) => x.id === id);
   if (!w) return <div className="p-4"><Header title={live ? "Тренировка завершена" : "Тренировка удалена"} back={back} /></div>;
   const st = stats(w, exMap, bwAt);
+  const restsOf = restBefore(w); // "ei:si" -> ms before the set, or "drop"
   // volume against the previous workout of the same program
   const prevSame = previousOfProgram(data.workouts, w);
   const prevVol = prevSame ? stats(prevSame, exMap, bwAt).vol : 0;
@@ -60,13 +62,15 @@ export function WorkoutDetail({ data, up, exMap, id, back, open, live = false })
           const ex = exMap[e.exerciseId];
           const note = ex && progressNote(data, w, e, ex, bwAt);
           return (
-            <ExerciseRow key={i} ex={ex} missing="Удалённое упражнение" text={fmtSets(e.sets, ex ? ex.kind : "reps")}
+            <ExerciseRow key={i} ex={ex} missing="Удалённое упражнение"
               onClick={() => open({ type: "exercise", id: e.exerciseId })}
               note={note && (
                 <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>
                   {note.text === "рекорд" && <Trophy size={12} className="mr-1 inline -mt-0.5" />}{note.text}
                 </div>
-              )} />
+              )}>
+              <SetTable sets={e.sets} kind={ex ? ex.kind : "reps"} assist={ex && ex.assist} bw={ex && ex.bw} rest={(si) => restsOf[`${i}:${si}`]} />
+            </ExerciseRow>
           );
         })}
       </div>

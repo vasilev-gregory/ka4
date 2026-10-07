@@ -8,8 +8,8 @@ import "./index.css";
 // ask the browser not to evict our data under storage pressure
 protectStorage();
 
-// When a freshly deployed service worker takes over, reload once so the new version shows — but not during a
-// workout or a stretch (core/appUpdate waits for the session to end).
+// When a freshly deployed service worker takes over, reload once so the new version shows at once, mid-workout too:
+// all state (a running workout or stretch included) is saved on the device as it changes, so the reload loses nothing.
 if ("serviceWorker" in navigator) {
   let reloaded = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {

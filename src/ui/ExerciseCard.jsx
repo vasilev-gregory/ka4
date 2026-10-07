@@ -57,19 +57,23 @@ export function ExerciseSessions({ sessions, empty }) {
   );
 }
 
-// An exercise in a session's card (a workout's exercise, a run's stretch): picture, name, what was done, a note;
-// a tap opens the exercise's card. ex may be gone (deleted): then `missing` is shown and nothing opens.
-export function ExerciseRow({ ex, missing, text, note, onClick }) {
+// An exercise in a session's card (a workout's exercise, a run's stretch): picture, name, what was done (text, or children
+// below: the sets as rows), a note; a tap on the header opens the exercise's card. ex may be gone (deleted): then
+// `missing` is shown and nothing opens.
+export function ExerciseRow({ ex, missing, text, note, onClick, children }) {
   const { nm1 } = useApp();
   return (
-    <button onClick={ex ? onClick : undefined} className="flex w-full items-center gap-3 rounded-xl bg-neutral-900 p-3 text-left active:bg-neutral-800">
-      <ExImg ex={ex} />
-      <div className="min-w-0 flex-1">
-        <div className="font-semibold">{nm1(ex, missing)}</div>
-        <div className="text-xs text-neutral-300 tabular-nums">{text}</div>
-        {note}
-      </div>
-    </button>
+    <div className="rounded-xl bg-neutral-900">
+      <button onClick={ex ? onClick : undefined} className="flex w-full items-center gap-3 rounded-xl p-3 text-left active:bg-neutral-800">
+        <ExImg ex={ex} />
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold">{nm1(ex, missing)}</div>
+          {text && <div className="text-xs text-neutral-300 tabular-nums">{text}</div>}
+          {note}
+        </div>
+      </button>
+      {children && <div className="px-3 pb-3">{children}</div>}
+    </div>
   );
 }
 

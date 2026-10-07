@@ -103,3 +103,10 @@ test("one workout has its own scale: a session's dose, not the week's", async ()
   assert.equal(sessionHint(4), "ещё 2 подх. до полной дозы за тренировку");
   assert.equal(sessionHint(7), "на сегодня мышце хватит");
 });
+
+test("a week not over yet says «пока мало», not «мало»", async () => {
+  const { growthStatus } = await import("../../src/model/muscles.js");
+  assert.deepEqual(growthStatus(2.5, 1, true), ["low", "пока мало"]);
+  assert.deepEqual(growthStatus(2.5, 1), ["low", "мало"]);
+  assert.equal(growthStatus(6, 1, true)[0], "grow");
+});
