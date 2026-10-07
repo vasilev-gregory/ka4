@@ -1,21 +1,21 @@
-// The parts of a program editor shared by strength and stretching: the name, the list of its items (hold the handle
-// and drag to reorder, ✕ removes with «Вернуть»), and the start / delete buttons. What a row shows is up to the
-// section; changes are saved as you go.
+// The parts of a program editor shared by strength, stretching and a split (its programs are its items): the name,
+// the list of its items (hold the handle and drag to reorder, ✕ removes with «Вернуть»), and the start / delete
+// buttons. What a row shows is up to the section; changes are saved as you go.
 import { useEffect, useEffectEvent } from "react";
 import { GripVertical, X } from "lucide-react";
 import { moveItem, useSortable } from "./sortable.js";
 import { Button, DeleteButton, useUndo } from "./kit.jsx";
 
-export function ProgramName({ value, onChange }) {
+export function ProgramName({ value, onChange, placeholder = "Название программы" }) {
   return (
-    <input value={value} placeholder="Название программы" autoFocus={!value} onChange={(e) => onChange(e.target.value)}
+    <input value={value} placeholder={placeholder} autoFocus={!value} onChange={(e) => onChange(e.target.value)}
       className="mb-4 w-full rounded-xl bg-neutral-900 px-3 py-3 text-base font-semibold outline-hidden focus:ring-2 focus:ring-accent-400" />
   );
 }
 
-// items: the program's items; change(fn): edits the program (fn gets its draft); what: the undo toast's word
-// ("Упражнение убрано"); row(it, i) -> { body, tail, below }: the row's middle, its controls before ✕, and what
-// opens under it
+// items: the program's items (exercises; a split's: { programId }); change(fn): edits the program (fn gets its
+// draft); removed: the undo toast's word ("Упражнение убрано"); row(it, i) -> { body, tail, below }: the row's
+// middle, its controls before ✕, and what opens under it
 export function ProgramItems({ items, change, removed, row }) {
   const undo = useUndo();
   const sort = useSortable((from, to) => change((p) => moveItem(p.items, from, to)));
@@ -29,7 +29,7 @@ export function ProgramItems({ items, change, removed, row }) {
       {items.map((it, i) => {
         const { body, tail, below } = row(it, i);
         return (
-          <div key={i + it.exerciseId} ref={sort.itemRef(i)} style={sort.itemStyle(i)}
+          <div key={`${i}:${it.exerciseId || it.programId}`} ref={sort.itemRef(i)} style={sort.itemStyle(i)}
             className={`rounded-xl p-2 ${sort.dragFrom === i ? "bg-neutral-800" : "bg-neutral-900"}`}>
             <div className="flex items-center gap-0.5">
               <button {...sort.handleProps(i, items.length)} className="cursor-grab p-2 text-neutral-500" aria-label="Перетащить">

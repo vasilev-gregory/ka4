@@ -9,15 +9,19 @@ export const SCHEMA_VERSION = 4;
 export function seed() {
   const exercises = SEED_EX.map(([name, ru, group, kind]) => ({ id: slug(name), name, ru, group, kind: kind || "reps" }));
   const P = (name, ids) => ({ id: uid(), name, items: ids.map((exerciseId) => ({ exerciseId, sets: 3 })) });
+  const programs = [
+    P("I. Ноги и плечи", ["squat", "leg-extension", "leg-curl", "lateral-raise", "overhead-press", "deadlift", "calf-raise"]),
+    P("II. Грудь и спина", ["dumbbell-bench-press", "seated-row", "dips", "pullover", "cable-preacher-curl", "cable-extension", "wrist-curl"]),
+    P("III. Ноги и плечи", ["belt-squat", "bulgarian-split-squat", "hip-thrust", "upright-row", "reverse-fly", "deadlift", "calf-raise"]),
+    P("IV. Грудь и спина", ["barbell-bench-press", "lat-pulldown", "cable-crossover", "machine-row", "dumbbell-seated-curl", "cable-extension-samurai", "wrist-curl"]),
+  ];
+  const split = { id: uid(), name: "Неделя I–IV", items: programs.map((p) => ({ programId: p.id })) };
   return {
     version: SCHEMA_VERSION,
     exercises,
-    programs: [
-      P("I. Ноги и плечи", ["squat", "leg-extension", "leg-curl", "lateral-raise", "overhead-press", "deadlift", "calf-raise"]),
-      P("II. Грудь и спина", ["dumbbell-bench-press", "seated-row", "dips", "pullover", "cable-preacher-curl", "cable-extension", "wrist-curl"]),
-      P("III. Ноги и плечи", ["belt-squat", "bulgarian-split-squat", "hip-thrust", "upright-row", "reverse-fly", "deadlift", "calf-raise"]),
-      P("IV. Грудь и спина", ["barbell-bench-press", "lat-pulldown", "cable-crossover", "machine-row", "dumbbell-seated-curl", "cable-extension-samurai", "wrist-curl"]),
-    ],
+    programs,
+    splits: [split],
+    activeSplitId: split.id,
     workouts: [],
     measurements: [],
     stretch: seedStretch(),
@@ -37,6 +41,8 @@ export function migrate(d) {
   });
   EX_RENAMES.forEach(([id, oldRu, ru]) => { if (byId[id] && byId[id].ru === oldRu) byId[id].ru = ru; });
   if (!Array.isArray(d.measurements)) d.measurements = [];
+  if (!Array.isArray(d.splits)) d.splits = [];
+  if (d.activeSplitId === undefined) d.activeSplitId = null;
   if (!d.stretch) d.stretch = seedStretch();
   ["exercises", "programs", "sessions"].forEach((k) => { if (!Array.isArray(d.stretch[k])) d.stretch[k] = []; });
   if (!d.stretch.defaults) d.stretch.defaults = { ...ST_DEFAULTS };

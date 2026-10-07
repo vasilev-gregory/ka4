@@ -273,6 +273,7 @@ export function programFromWorkout(d, w, id, exMap) {
 
 export function removeProgram(d, id) {
   d.programs = d.programs.filter((x) => x.id !== id);
+  d.splits.forEach((s) => { s.items = s.items.filter((it) => it.programId !== id); }); // and out of the splits
 }
 
 // exercises added to a program, each with the default plan of its kind
