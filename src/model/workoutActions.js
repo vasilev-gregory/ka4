@@ -80,6 +80,8 @@ export function toggleSet(d, ei, si, now = Date.now()) {
   s.done = !s.done;
   if (!s.done) { delete s.at; return; }
   if (s.w === "" && s.hw) s.w = s.hw;
+  // only partials typed: no full reps were done, so 0 (not last time's reps)
+  if (s.r === "" && num(s.p) > 0) s.r = "0";
   if (s.r === "" && s.hr) s.r = s.hr;
   if (!s.p && s.hp) s.p = s.hp;
   if (num(s.p) > 0 && s.t !== "w") s.rir = 0;

@@ -221,3 +221,12 @@ test("the hidden rest countdown comes back counted from the last set; not while 
   A.showRest(d, T0 + 40e3);
   assert.equal(d.active.restEndsAt, null);
 });
+
+test("✓ with only partials typed: full reps are 0, not last time's", () => {
+  const d = withWorkout([blank({ hw: "80", hr: "6", p: "3" }), blank({ hw: "80", hr: "6" })]);
+  A.toggleSet(d, 0, 0, T0 + 1000);
+  A.toggleSet(d, 0, 1, T0 + 2000);
+  const [a, b] = d.active.exercises[0].sets;
+  assert.deepEqual([a.w, a.r, a.p], ["80", "0", "3"]);
+  assert.deepEqual([b.w, b.r], ["80", "6"]); // nothing typed: last time's
+});
