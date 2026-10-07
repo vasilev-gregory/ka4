@@ -73,10 +73,15 @@ test("history: month by default, paging, year overview drills down to a month an
   await expect(period).toHaveText("Вт, 6 октября");
   await expect(page.getByText("Октябрьская").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\..*«есть рост»/ })).toBeVisible();
+  await expect(page.getByTestId("set-table")).toHaveCount(1); // a day shows its workouts' exercises with their sets
   await page.getByRole("button", { name: "Неделя" }).click();
+  await expect(page.getByTestId("set-table")).toHaveCount(0); // a week: just the workouts
 
-  // the zoom is kept while a workout card is open
+  // the zoom is kept while a workout card is open; the card has the same muscles block, opened on its day
   await page.getByText("Октябрьская").click();
+  await expect(page.getByText("ещё 1 подх. — «есть рост» · за неделю 2 из 10").first()).toBeVisible();
+  await page.getByRole("button", { name: "Месяц", exact: true }).click(); // its own switch: up to the month from here
+  await expect(page.getByText("в среднем за неделю")).toBeVisible();
   await page.goBack();
   await expect(period).toHaveText("5 окт. – 11 окт.");
 });

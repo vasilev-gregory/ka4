@@ -67,6 +67,8 @@
 | Пустая безымянная программа после выхода из редактора | `useDropIfEmpty` + `dropEmptyProgram` (сила и растяжка) | |
 | Схема тела | `BodyMap` | |
 | Нагрузка по частям тела (схема + список) | `LoadBreakdown` через `strength/MuscleBreakdown` / `stretch/StretchBreakdown` | |
+| Мышцы / группы за период — один блок для истории и карточки сессии (день / неделя / месяц / год) | `strength/MusclesPanel`, `stretch/StretchPanel` в `PeriodCard` (свой переключатель — `onZoom`) | второй блок мышц в карточке |
+| Упражнения сессии с подходами (карточка и «День» истории) | `WorkoutExercises` (`strength/History.jsx`), `StretchHeld` (`stretch/StretchSession.jsx`) | |
 | Календарь истории | `PeriodNav`, `usePeriod`, `PeriodCard` | |
 | Строка истории, заголовок карточки сессии, плитки чисел, карточка с переключателем | `HistoryRow`, `SessionHeader`, `StatTiles`, `ViewsCard` (`ui/Session.jsx`) | |
 | Список программ: строки, «+ Новая программа», «Без программы» | `ProgramRows` | |

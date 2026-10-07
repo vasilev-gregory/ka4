@@ -8,7 +8,7 @@ import { useFlick } from "./gestures.js";
 import { Segmented } from "./kit.jsx";
 import { WhyButton } from "./LoadBreakdown.jsx";
 
-const ZOOMS = [["day", "День"], ["week", "Неделя"], ["month", "Месяц"], ["year", "Год"]];
+export const ZOOMS = [["day", "День"], ["week", "Неделя"], ["month", "Месяц"], ["year", "Год"]];
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const dayMonth = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 
@@ -128,11 +128,14 @@ export function PeriodNav({ period, dates, children }) {
   );
 }
 
-// The card under the calendar: a title line, "в среднем за неделю" for a month / year (averaged), a "?" opening `why`
-export function PeriodCard({ title, averaged, why, children }) {
+// The card of a period's analysis (under the calendar, or in a session's card): a title line, "в среднем за неделю"
+// for a month / year (averaged), a "?" opening `why`; zoom + onZoom: its own day / week / month / year switch (in a
+// session's card, where there is no calendar above)
+export function PeriodCard({ title, averaged, why, zoom, onZoom, className = "mt-3", children }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="mt-3 rounded-xl bg-neutral-900 p-3">
+    <div className={`rounded-xl bg-neutral-900 p-3 ${className}`}>
+      {onZoom && <div className="mb-2"><Segmented options={ZOOMS} value={zoom} onChange={onZoom} /></div>}
       <div className="mb-2 flex items-center justify-between gap-2 text-xs text-neutral-400">
         <span className="tabular-nums">{title}</span>
         <span className="flex items-center gap-2">{averaged && "в среднем за неделю"}<WhyButton on={open} toggle={() => setOpen((x) => !x)} /></span>

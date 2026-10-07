@@ -6,13 +6,14 @@ import { fmtDur, fmtKg, fmtNum, plural } from "../core/util.js";
 import { previousOfProgram, restBefore, restStats, stats, workoutSoFar } from "../model/workout.js";
 import { SetTable } from "./SetTable.jsx";
 import { workoutText } from "../model/workoutText.js";
-import { WorkoutMuscles } from "./WorkoutMuscles.jsx";
+import { MusclesPanel } from "./MusclesPanel.jsx";
+import { periodOf } from "../model/calendar.js";
 import { SessionHeader, StatTiles } from "../ui/Session.jsx";
 import { ExerciseRow } from "../ui/ExerciseCard.jsx";
 import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
 import { Button, Card, DeleteButton, Header, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
-import { stillCounted } from "../model/muscles.js";
+import { muscleLoad, stillCounted } from "../model/muscles.js";
 import { removeWorkout, setWorkoutOff } from "../model/workoutActions.js";
 
 // "+2,5 кг", "−1 кг", "так же"
@@ -28,10 +29,10 @@ function progressNote(data, w, e, ex, bwAt) {
 export function WorkoutDetail({ data, up, exMap, id, back, open, live = false }) {
   const { bwAt, nm1 } = useApp();
   const now = useNow(1000, live);
+  const [zoom, setZoom] = useState("day"); // the muscles block: this workout's day, or its week / month / year
   const w = live ? data.active && workoutSoFar(data.active, now) : data.workouts.find((x) => x.id === id);
   if (!w) return <div className="p-4"><Header title={live ? "Тренировка завершена" : "Тренировка удалена"} back={back} /></div>;
   const st = stats(w, exMap, bwAt);
-  const restsOf = restBefore(w); // "ei:si" -> ms before the set, or "drop"
   // volume against the previous workout of the same program
   const prevSame = previousOfProgram(data.workouts, w);
   const prevVol = prevSame ? stats(prevSame, exMap, bwAt).vol : 0;
@@ -49,7 +50,10 @@ export function WorkoutDetail({ data, up, exMap, id, back, open, live = false })
     <div className="p-4 pb-28">
       <SessionHeader name={live ? `${w.name} · итог сейчас` : w.name} startedAt={w.startedAt} back={back} />
       <StatTiles tiles={tiles} />
-      <WorkoutMuscles data={data} w={w} exMap={exMap} open={open} />
+      {Object.keys(muscleLoad([w], exMap, -Infinity, Infinity).muscles).length > 0 && ( // cardio only: no muscles block
+        <MusclesPanel data={data} zoom={zoom} range={periodOf(zoom, w.startedAt)} onZoom={setZoom} extra={w} exMap={exMap} open={open}
+          className="-mt-3 mb-5" />
+      )}
       {(() => {
         const rs = restStats(w);
         if (!rs.nSets && !rs.nEx) return null;
@@ -57,23 +61,7 @@ export function WorkoutDetail({ data, up, exMap, id, back, open, live = false })
           <StatTiles className="-mt-3 mb-5" tiles={[[rs.nSets ? fmtDur(rs.sets) : "—", "средний отдых между подходами"], [rs.nEx ? fmtDur(rs.ex) : "—", "между упражнениями"]]} />
         );
       })()}
-      <div className="space-y-2">
-        {w.exercises.map((e, i) => {
-          const ex = exMap[e.exerciseId];
-          const note = ex && progressNote(data, w, e, ex, bwAt);
-          return (
-            <ExerciseRow key={i} ex={ex} missing="Удалённое упражнение"
-              onClick={() => open({ type: "exercise", id: e.exerciseId })}
-              note={note && (
-                <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>
-                  {note.text === "рекорд" && <Trophy size={12} className="mr-1 inline -mt-0.5" />}{note.text}
-                </div>
-              )}>
-              <SetTable sets={e.sets} kind={ex ? ex.kind : "reps"} assist={ex && ex.assist} bw={ex && ex.bw} rest={(si) => restsOf[`${i}:${si}`]} />
-            </ExerciseRow>
-          );
-        })}
-      </div>
+      <WorkoutExercises data={data} w={w} exMap={exMap} open={open} />
       <CopyText text={() => workoutText(data, w, exMap, bwAt, nm1, live)} />
       {!live && <>
         {w.off && <NotForNothing data={data} w={w} exMap={exMap} />}
@@ -124,5 +112,30 @@ function CopyText({ text }) {
           className="mt-2 w-full rounded-xl bg-neutral-900 p-3 text-xs text-neutral-300" />
       )}
     </>
+  );
+}
+
+// a workout's exercises as in the workout: each with its sets as rows and how it went against last time
+export function WorkoutExercises({ data, w, exMap, open }) {
+  const { bwAt } = useApp();
+  const restsOf = restBefore(w); // "ei:si" -> ms before the set, or "drop"
+  return (
+    <div className="space-y-2">
+      {w.exercises.map((e, i) => {
+        const ex = exMap[e.exerciseId];
+        const note = ex && progressNote(data, w, e, ex, bwAt);
+        return (
+          <ExerciseRow key={i} ex={ex} missing="Удалённое упражнение"
+            onClick={() => open({ type: "exercise", id: e.exerciseId })}
+            note={note && (
+              <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>
+                {note.text === "рекорд" && <Trophy size={12} className="mr-1 inline -mt-0.5" />}{note.text}
+              </div>
+            )}>
+            <SetTable sets={e.sets} kind={ex ? ex.kind : "reps"} assist={ex && ex.assist} bw={ex && ex.bw} rest={(si) => restsOf[`${i}:${si}`]} />
+          </ExerciseRow>
+        );
+      })}
+    </div>
   );
 }
