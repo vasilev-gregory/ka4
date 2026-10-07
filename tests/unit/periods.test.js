@@ -79,3 +79,10 @@ test("a workout «не в зачёт» still counted: its hard sets, the muscles
   assert.deepEqual(c.muscles, [["квадрицепс", 2, 6], ["ягодицы", 1, 3]]);
   assert.equal(c.nth, 3);
 });
+
+test("a day: from midnight to the next one, paging day by day (over the DST switch too)", () => {
+  assert.deepEqual(periodOf("day", at(2026, 9, 7, 15)), { from: at(2026, 9, 7, 0), to: at(2026, 9, 8, 0) });
+  assert.equal(shiftPeriod("day", at(2026, 9, 7), -1), at(2026, 9, 6, 0));
+  assert.equal(shiftPeriod("day", at(2026, 2, 29), -1), at(2026, 2, 28, 0));
+  assert.equal(shiftPeriod("day", at(2026, 11, 31), 1), at(2027, 0, 1, 0));
+});

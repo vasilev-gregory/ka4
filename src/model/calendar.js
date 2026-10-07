@@ -1,10 +1,11 @@
-// Calendar periods shared by every history (strength, stretching): week / month / year ranges, paging,
+// Calendar periods shared by every history (strength, stretching): day / week / month / year ranges, paging,
 // and averaging a weekly load over the weeks of a period. Knows nothing of what is being counted.
 import { DAY, weekStartOf } from "../core/util.js";
 
 // The period of the given zoom containing `ts`: { from, to } (to exclusive), local calendar boundaries.
 export function periodOf(zoom, ts) {
   const d = new Date(ts);
+  if (zoom === "day") return { from: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), to: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() };
   if (zoom === "week") { const from = weekStartOf(ts); return { from, to: weekStartOf(from + 8 * DAY) }; }
   if (zoom === "month") return { from: new Date(d.getFullYear(), d.getMonth(), 1).getTime(), to: new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime() };
   return { from: new Date(d.getFullYear(), 0, 1).getTime(), to: new Date(d.getFullYear() + 1, 0, 1).getTime() };
@@ -13,6 +14,7 @@ export function periodOf(zoom, ts) {
 // start of the period k periods away from the one containing ts
 export function shiftPeriod(zoom, ts, k) {
   const d = new Date(periodOf(zoom, ts).from);
+  if (zoom === "day") return new Date(d.getFullYear(), d.getMonth(), d.getDate() + k).getTime();
   if (zoom === "week") return weekStartOf(d.getTime() + k * 7 * DAY + 3 * DAY); // mid-week: DST-safe
   if (zoom === "month") return new Date(d.getFullYear(), d.getMonth() + k, 1).getTime();
   return new Date(d.getFullYear() + k, 0, 1).getTime();

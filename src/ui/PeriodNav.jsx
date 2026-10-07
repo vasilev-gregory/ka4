@@ -1,4 +1,4 @@
-// The calendar of a history, shared by strength and stretching: zoom week / month / year, paging (arrows and a
+// The calendar of a history, shared by strength and stretching: zoom day / week / month / year, paging (arrows and a
 // flick), the days with training marked, a year as 12 months. What a period shows is up to the screen.
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
@@ -8,12 +8,12 @@ import { useFlick } from "./gestures.js";
 import { Segmented } from "./kit.jsx";
 import { WhyButton } from "./LoadBreakdown.jsx";
 
-const ZOOMS = [["week", "Неделя"], ["month", "Месяц"], ["year", "Год"]];
+const ZOOMS = [["day", "День"], ["week", "Неделя"], ["month", "Месяц"], ["year", "Год"]];
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const dayMonth = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
 
 // what the items behind a load cover: a month / year shows totals, not the average week
-export const TOTAL_NOTE = { week: "за неделю", month: "за месяц, всего", year: "за год, всего" };
+export const TOTAL_NOTE = { day: "за день", week: "за неделю", month: "за месяц, всего", year: "за год, всего" };
 
 // survives leaving the tab for a card and coming back; one per history (key)
 const remembered = {};
@@ -34,30 +34,36 @@ function periodLabel(zoom, { from, to }) {
   const d = new Date(from);
   if (zoom === "year") return String(d.getFullYear());
   if (zoom === "month") return capitalize(d.toLocaleDateString("ru-RU", { month: "long", year: "numeric" }));
+  if (zoom === "day") return capitalize(d.toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "long" }));
   const y = new Date(to - DAY).getFullYear() !== new Date().getFullYear() ? ` ${new Date(to - DAY).getFullYear()}` : "";
   return `${dayMonth(from)} – ${dayMonth(to - DAY)}${y}`;
 }
 
-// one calendar row; days outside `month` (if given) are dimmed
-function WeekRow({ ws, month, trained, selected, onClick }) {
+// one calendar row; days outside `month` (if given) are dimmed; onDay(ts): a tap on a day opens it (else the row is
+// one button, onClick); day: the day picked (outlined)
+function WeekRow({ ws, month, trained, selected, onClick, onDay, day }) {
   const today = new Date().toDateString();
+  const Cell = onDay ? "button" : "div";
+  const Row = onDay ? "div" : "button";
   return (
-    <button onClick={onClick} className={`grid w-full grid-cols-7 rounded-lg py-0.5 text-center ${selected ? "bg-neutral-800" : ""}`}>
+    <Row onClick={onDay ? undefined : onClick} className={`grid w-full grid-cols-7 rounded-lg py-0.5 text-center ${selected ? "bg-neutral-800" : ""}`}>
       {Array.from({ length: 7 }, (_, i) => {
         const d = new Date(ws + i * DAY + 3600e3);
         const on = trained.has(d.toDateString());
         const dim = month != null && d.getMonth() !== month;
+        const picked = day != null && new Date(day).toDateString() === d.toDateString();
         return (
-          <div key={i} className="flex justify-center py-0.5">
+          <Cell key={i} className="flex justify-center py-0.5"
+            {...(onDay ? { onClick: () => onDay(d.getTime()), "aria-label": d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) } : {})}>
             <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs tabular-nums
               ${on ? "bg-accent-400 font-semibold text-black" : dim ? "text-neutral-700" : "text-neutral-300"}
-              ${d.toDateString() === today && !on ? "ring-1 ring-accent-400" : ""}`}>
+              ${picked ? "ring-2 ring-neutral-100" : d.toDateString() === today && !on ? "ring-1 ring-accent-400" : ""}`}>
               {d.getDate()}
             </span>
-          </div>
+          </Cell>
         );
       })}
-    </button>
+    </Row>
   );
 }
 
@@ -106,12 +112,16 @@ export function PeriodNav({ period, dates, children }) {
           <button onClick={() => shift(1)} className="rotate-180 p-2 text-neutral-400" aria-label="Позже"><ChevronLeft size={20} /></button>
         </div>
         {zoom !== "year" && <DayNames />}
-        {zoom === "week" && <WeekRow ws={range.from} trained={trained} />}
+        {(zoom === "week" || zoom === "day") && (
+          <WeekRow ws={weekStartOf(range.from)} trained={trained} day={zoom === "day" ? range.from : null} onDay={(t) => go("day", t)} />
+        )}
         {zoom === "month" && weeks.map((ws) => (
           <WeekRow key={ws} ws={ws} month={new Date(range.from).getMonth()} trained={trained} onClick={() => go("week", ws)} />
         ))}
         {zoom === "year" && <YearGrid year={new Date(range.from).getFullYear()} dates={dates} onMonth={(t) => go("month", t)} />}
-        {zoom !== "week" && <p className="mt-1 text-center text-[11px] text-neutral-500">{zoom === "month" ? "Тап по неделе — её разбор" : "Тап по месяцу — его календарь"}</p>}
+        <p className="mt-1 text-center text-[11px] text-neutral-500">
+          {{ day: "Тап по другому дню — его разбор", week: "Тап по дню — его разбор", month: "Тап по неделе — её разбор", year: "Тап по месяцу — его календарь" }[zoom]}
+        </p>
         {children}
       </div>
     </>

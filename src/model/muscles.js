@@ -191,20 +191,24 @@ export function sessionWindow(hits) {
 }
 
 // How many workouts a week train each muscle: the user's workouts a week (settings.perWeek, default 3) times the
-// share of the programs where the muscle is a main one (no programs, or a muscle that only helps in them: every
-// workout — its sets come by the way). Returns muscle -> window.
+// share of the programs that give it sets at all — as a main muscle or a helping one (front delts get sets on chest
+// days too). No programs: every workout. Returns muscle -> window.
 export const PER_WEEK = 3;
 export function sessionWindows(d, exMap) {
   const perWeek = (d.settings && d.settings.perWeek) || PER_WEEK;
   const progs = (d.programs || []).filter((p) => p.items.length);
-  const share = progs.length ? programLoad(progs, exMap).muscles : null;
-  return (m) => sessionWindow(share && share[m] && share[m].freq ? perWeek * (share[m].freq / progs.length) : perWeek);
+  if (!progs.length) return () => sessionWindow(perWeek);
+  const loads = progs.map((p) => programLoad([p], exMap).muscles);
+  return (m) => {
+    const n = loads.filter((l) => l[m]).length;
+    return sessionWindow(n ? perWeek * (n / progs.length) : perWeek);
+  };
 }
 
 // One workout's sets for a muscle against its window: [key, label]
 export function sessionStatus(sets, w) {
   if (sets < w.lo / 2) return ["low", "мало"];
-  if (sets < w.lo) return ["grow", "почти"];
+  if (sets < w.lo) return ["grow", "рабочая"];
   if (sets > SESSION_CAP) return ["high", "перебор за раз"];
   return ["optimal", sets >= w.hi ? "отлично" : "норма"];
 }
