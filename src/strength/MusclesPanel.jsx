@@ -1,4 +1,4 @@
-// The muscles of a period, one block for the history and a workout's card: day (the workout's own ladder, with its
+// The muscles of a period (drawn by ui/PeriodCard), one block for the history and a workout's card: day (the workout's own ladder, with its
 // week beside), week (hard sets and steps), month / year (totals and the average week). onZoom: its own switch.
 import { fmtNum, plural, weekStartOf } from "../core/util.js";
 import { fmtTotals } from "../model/workout.js";
@@ -38,14 +38,10 @@ export function MusclesPanel({ data, zoom, range, onZoom, extra, exMap, open, cl
     load = s.perWeek;
     empty = s.workouts ? "Тяжёлых подходов не было." : zoom === "month" ? "В этом месяце тренировок не было." : "В этом году тренировок не было.";
   }
-  const any = Object.keys(load).length > 0;
   return (
-    <PeriodCard title={title} averaged={(zoom === "month" || zoom === "year") && any} why={<MusclesWhy />} zoom={zoom} onZoom={onZoom}
-      className={className}>
-      {any ? <MuscleBreakdown load={load} exMap={exMap} open={open} byNote={TOTAL_NOTE[zoom]}
+    <PeriodCard title={title} why={<MusclesWhy />} items={load} empty={empty} zoom={zoom} onZoom={onZoom} className={className}>
+      <MuscleBreakdown load={load} exMap={exMap} open={open} byNote={TOTAL_NOTE[zoom]}
         single={zoom === "day"} week={zoom === "day" ? weekOf : undefined} note={zoom === "week" ? (r) => weekHint(r.sets) : undefined} />
-        : <p className="text-xs text-neutral-500">{empty}</p>}
     </PeriodCard>
   );
 }
-
