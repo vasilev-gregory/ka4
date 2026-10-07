@@ -20,8 +20,9 @@ const fmtSec = (sec) => fmtDur(Math.round(sec) * 1000);
 const fmtDays = (n) => (n ? ` · ${fmtNum(n)} ${Number.isInteger(n) ? plural(n, "раз", "раза", "раз") : "раза"}` : "");
 
 // areas: { area: { sec, freq?, by } }; single: one run / program (no verdicts); week: a line under an area saying
-// what the week still needs; exMap, byNote: the stretches behind a picked area; open: opens a stretch's card
-export function StretchBreakdown({ areas, map = true, only, single = false, week = false, exMap, byNote, open }) {
+// what the week still needs; exMap, byNote: the stretches behind a picked area; open: opens a stretch's card;
+// find(area): a program's editor — stretches for an area (ui/LoadBreakdown find)
+export function StretchBreakdown({ areas, map = true, only, single = false, week = false, exMap, byNote, open, find }) {
   const { nm1 } = useApp();
   const items = [...ST_AREAS, ...Object.keys(areas).filter((a) => !ST_AREAS.includes(a) && a !== NO_AREA), NO_AREA]
     .map((a) => ({ id: a, name: a, parts: AREA_PARTS[a] || [] }));
@@ -34,7 +35,7 @@ export function StretchBreakdown({ areas, map = true, only, single = false, week
     }))} />
   ));
   return <LoadBreakdown items={items} load={load} scale={single ? SINGLE : SCALE} map={map} only={only}
-    note={week ? (a) => stretchHint(areas[a].sec) : undefined} expand={expand} />;
+    note={week ? (a) => stretchHint(areas[a].sec) : undefined} expand={expand} find={find && { label: "Подобрать растяжку", go: find }} />;
 }
 
 // how the numbers are counted, under the "?"

@@ -1,7 +1,7 @@
 // Splits: the week's next program, and what creating, removing and deleting programs does to splits.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { activeSplit, splitWeek } from "../../src/model/splits.js";
+import { activeSplit, splitOf, splitWeek } from "../../src/model/splits.js";
 import { createSplit, dropEmptySplit, removeSplit, setActiveSplit } from "../../src/model/splitActions.js";
 import { removeProgram } from "../../src/model/workoutActions.js";
 import { programLoad } from "../../src/model/muscles.js";
@@ -52,4 +52,12 @@ test("a split's week of muscles: a program twice counts its sets and its workout
   const p = { id: "a", items: [{ exerciseId: "squat", sets: 3 }] };
   const m = programLoad([p, p], exMap).muscles;
   assert.deepEqual([m.quads.sets, m.quads.freq, m.glutes.sets, m.glutes.freq], [6, 2, 3, 0]);
+});
+
+test("a program's split: the active one when it holds the program, else the first that does", () => {
+  const d = { splits: [{ id: "s1", items: [{ programId: "a" }] }, { id: "s2", items: [{ programId: "a" }, { programId: "b" }] }], activeSplitId: "s2" };
+  assert.equal(splitOf(d, "a").id, "s2");
+  d.activeSplitId = "s1";
+  assert.equal(splitOf(d, "b").id, "s2");
+  assert.equal(splitOf(d, "c"), null);
 });

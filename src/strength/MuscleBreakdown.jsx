@@ -23,8 +23,9 @@ const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum
 
 // load: { muscleId: { sets, freq, by } }; single: one workout / program (its own scale, no frequency); week(m): with
 // single, the muscle's sets in that week so far, shown beside (a program has none); note(row): a line
-// under a muscle; exMap, byNote ("за месяц"), open: the exercises behind a picked muscle and opening their cards
-export function MuscleBreakdown({ load, map = true, only, note, single = false, week, exMap, byNote, open }) {
+// under a muscle; exMap, byNote ("за месяц"), open: the exercises behind a picked muscle and opening their cards;
+// find(m): a plan's editor — exercises for a muscle (ui/LoadBreakdown find)
+export function MuscleBreakdown({ load, map = true, only, note, single = false, week, exMap, byNote, open, find }) {
   const { nm1 } = useApp();
   const shown = Object.fromEntries(Object.entries(load).map(([m, l]) => [m, {
     value: l.sets, text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets) : growthStatus(l.sets),
@@ -39,7 +40,7 @@ export function MuscleBreakdown({ load, map = true, only, note, single = false, 
   ));
   const rowNote = note || (single ? (r) => sessionHint(r.sets, week ? week(r.id) : null) : null);
   return <LoadBreakdown items={ITEMS} load={shown} scale={single ? SINGLE : SCALE} map={map} only={only}
-    note={rowNote && ((m) => rowNote({ id: m, ...load[m] }))} expand={expand} />;
+    note={rowNote && ((m) => rowNote({ id: m, ...load[m] }))} expand={expand} find={find && { label: "Подобрать упражнение", go: find }} />;
 }
 
 // how the numbers are counted, under the "?"

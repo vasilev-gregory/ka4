@@ -1,5 +1,6 @@
 // A split: its name, its programs for the week (shared program parts, ui/ProgramEdit: drag to reorder, ✕ with
-// «Вернуть»; a tap opens the program), whether it is the active one, and the muscles of its whole week.
+// «Вернуть»; a tap opens the program), whether it is the active one, and the muscles of its whole week. Exercises
+// are added to a program in its own editor, never from here: a split holds programs.
 import { useState } from "react";
 import { fmtNum, plural, progTitle } from "../core/util.js";
 import { splitPrograms } from "../model/splits.js";
