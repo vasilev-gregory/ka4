@@ -244,8 +244,24 @@ test("a reload in the middle of a workout (a new version) loses nothing: ticked 
   await expect.poll(async () => (await stored(page)).workouts[0]?.exercises[0].sets.map((s) => s.w)).toEqual(["60", "70"]);
 });
 
+test("no RIR dial while the RIR column is off (the default): holding ✓ just ticks it", async ({ page }) => {
+  await openApp(page);
+  await startWorkout(page);
+  const b = await page.getByRole("button", { name: "Подход сделан" }).first().boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await expect(page.getByTestId("rir-dial")).toHaveCount(0);
+  await page.mouse.up();
+  // settings: the RIR column's «?» says why to switch it on
+  await tab(page, "Настройки");
+  await page.getByRole("button", { name: "Как считается" }).click();
+  await expect(page.getByText("RIR — сколько повторов ты ещё мог бы сделать.")).toBeVisible();
+});
+
 test("hold ✓ and slide to a RIR: the set is done with it; let go at the centre: nothing", async ({ page }) => {
   await openApp(page);
+  await seedStorage(page, (d) => { d.settings.columns = [{ key: "w", on: true }, { key: "r", on: true }, { key: "rir", on: true }, { key: "rest", on: true }]; });
   await startWorkout(page);
   const check = page.getByRole("button", { name: "Подход сделан" }).first();
   const b = await check.boundingBox();

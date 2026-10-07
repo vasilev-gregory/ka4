@@ -48,7 +48,7 @@ function Cell({ col, s, ex, edit }) {
 // label: "1", "2a", …; rest: ms before this set or "drop"; live: the running stopwatch is here (ms so far);
 // record: this set beat the exercise's best estimated 1RM; rir(n): done with RIR n (the dial on ✓)
 export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, record, swipe, swipeProps, numberProps, edit, toggle, rir }) {
-  const dial = useRirDial({ onTap: toggle, onPick: rir, enabled: s.t !== "w" && ex.kind !== "cardio" });
+  const dial = useRirDial({ onTap: toggle, onPick: rir, enabled: cols.includes("rir") && s.t !== "w" });
   const shownRest = rest === "drop" || rest >= 1000 ? rest : null; // under a second (warm-up closed by this tick): nothing to show
   // a short flash when the set gets confirmed (phones without vibration still notice)
   const rowRef = useRef(null);
