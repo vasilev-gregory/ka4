@@ -195,12 +195,12 @@ export function sessionStatus(sets) {
   const [, label, key] = SESSION_STEPS[stepOf(sets)];
   return [key, label];
 }
-// The joke beside a step: the weight stack of a basement gym, signed from «амёба» up — all its 17 plates spread over
-// 0–11 hard sets (every half set counts: helping muscles give halves), and past 11 the last one
+// The joke on a step's chip: the weight stack of a basement gym, signed from «амёба» up — all its 17 plates spread over
+// the scale's 0–cap hard sets (one workout: 0–11, every half set counts; a week: 0–30), and past the cap the last one
 export const SESSION_NICKS = ["амёба", "инфузория", "дрыщ", "пацан", "самец", "мужик", "качок", "билдер", "лифтёр", "машина",
   "терминатор", "мистер Олимпия", "биоробот", "животное", "чёрный бог", "80 lvl", "мутант"];
-export const sessionNick = (sets) =>
-  (sets > SESSION_CAP ? "кто ты, тварь?" : SESSION_NICKS[Math.min(SESSION_NICKS.length - 1, Math.floor((sets * (SESSION_NICKS.length - 1)) / SESSION_CAP))]);
+export const muscleNick = (sets, cap = SESSION_CAP) =>
+  (sets > cap ? "кто ты, тварь?" : SESSION_NICKS[Math.min(SESSION_NICKS.length - 1, Math.floor((sets * (SESSION_NICKS.length - 1)) / cap))]);
 
 // what one workout gave a muscle and the next step; week: the muscle's sets of that week so far (this workout
 // included), shown as context, or null (a program's plan has no week)

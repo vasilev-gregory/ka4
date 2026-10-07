@@ -6,7 +6,7 @@ import { periodOf } from "../model/calendar.js";
 import { heldTotal, stExMap } from "../model/stretch.js";
 import { removeSession } from "../model/stretchActions.js";
 import { DeleteButton, Header } from "../ui/kit.jsx";
-import { SessionHeader, StatTiles } from "../ui/Session.jsx";
+import { DayOnly, SessionHeader, StatTiles } from "../ui/Session.jsx";
 import { ExerciseRow } from "../ui/ExerciseCard.jsx";
 import { StretchPanel } from "./StretchPanel.jsx";
 
@@ -26,7 +26,9 @@ export function StretchSession({ stretch, upStretch, id, back, open }) {
       {held.length > 0 && (
         <StretchPanel stretch={stretch} zoom={zoom} range={periodOf(zoom, x.startedAt)} onZoom={setZoom} open={open} className="-mt-3 mb-5" />
       )}
-      <StretchHeld stretch={stretch} x={x} open={open} />
+      <DayOnly zoom={zoom} onDay={() => setZoom("day")} label="Растяжки этого занятия">
+        <StretchHeld stretch={stretch} x={x} open={open} />
+      </DayOnly>
       <DeleteButton onConfirm={() => { upStretch((s) => removeSession(s, id)); back(); }} confirmText="Удалить из истории?">
         Удалить растяжку
       </DeleteButton>

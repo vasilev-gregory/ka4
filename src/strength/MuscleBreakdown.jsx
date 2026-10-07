@@ -2,7 +2,7 @@
 // workout's own scale (model/muscles sessionStatus) with its week beside it, statuses and the exercises behind a muscle.
 // Used by the history, a workout and a program.
 import { fmtNum, plural } from "../core/util.js";
-import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, SESSION_GOOD, SESSION_GROW, sessionHint, sessionNick, sessionStatus } from "../model/muscles.js";
+import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, SESSION_GOOD, SESSION_GROW, sessionHint, sessionStatus, muscleNick, WEEK_CAP } from "../model/muscles.js";
 import { ByList, LoadBreakdown } from "../ui/LoadBreakdown.jsx";
 import { useApp } from "../ui/kit.jsx";
 
@@ -27,7 +27,8 @@ const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum
 export function MuscleBreakdown({ load, map = true, only, note, single = false, week, exMap, byNote, open }) {
   const { nm1 } = useApp();
   const shown = Object.fromEntries(Object.entries(load).map(([m, l]) => [m, {
-    value: l.sets, text: single ? `${fmtLoad(l.sets)} · ${sessionNick(l.sets)}` : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets) : growthStatus(l.sets),
+    value: l.sets, text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets) : growthStatus(l.sets),
+    nick: single ? muscleNick(l.sets) : muscleNick(l.sets, WEEK_CAP),
   }]));
   const expand = exMap && ((m) => load[m].by && (
     <ByList title={`Засчитались${byNote ? ` ${byNote}` : ""}`} entries={Object.entries(load[m].by).map(([id, n]) => {

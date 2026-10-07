@@ -8,7 +8,7 @@ import { SetTable } from "./SetTable.jsx";
 import { workoutText } from "../model/workoutText.js";
 import { MusclesPanel } from "./MusclesPanel.jsx";
 import { periodOf } from "../model/calendar.js";
-import { SessionHeader, StatTiles } from "../ui/Session.jsx";
+import { DayOnly, SessionHeader, StatTiles } from "../ui/Session.jsx";
 import { ExerciseRow } from "../ui/ExerciseCard.jsx";
 import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
@@ -54,14 +54,16 @@ export function WorkoutDetail({ data, up, exMap, id, back, open, live = false })
         <MusclesPanel data={data} zoom={zoom} range={periodOf(zoom, w.startedAt)} onZoom={setZoom} extra={w} exMap={exMap} open={open}
           className="-mt-3 mb-5" />
       )}
-      {(() => {
-        const rs = restStats(w);
-        if (!rs.nSets && !rs.nEx) return null;
-        return (
-          <StatTiles className="-mt-3 mb-5" tiles={[[rs.nSets ? fmtDur(rs.sets) : "—", "средний отдых между подходами"], [rs.nEx ? fmtDur(rs.ex) : "—", "между упражнениями"]]} />
-        );
-      })()}
-      <WorkoutExercises data={data} w={w} exMap={exMap} open={open} />
+      <DayOnly zoom={zoom} onDay={() => setZoom("day")} label="Упражнения этой тренировки">
+        {(() => {
+          const rs = restStats(w);
+          if (!rs.nSets && !rs.nEx) return null;
+          return (
+            <StatTiles className="-mt-3 mb-5" tiles={[[rs.nSets ? fmtDur(rs.sets) : "—", "средний отдых между подходами"], [rs.nEx ? fmtDur(rs.ex) : "—", "между упражнениями"]]} />
+          );
+        })()}
+        <WorkoutExercises data={data} w={w} exMap={exMap} open={open} />
+      </DayOnly>
       <CopyText text={() => workoutText(data, w, exMap, bwAt, nm1, live)} />
       {!live && <>
         {w.off && <NotForNothing data={data} w={w} exMap={exMap} />}
