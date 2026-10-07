@@ -1,8 +1,8 @@
 // Hard sets per muscle on the shared load breakdown (ui/LoadBreakdown): the week's scale (10 a week «оптимум»), or one
-// workout's per-muscle window (model/muscles sessionWindows), statuses and the exercises behind a muscle.
+// workout's own scale (model/muscles sessionStatus) with its week beside it, statuses and the exercises behind a muscle.
 // Used by the history, a workout and a program.
 import { fmtNum, plural } from "../core/util.js";
-import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, sessionHint, sessionStatus } from "../model/muscles.js";
+import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, SESSION_GOOD, SESSION_MAX, sessionHint, sessionStatus } from "../model/muscles.js";
 import { ByList, LoadBreakdown } from "../ui/LoadBreakdown.jsx";
 import { useApp } from "../ui/kit.jsx";
 
@@ -14,21 +14,20 @@ const SCALE = {
   // statuses in the muscle colour: the fuller, the closer to the weekly target
   chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-rose-950 text-rose-300", optimal: "bg-rose-500 text-white", high: "bg-rose-200 text-rose-950" },
 };
-// one workout or program: each muscle against its own window, so values come as parts of its «максимум» (10 = full)
-const SINGLE = { ...SCALE, target: 10, barMax: 13, mark: 10, legend: [[0, "0"], [10, "максимум за тренировку"]] };
+// one workout or program: its own scale, full at «максимум» (8)
+const SINGLE = { ...SCALE, target: SESSION_MAX, barMax: SESSION_CAP + 1, mark: SESSION_GOOD,
+  legend: [[0, "0"], [SESSION_GOOD, "4 — оптимум"], [SESSION_MAX, "8+ — максимум"]] };
 
 // "7,5 подх. · 2 раза"; averages over weeks are fractional
 const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum(freq)} ${Number.isInteger(freq) ? plural(freq, "раз", "раза", "раз") : "раза"}` : ""}`;
 
-// load: { muscleId: { sets, freq, by } }; windows(m): one workout / program — that muscle's window per workout
-// (statuses against it, no frequency); note(row): a line
+// load: { muscleId: { sets, freq, by } }; single: one workout / program (its own scale, no frequency); week(m): with
+// single, the muscle's sets in that week so far, shown beside (a program has none); note(row): a line
 // under a muscle; exMap, byNote ("за месяц"), open: the exercises behind a picked muscle and opening their cards
-export function MuscleBreakdown({ load, map = true, only, note, windows, exMap, byNote, open }) {
-  const single = !!windows;
+export function MuscleBreakdown({ load, map = true, only, note, single = false, week, exMap, byNote, open }) {
   const { nm1 } = useApp();
   const shown = Object.fromEntries(Object.entries(load).map(([m, l]) => [m, {
-    value: single ? Math.min(l.sets, SESSION_CAP) / windows(m).hi * 10 : l.sets,
-    text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets, windows(m)) : growthStatus(l.sets),
+    value: l.sets, text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets) : growthStatus(l.sets),
   }]));
   const expand = exMap && ((m) => load[m].by && (
     <ByList title={`Засчитались${byNote ? ` ${byNote}` : ""}`} entries={Object.entries(load[m].by).map(([id, n]) => {
@@ -37,7 +36,7 @@ export function MuscleBreakdown({ load, map = true, only, note, windows, exMap, 
         tag: (musclesOf(ex)[m] || 0) >= 1 ? "основная" : "помогает", onClick: ex && open ? () => open({ type: "exercise", id }) : undefined };
     })} />
   ));
-  const rowNote = note || (single ? (r) => sessionHint(r.sets, windows(r.id)) : null);
+  const rowNote = note || (single ? (r) => sessionHint(r.sets, week ? week(r.id) : null) : null);
   return <LoadBreakdown items={ITEMS} load={shown} scale={single ? SINGLE : SCALE} map={map} only={only}
     note={rowNote && ((m) => rowNote({ id: m, ...load[m] }))} expand={expand} />;
 }
@@ -49,8 +48,8 @@ export const MusclesWhy = () => (
     вспомогательная — половину (присед: квадрицепс — подход, ягодицы — половина); тренировка засчитывается мышце, если она была основной.
     Ориентир по исследованиям (Pelland и др., 2024–25): рост — от 4 подходов в неделю, хорошо — от 10 (черта на шкале), отлично — 20,
     после ~30 прироста почти нет; сколько раз в неделю — почти не важно, важен объём. На схеме мышца заливается по мере подходов,
-    полностью — к 10 в неделю. Одна тренировка — своя норма: недельные 10–20 делятся на тренировки этой мышцы (тренировок в неделю —
-    в настройках, доля — по программам), но не больше 11 за раз: дальше прироста не видно.
+    полностью — к 10 в неделю. Одна тренировка — своя шкала: 2 подхода — уже рост, 4–7 — оптимум, 8–11 — максимум за раз,
+    больше 11 за раз прироста не видно (лучше на другой день); рядом — сколько у мышцы за неделю.
     Тап по мышце на схеме или в списке выделяет её и раскрывает упражнения, из которых сложились её подходы.
   </p>
 );

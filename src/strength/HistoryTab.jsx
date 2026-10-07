@@ -1,8 +1,8 @@
 // Strength history tab: the shared calendar (ui/PeriodNav), the period's analysis (hard sets per muscle, totals)
 // and its workouts.
-import { fmtNum, plural } from "../core/util.js";
+import { fmtNum, plural, weekStartOf } from "../core/util.js";
 import { fmtTotals, fmtWDur, stats } from "../model/workout.js";
-import { muscleLoad, sessionWindows, weekLoad } from "../model/muscles.js";
+import { muscleLoad, weekLoad } from "../model/muscles.js";
 import { workoutKcal } from "../model/energy.js";
 import { periodSummary } from "../model/periods.js";
 import { inPeriod } from "../model/calendar.js";
@@ -15,7 +15,7 @@ import { MuscleBreakdown, MusclesWhy } from "./MuscleBreakdown.jsx";
 // month / year: totals and the average week per muscle.
 function PeriodPanel({ data, zoom, range, workouts, exMap, open }) {
   const { bwAt } = useApp();
-  let title, load, empty;
+  let title, load, empty, weekOf;
   if (zoom === "day") {
     const day = inPeriod(workouts, range);
     const n = day.length;
@@ -23,6 +23,8 @@ function PeriodPanel({ data, zoom, range, workouts, exMap, open }) {
     title = n === 1 ? day[0].name : n ? `${n} ${plural(n, "тренировка", "тренировки", "тренировок")}` : "";
     load = muscleLoad(workouts, exMap, range.from, range.to).muscles;
     empty = n ? "Тяжёлых подходов не было." : "В этот день тренировок не было.";
+    const wk = muscleLoad(workouts, exMap, weekStartOf(range.from), range.to).muscles; // the week up to this day
+    weekOf = (m) => (wk[m] ? wk[m].sets : 0);
   } else if (zoom === "week") {
     const an = weekLoad(workouts, exMap, range.from);
     title = `тренировок: ${an.days}`;
@@ -39,7 +41,7 @@ function PeriodPanel({ data, zoom, range, workouts, exMap, open }) {
   return (
     <PeriodCard title={title} averaged={(zoom === "month" || zoom === "year") && any} why={<MusclesWhy />}>
       {any ? <MuscleBreakdown load={load} exMap={exMap} open={open} byNote={TOTAL_NOTE[zoom]}
-        windows={zoom === "day" ? sessionWindows(data, exMap) : undefined} />
+        single={zoom === "day"} week={zoom === "day" ? weekOf : undefined} />
         : <p className="text-xs text-neutral-500">{empty}</p>}
     </PeriodCard>
   );

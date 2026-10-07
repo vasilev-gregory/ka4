@@ -70,13 +70,6 @@ function StrengthSettings({ data, up }) {
         <Segmented options={[[true, "сначала русские"], [false, "сначала английские"]]} value={s.namesRu !== false}
           onChange={(v) => up((d) => { d.settings.namesRu = v; })} />
       </Card>
-      <Card className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <div className="font-semibold">Тренировок в неделю</div>
-          <div className="text-xs text-neutral-400">Сколько обычно получается. Из этого — норма подходов на мышцу за одну тренировку</div>
-        </div>
-        <Stepper value={s.perWeek || 3} min={1} onChange={(v) => up((d) => { d.settings.perWeek = Math.min(7, v); })} />
-      </Card>
       <BodyWeight data={data} up={up} />
       <SwitchRow title="Обратный отсчёт после подхода" hint="Отсчёт внизу экрана. Секундомер в кнопке ✓ — колонка «Отдых» ниже"
         on={countdown} className="mb-3"
