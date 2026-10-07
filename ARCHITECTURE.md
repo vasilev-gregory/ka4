@@ -75,6 +75,10 @@
 | Строка истории, заголовок карточки сессии, плитки чисел, её упражнения только на «Дне» | `HistoryRow`, `SessionHeader`, `StatTiles`, `DayOnly` (`ui/Session.jsx`) | |
 | Список программ: строки, «+ Новая программа», «Без программы» | `ProgramRows` | |
 | Редактор программы: название, строки (перетащить, убрать с «Вернуть»), начать / удалить | `ProgramName`, `ProgramItems`, `ProgramFooter` (`ui/ProgramEdit.jsx`) | |
+| Сплит: следующая программа недели, отметки программ | `model/splits.js` (`splitWeek`, `splitMarks`) → `strength/workout/ProgramList` (строки — общие `ProgramRows`: `note`, `next`) | ⚙ своя логика «что сделано за неделю» в экране |
+| Изменение сплитов: создать, активный, удалить; программы сплита — черновиком, как строки программы | `model/splitActions.js`; удаление программы из сплитов — в `removeProgram` | |
+| Редактор сплита, список сплитов | `strength/SplitEditor.jsx` (общие `ProgramName`, `ProgramItems`), `strength/SplitRows.jsx` | |
+| Мышцы плана (программа — шкала одной тренировки, сплит — недели) | `strength/ProgramMuscles` (`programs`, `week`) | |
 | Выбор упражнений / растяжек (поиск, фильтры — ряды чипов `filters` от раздела, группы, «твои», несколько сразу, «уже в программе», создать новое) | `ExercisePicker` (`ui/ExercisePicker.jsx`) | свой экран выбора в разделе |
 | Подтверждение / вопрос снизу | `Sheet` | |
 | Графики | `<Trend>` | ⚙ `recharts` напрямую |

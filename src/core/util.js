@@ -23,6 +23,7 @@ export function fmtDur(ms) {
 
 export const fmtKg = (v) => (v >= 1000 ? `${(v / 1000).toFixed(1).replace(".", ",")} т` : `${Math.round(v)} кг`);
 
+export const fmtWeekday = (ts) => new Date(ts).toLocaleDateString("ru-RU", { weekday: "short" }); // «пн»
 export const fmtDate = (ts) => new Date(ts).toLocaleDateString("ru-RU", { weekday: "short", day: "numeric", month: "short" });
 
 export const fmtShort = (ts) => new Date(ts).toLocaleDateString("ru-RU", { day: "numeric", month: "numeric" });

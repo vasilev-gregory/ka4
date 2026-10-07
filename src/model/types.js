@@ -8,6 +8,8 @@
  * @property {number} [savedAt]          when this copy was written; the newer copy wins on load / sync
  * @property {Exercise[]} exercises      strength exercises: built-in (id = slug of the name) and user-made
  * @property {Program[]} programs
+ * @property {Split[]} splits            programs grouped into a week
+ * @property {string|null} activeSplitId the split the workout tab follows (next program of the week)
  * @property {Workout[]} workouts        finished workouts, oldest first; only confirmed sets are kept
  * @property {ActiveWorkout|null} active the running (or paused) workout
  * @property {Measurement[]} measurements
@@ -45,6 +47,7 @@
  */
 
 /** @typedef {{ id: string, name: string, items: ProgramItem[] }} Program  name may be "" (shown as "Без названия") */
+/** @typedef {{ id: string, name: string, items: { programId: string }[] }} Split  a program may be in it more than once */
 /** @typedef {{ exerciseId: string, sets: number, min?: number, km?: number }} ProgramItem  sets: how many sets to prefill; cardio plan: min or km */
 
 /**

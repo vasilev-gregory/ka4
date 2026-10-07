@@ -123,14 +123,14 @@ export function muscleLoad(workouts, exMap, from, to) {
 // { muscles: { id: { sets, freq, by } } }; freq: programs where the muscle is a main one. Cardio adds nothing.
 export function programLoad(programs, exMap) {
   const muscles = {};
-  programs.forEach((p) => p.items.forEach((it) => {
+  programs.forEach((p, pi) => p.items.forEach((it) => { // pi: a program twice in a split is two workouts
     const share = Object.entries(musclesOf(exMap[it.exerciseId]));
     if (!it.sets || !share.length) return;
     share.forEach(([m, k]) => {
       const t = muscles[m] || (muscles[m] = { sets: 0, progs: new Set(), by: {} });
       t.sets += it.sets * k;
       t.by[it.exerciseId] = (t.by[it.exerciseId] || 0) + it.sets * k;
-      if (k >= 1) t.progs.add(p.id);
+      if (k >= 1) t.progs.add(pi);
     });
   }));
   const out = {};

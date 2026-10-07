@@ -1,20 +1,41 @@
-// No workout running: the programs to start from (shared rows, ui/ProgramRows), and yesterday's auto-closed
+// No workout running: the programs to start from (shared rows, ui/ProgramRows) — the active split's first, in its
+// order, marked with what this week did and which is next (model/splits) — the splits, and yesterday's auto-closed
 // workout asking to update its program.
 import { RUNNING_NOTE, runningSession } from "../../model/workout.js";
-import { fmtDate, progTitle, uid } from "../../core/util.js";
+import { activeSplit, splitMarks } from "../../model/splits.js";
+import { fmtDate, fmtWeekday, progTitle, uid } from "../../core/util.js";
 import { createProgram, resolvePendingProgramUpdate, startWorkout } from "../../model/workoutActions.js";
+import { createSplit } from "../../model/splitActions.js";
 import { Button, Card, Header, useApp } from "../../ui/kit.jsx";
 import { ProgramRows } from "../../ui/ProgramRows.jsx";
+import { SplitRows } from "../SplitRows.jsx";
+
+// a split program's line: «✓ пн» per workout this week, «следующая» on the one to do now
+function splitNote(m) {
+  if (!m) return null;
+  const done = m.done.map((w) => `✓ ${fmtWeekday(w.startedAt)}`).join(", ");
+  const left = m.times - m.done.length;
+  return [done, m.next ? "следующая по сплиту" : left > 0 && m.times > 1 && `ещё ${left}`].filter(Boolean).join(" · ") || null;
+}
 
 export function ProgramList({ data, up, exMap, open }) {
   const { nm1 } = useApp();
   const last = data.workouts[data.workouts.length - 1];
   const pending = data.pendingProgramUpdate;
   const pendingProgram = pending && data.programs.find((x) => x.id === pending.programId);
+  const split = activeSplit(data);
+  const sm = split && split.items.length ? splitMarks(split, data.workouts) : null;
+  const ordered = sm ? [...sm.order.map((id) => data.programs.find((p) => p.id === id)).filter(Boolean), ...data.programs.filter((p) => !sm.marks[p.id])]
+    : data.programs;
   const create = () => {
     const id = uid();
     up((d) => createProgram(d, id));
     open({ type: "program", id });
+  };
+  const newSplit = () => {
+    const id = uid();
+    up((d) => createSplit(d, id));
+    open({ type: "split", id });
   };
   const start = (p) => up((d) => startWorkout(d, p));
   return (
@@ -31,13 +52,19 @@ export function ProgramList({ data, up, exMap, open }) {
           </div>
         </Card>
       )}
+      {sm && (
+        <button onClick={() => open({ type: "split", id: split.id })} className="mb-2 block w-full text-left text-xs text-neutral-400">
+          Сплит «{progTitle(split)}»: {sm.doneCount === sm.total ? "неделя закрыта ✓" : `${sm.doneCount} из ${sm.total} на этой неделе`}
+        </button>
+      )}
       <ProgramRows onOpen={(id) => open({ type: "program", id })} onCreate={create} onWithout={() => start(null)}
         blocked={runningSession(data) === "stretch" ? RUNNING_NOTE.stretch : null}
         onStart={(id) => start(data.programs.find((x) => x.id === id))}
-        programs={data.programs.map((p) => ({
-          id: p.id, name: p.name, canStart: p.items.length > 0,
+        programs={ordered.map((p) => ({
+          id: p.id, name: p.name, canStart: p.items.length > 0, note: sm && splitNote(sm.marks[p.id]), next: !!sm?.marks[p.id]?.next,
           meta: p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений",
         }))} />
+      <SplitRows splits={data.splits} activeId={data.activeSplitId} onOpen={(id) => open({ type: "split", id })} onCreate={newSplit} />
     </div>
   );
 }
