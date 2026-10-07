@@ -4,7 +4,7 @@ import { ASSIST_DEFAULTS, BW_DEFAULTS, EX_RENAMES, SEED_EX, ST_AREA_DEFAULTS, ST
 
 export const KEY = "gymapp-state-v1";
 // bumped whenever migrate() learns a new upgrade step
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 
 export function seed() {
   const exercises = SEED_EX.map(([name, ru, group, kind]) => ({ id: slug(name), name, ru, group, kind: kind || "reps" }));
@@ -72,6 +72,10 @@ export function migrate(d) {
   };
   d.workouts.forEach((w) => w.exercises.forEach((e) => { e.sets = flat(e.sets); }));
   if (d.active) d.active.exercises.forEach((e) => { e.sets = flat(e.sets); });
+  // v4: the rest stopwatch in ✓ had been made opt-in, and any change of the columns saved it off; switch it on once
+  if ((d.version || 0) < 4 && d.settings && Array.isArray(d.settings.columns)) {
+    d.settings.columns.forEach((c) => { if (c.key === "rest") c.on = true; });
+  }
   d.version = SCHEMA_VERSION;
   return d;
 }
