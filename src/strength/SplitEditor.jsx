@@ -1,12 +1,10 @@
 // A split: its name, its programs for the week (shared program parts, ui/ProgramEdit: drag to reorder, ✕ with
-// «Вернуть»; a tap opens the program), whether it is the active one, and the muscles of its whole week — a muscle
-// short of load leads to exercises for it, and the one picked goes into the program chosen next.
+// «Вернуть»; a tap opens the program), whether it is the active one, and the muscles of its whole week. Exercises
+// are added to a program in its own editor, never from here: a split holds programs.
 import { useState } from "react";
 import { fmtNum, plural, progTitle } from "../core/util.js";
 import { splitPrograms } from "../model/splits.js";
 import { addSplitPrograms, dropEmptySplit, removeSplit, setActiveSplit } from "../model/splitActions.js";
-import { addProgramItems } from "../model/workoutActions.js";
-import { Picker } from "./ExerciseList.jsx";
 import { Button, DeleteButton, Header, Sheet, SwitchRow, useApp } from "../ui/kit.jsx";
 import { ProgramItems, ProgramName, useDropIfEmpty } from "../ui/ProgramEdit.jsx";
 import { ProgramMuscles } from "./ProgramMuscles.jsx";
@@ -14,7 +12,6 @@ import { ProgramMuscles } from "./ProgramMuscles.jsx";
 export function SplitEditor({ data, up, exMap, id, back, open }) {
   const { nm1 } = useApp();
   const [adding, setAdding] = useState(false);
-  const [finding, setFinding] = useState(null); // { muscle, ex? }: exercises for a muscle, then the program to put one in
   const change = (fn) => up((d) => { const s = d.splits.find((x) => x.id === id); if (s) fn(s); });
   useDropIfEmpty(() => up((d) => dropEmptySplit(d, id)));
   const s = data.splits.find((x) => x.id === id);
@@ -43,22 +40,8 @@ export function SplitEditor({ data, up, exMap, id, back, open }) {
       </p>
       <SwitchRow className="mt-4" title="Активный сплит" on={data.activeSplitId === id} onClick={() => up((d) => setActiveSplit(d, data.activeSplitId === id ? null : id))}
         hint="Вкладка «Тренировка» показывает его программы первыми и подсказывает следующую" />
-      <ProgramMuscles programs={splitPrograms(s, data.programs)} week exMap={exMap} open={open} find={(m) => setFinding({ muscle: m })} />
+      <ProgramMuscles programs={splitPrograms(s, data.programs)} week exMap={exMap} open={open} />
       <DeleteButton onConfirm={() => { up((d) => removeSplit(d, id)); back(); }} confirmText="Удалить сплит? Программы останутся">Удалить сплит</DeleteButton>
-      {finding && !finding.ex && (
-        <Picker data={data} up={up} muscle={finding.muscle} title="Подобрать упражнение" onClose={() => setFinding(null)}
-          onPick={(ex) => setFinding({ ...finding, ex })} />
-      )}
-      {finding && finding.ex && (
-        <Sheet title={`«${nm1(finding.ex)}» — в какую тренировку?`} onClose={() => setFinding(null)}>
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-            {splitPrograms(s, data.programs).filter((p, i, all) => all.indexOf(p) === i).map((p) => ( // each program once
-              <button key={p.id} onClick={() => { up((d) => addProgramItems(d.programs.find((x) => x.id === p.id), [finding.ex])); setFinding(null); }}
-                className="w-full rounded-xl bg-neutral-800 px-4 py-3 text-left font-semibold active:bg-neutral-700">{progTitle(p)}</button>
-            ))}
-          </div>
-        </Sheet>
-      )}
       {adding && (
         <Sheet title="Добавить тренировку" onClose={() => setAdding(false)}>
           <div className="max-h-[60vh] space-y-2 overflow-y-auto">

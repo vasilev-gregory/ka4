@@ -17,7 +17,7 @@ const HEAD_JOKES = [
 // scale: { target: value filled completely, barMax, mark: value of the tick on the bar, legend: [[value, label]],
 //   fill: fill-* class, bar: bg-* class, chip: { statusKey: classes }, empty: caption of a part with no load };
 // map: draw the body; only: list just these ids; note(id): a line under a row; expand(id): what opens under a picked row;
-// find: { label, go(id) } — only where a plan is made (program / split editors): a picked part, or one left with no
+// find: { label, go(id) } — only in a program's editor (exercises go into a program): a picked part, or one left with no
 // load, leads to the exercises for it («Подобрать упражнение»); elsewhere a tap only shows
 export function LoadBreakdown({ items, load, scale, map = true, only, note, expand, find }) {
   const [sel, setSel] = useState(null);

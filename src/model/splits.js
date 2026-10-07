@@ -33,3 +33,10 @@ export function splitMarks(split, workouts, now = Date.now()) {
   });
   return { marks, order: Object.keys(marks), doneCount: done.filter(Boolean).length, total: split.items.length };
 }
+
+// the split a program's editor shows the week of: the active one if the program is in it, else the first that has it
+export function splitOf(d, programId) {
+  const has = (s) => s.items.some((it) => it.programId === programId);
+  const a = activeSplit(d);
+  return a && has(a) ? a : (d.splits || []).find(has) || null;
+}

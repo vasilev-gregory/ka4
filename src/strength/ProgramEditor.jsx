@@ -3,9 +3,10 @@
 import { RefreshCw } from "lucide-react";
 import { addProgramItems, dropEmptyProgram, removeProgram, replaceProgramItem, startWorkout } from "../model/workoutActions.js";
 import { CARDIO_PLAN, runningSession } from "../model/workout.js";
-import { fmtNum } from "../core/util.js";
+import { fmtNum, progTitle } from "../core/util.js";
 import { Picker } from "./ExerciseList.jsx";
 import { ProgramMuscles } from "./ProgramMuscles.jsx";
+import { splitOf, splitPrograms } from "../model/splits.js";
 import { Button, ExImg, Header, SecStepper, Stepper, useApp } from "../ui/kit.jsx";
 import { useRestorable } from "../ui/navigation.js";
 import { ProgramFooter, ProgramItems, ProgramName, useDropIfEmpty } from "../ui/ProgramEdit.jsx";
@@ -16,6 +17,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
   const change = (fn) => up((d) => { const p = d.programs.find((x) => x.id === id); if (p) fn(p); });
   useDropIfEmpty(() => up((d) => dropEmptyProgram(d, id)));
   const p = data.programs.find((x) => x.id === id);
+  const split = p && splitOf(data, id);
   if (!p) return <div className="p-4"><Header title="Программа удалена" back={back} /></div>;
 
   const pick = (ex) => {
@@ -44,7 +46,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
       })} />
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить упражнение</Button>
       <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте, у кардио — план в минутах или километрах (тап по единице). Изменения сохраняются сразу.</p>
-      <ProgramMuscles programs={[p]} exMap={exMap} open={open} find={(m) => setPicker({ muscle: m })} />
+      <ProgramMuscles programs={[p]} split={split && { name: progTitle(split), programs: splitPrograms(split, data.programs) }} exMap={exMap} open={open} find={(m) => setPicker({ muscle: m })} />
 
       <ProgramFooter canStart={!runningSession(data) && p.items.length > 0}
         startLabel={{ strength: "Уже идёт тренировка", stretch: "Идёт растяжка" }[runningSession(data)] || "Начать тренировку"}

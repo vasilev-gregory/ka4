@@ -75,11 +75,11 @@
 | Строка истории, заголовок карточки сессии, плитки чисел, её упражнения только на «Дне» | `HistoryRow`, `SessionHeader`, `StatTiles`, `DayOnly` (`ui/Session.jsx`) | |
 | Список программ: строки, «+ Новая программа», «Без программы» | `ProgramRows` | |
 | Редактор программы: название, строки (перетащить, убрать с «Вернуть»), начать / удалить | `ProgramName`, `ProgramItems`, `ProgramFooter` (`ui/ProgramEdit.jsx`) | |
-| Сплит: следующая программа недели, отметки программ | `model/splits.js` (`splitWeek`, `splitMarks`) → `strength/workout/ProgramList` (строки — общие `ProgramRows`: `note`, `next`) | ⚙ своя логика «что сделано за неделю» в экране |
+| Сплит: следующая программа недели, отметки программ; сплит программы (её неделя в редакторе) | `model/splits.js` (`splitWeek`, `splitMarks`, `splitOf`) → `strength/workout/ProgramList` (строки — общие `ProgramRows`: `note`, `next`) | ⚙ своя логика «что сделано за неделю» в экране |
 | Изменение сплитов: создать, активный, удалить; программы сплита — черновиком, как строки программы | `model/splitActions.js`; удаление программы из сплитов — в `removeProgram` | |
 | Редактор сплита, список сплитов | `strength/SplitEditor.jsx` (общие `ProgramName`, `ProgramItems`), `strength/SplitRows.jsx` | |
 | Мышцы плана (программа — шкала одной тренировки, сплит — недели) | `strength/ProgramMuscles` (`programs`, `week`) | |
-| От мышцы плана к упражнениям на неё (только редакторы программы / сплита / растяжки) | `find` у `LoadBreakdown` (через `MuscleBreakdown` / `StretchBreakdown` / `ProgramMuscles`) → выбор с фильтром (`Picker` `muscle`, `StretchPicker` `area`) | ⚙ `find` в истории / карточке тренировки |
+| От мышцы плана к упражнениям на неё (только редактор программы — силы и растяжки) | `find` у `LoadBreakdown` (через `MuscleBreakdown` / `StretchBreakdown` / `ProgramMuscles`) → выбор с фильтром (`Picker` `muscle`, `StretchPicker` `area`) | ⚙ `find` в сплите / истории / карточке тренировки (упражнения — в программу, программы — в сплит) |
 | Выбор упражнений / растяжек (поиск, фильтры — ряды чипов `filters` от раздела, группы, «твои», несколько сразу, «уже в программе», создать новое) | `ExercisePicker` (`ui/ExercisePicker.jsx`) | свой экран выбора в разделе |
 | Подтверждение / вопрос снизу | `Sheet` | |
 | Графики | `<Trend>` | ⚙ `recharts` напрямую |
