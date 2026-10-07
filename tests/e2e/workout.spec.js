@@ -220,3 +220,20 @@ test("«Итог сейчас»: the running workout's card without finishing it
   await expect(page.getByRole("button", { name: "Итог сейчас" })).toBeVisible(); // still running
   expect((await stored(page)).active).not.toBeNull();
 });
+
+test("a reload in the middle of a workout (a new version) loses nothing: ticked sets are saved on finishing", async ({ page }) => {
+  await openApp(page);
+  await startWorkout(page);
+  for (let i = 0; i < 2; i++) {
+    await page.locator("input[inputmode=decimal]").nth(i).fill(String(60 + i * 10));
+    await page.locator("input[inputmode=numeric]").nth(i).fill("5");
+    await page.getByRole("button", { name: "Подход сделан" }).nth(i).click();
+  }
+  await page.reload();
+  await expect(page.locator("button[aria-label='Подход сделан'].bg-accent-400")).toHaveCount(2);
+  await page.getByRole("button", { name: "Завершить" }).last().click();
+  await page.getByRole("dialog", { name: "Завершить тренировку?" }).getByRole("button", { name: "Завершить", exact: true }).click();
+  const keep = page.getByText("Оставить программу как была");
+  if (await keep.count()) await keep.click();
+  await expect.poll(async () => (await stored(page)).workouts[0]?.exercises[0].sets.map((s) => s.w)).toEqual(["60", "70"]);
+});

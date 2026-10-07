@@ -1,4 +1,4 @@
-// App version check and cache reset (service worker + Cache Storage), and when a new version may reload the page.
+// App version check and cache reset (service worker + Cache Storage), and taking over a new version.
 
 // Asks the server which build is current. Returns { latest, current, upToDate }; throws when offline.
 export async function checkForUpdate() {
@@ -23,14 +23,8 @@ export async function hardRefresh() {
   window.location.reload();
 }
 
-// A freshly deployed version takes over with a page reload. Never in the middle of a workout or a stretch: the
-// reload waits until no session runs (App reports it with setSessionRunning).
-let running = false, waiting = false;
+// A freshly deployed version takes over with a page reload right away, in a workout too: everything is saved as it
+// changes (model/usePersistentData), so the running workout or stretch goes on in the new version.
 export function newVersionReady() {
-  if (running) waiting = true;
-  else window.location.reload();
-}
-export function setSessionRunning(on) {
-  running = on;
-  if (!on && waiting) { waiting = false; window.location.reload(); }
+  window.location.reload();
 }
