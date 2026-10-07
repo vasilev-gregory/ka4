@@ -1,11 +1,11 @@
 // The calendar of a history, shared by strength and stretching: zoom day / week / month / year, paging (arrows and a
-// flick), the days with training marked, a year as 12 months. What a period shows is up to the screen.
+// flick; not before the first session's period nor past today's), the days with training marked, a year as 12 months. What a period shows is up to the screen.
 import { useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { DAY, weekStartOf } from "../core/util.js";
 import { periodOf, shiftPeriod } from "../model/calendar.js";
 import { useFlick } from "./gestures.js";
-import { Segmented } from "./kit.jsx";
+import { Segmented, useNow } from "./kit.jsx";
 import { WhyButton } from "./LoadBreakdown.jsx";
 
 export const ZOOMS = [["day", "День"], ["week", "Неделя"], ["month", "Месяц"], ["year", "Год"]];
@@ -98,7 +98,11 @@ function YearGrid({ year, dates, onMonth }) {
 // period: from usePeriod; dates: start times of the workouts / sessions; children: the period's panel (flicks with it)
 export function PeriodNav({ period, dates, children }) {
   const { zoom, range, go, shift, rezoom } = period;
-  const flick = useFlick((dir) => shift(-dir));
+  // nothing to see before the first session or after today
+  const now = useNow(60e3);
+  const can = (k) => (k < 0 ? range.from > Math.min(now, ...dates) : range.to <= now);
+  const step = (k) => can(k) && shift(k);
+  const flick = useFlick((dir) => step(-dir));
   const trained = new Set(dates.map((t) => new Date(t).toDateString()));
   const weeks = [];
   if (zoom === "month") for (let ws = weekStartOf(range.from); ws < range.to; ws = weekStartOf(ws + 8 * DAY)) weeks.push(ws);
@@ -107,9 +111,9 @@ export function PeriodNav({ period, dates, children }) {
       <Segmented options={ZOOMS} value={zoom} onChange={rezoom} />
       <div className="mb-5" {...flick}>
         <div className="my-2 flex items-center justify-between">
-          <button onClick={() => shift(-1)} className="p-2 text-neutral-400" aria-label="Раньше"><ChevronLeft size={20} /></button>
+          <button onClick={() => step(-1)} disabled={!can(-1)} className="p-2 text-neutral-400 disabled:opacity-20" aria-label="Раньше"><ChevronLeft size={20} /></button>
           <div className="font-semibold" data-testid="period">{periodLabel(zoom, range)}</div>
-          <button onClick={() => shift(1)} className="rotate-180 p-2 text-neutral-400" aria-label="Позже"><ChevronLeft size={20} /></button>
+          <button onClick={() => step(1)} disabled={!can(1)} className="rotate-180 p-2 text-neutral-400 disabled:opacity-20" aria-label="Позже"><ChevronLeft size={20} /></button>
         </div>
         {zoom !== "year" && <DayNames />}
         {(zoom === "week" || zoom === "day") && (
@@ -129,7 +133,7 @@ export function PeriodNav({ period, dates, children }) {
 }
 
 // The card of a period's analysis (under the calendar, or in a session's card), one for strength and stretching: a
-// title line, a "?" opening `why`, the period's load (items: part -> load) drawn by children, or `empty` when there is
+// title line, a "?" opening `why` (only when there is something to explain), the period's load (items: part -> load) drawn by children, or `empty` when there is
 // none; a month / year says "в среднем за неделю". onZoom: its own day / week / month / year switch (in a session's card)
 export function PeriodCard({ title, why, items, empty, zoom, onZoom, className = "mt-3", children }) {
   const [open, setOpen] = useState(false);
@@ -140,10 +144,10 @@ export function PeriodCard({ title, why, items, empty, zoom, onZoom, className =
       <div className="mb-2 flex items-center justify-between gap-2 text-xs text-neutral-400">
         <span className="tabular-nums">{title}</span>
         <span className="flex items-center gap-2">
-          {any && (zoom === "month" || zoom === "year") && "в среднем за неделю"}<WhyButton on={open} toggle={() => setOpen((x) => !x)} />
+          {any && (zoom === "month" || zoom === "year") && "в среднем за неделю"}{any && <WhyButton on={open} toggle={() => setOpen((x) => !x)} />}
         </span>
       </div>
-      {open && why}
+      {any && open && why}
       {any ? children : <p className="text-xs text-neutral-500">{empty}</p>}
     </div>
   );

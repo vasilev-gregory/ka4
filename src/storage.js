@@ -85,6 +85,14 @@ export const uiPlace = {
   set(v) { try { localStorage.setItem(UI_KEY, JSON.stringify(v)); } catch (e) {} },
 };
 
+// "Just updated": set before the reload that takes over a new version, taken once after it (core/appUpdate.js) to
+// say so. Per tab, gone with it.
+const UPDATED_KEY = "kach-updated";
+export const updatedFlag = {
+  set() { try { sessionStorage.setItem(UPDATED_KEY, "1"); } catch (e) {} },
+  take() { try { const on = sessionStorage.getItem(UPDATED_KEY); sessionStorage.removeItem(UPDATED_KEY); return !!on; } catch (e) { return false; } },
+};
+
 // Browser-level storage facts: whether the data is protected from eviction, and how much is used.
 export async function storageStatus() {
   const out = { persisted: null, usage: null, quota: null };

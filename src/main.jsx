@@ -2,7 +2,7 @@
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { protectStorage } from "./storage.js";
-import { newVersionReady } from "./core/appUpdate.js";
+import { newVersionReady, sayUpdated } from "./core/appUpdate.js";
 import "./index.css";
 
 // ask the browser not to evict our data under storage pressure
@@ -27,3 +27,4 @@ document.addEventListener("visibilitychange", () => {
 });
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+sayUpdated();
