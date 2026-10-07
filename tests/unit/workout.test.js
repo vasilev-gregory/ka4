@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../../src/model/state.js";
-import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, fmtSets, setColumns } from "../../src/model/workout.js";
+import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, fmtSets, setColumns, restShown } from "../../src/model/workout.js";
 import { closeStaleWorkout } from "../../src/model/workoutActions.js";
 
 test("set labels and group normalization", () => {
@@ -80,6 +80,8 @@ test("running workout abandoned since yesterday ends at its last set", () => {
 
 test("columns: rest is never a real column, w/r always on", () => {
   assert.deepEqual(setColumns({ columns: [{ key: "rir", on: true }, { key: "w", on: false }, { key: "rest", on: true }] }), ["rir", "w", "r"]); // partials are opt-in
+  assert.equal(restShown({}), true); // the rest stopwatch in ✓ is on until turned off
+  assert.equal(restShown({ columns: [{ key: "rest", on: false }] }), false);
 });
 
 test("formatting of sets", () => {

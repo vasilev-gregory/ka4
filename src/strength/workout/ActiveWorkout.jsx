@@ -1,7 +1,7 @@
 // The running workout: header with time and volume, exercise cards, add / finish / pause, the
 // "update the program?" question, undo of a deleted set, the exercise picker.
 import { useState } from "react";
-import { Play } from "lucide-react";
+import { Play, Timer } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, plural, progTitle } from "../../core/util.js";
 import {
@@ -132,6 +132,12 @@ export function ActiveWorkout({ data, up, exMap, open }) {
             {fmtTotals(st)}
             {segs.length > 1 && <span className="block">основная {fmtDur(dur.main)}{dur.extra >= 60000 ? `, +${fmtDur(dur.extra)}` : ""}</span>}
           </div>
+          {/* the rest strip was hidden: bring it back */}
+          {!a.restEndsAt && a.lastSetAt && !a.paused && data.settings.countdown !== false && (
+            <button onClick={() => up((d) => A.showRest(d, Date.now()))} className="mt-1 inline-flex items-center gap-1 text-xs text-accent-400">
+              <Timer size={14} /> Таймер отдыха
+            </button>
+          )}
         </div>
       </div>
 

@@ -13,11 +13,11 @@ function rirFromInput(raw, shown) {
   return digit === "" ? null : Math.min(4, parseInt(digit, 10));
 }
 
-// an empty field with last time's value takes it on focus, selected, so typing replaces it
+// on focus the value is selected, so typing replaces it; an empty field with last time's value takes it first
 const takeHint = (value, hint, key, edit) => (e) => {
-  if (value !== "" || !hint) return;
   const el = e.target;
-  edit({ [key]: String(hint) });
+  if (value === "" && hint) edit({ [key]: String(hint) });
+  else if (value === "") return;
   requestAnimationFrame(() => el.select());
 };
 
@@ -32,7 +32,7 @@ function Cell({ col, s, ex, edit }) {
       onChange={(e) => edit({ r: numericInput(e.target.value, ex.kind === "cardio") })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
   );
   if (col === "p") return ex.kind === "time" ? <span className="w-9" /> : (
-    <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
+    <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы" onFocus={takeHint(s.p || "", "", "p", edit)}
       onChange={(e) => edit({ p: numericInput(e.target.value, false) })} className={`w-9 ${BOX} ${doneText || "text-neutral-300"}`} />
   );
   const shown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
@@ -46,6 +46,7 @@ function Cell({ col, s, ex, edit }) {
 // label: "1", "2a", …; rest: ms before this set or "drop"; live: the running stopwatch is here (ms so far);
 // record: this set beat the exercise's best estimated 1RM
 export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, record, swipe, swipeProps, numberProps, edit, toggle }) {
+  const shownRest = rest === "drop" || rest >= 1000 ? rest : null; // under a second (warm-up closed by this tick): nothing to show
   // a short flash when the set gets confirmed (phones without vibration still notice)
   const rowRef = useRef(null);
   const wasDone = useRef(s.done);
@@ -78,8 +79,8 @@ export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, reco
             <span className="text-xs font-semibold tabular-nums">{fmtDur(live)}</span>
           ) : (
             <>
-              <Check size={s.done && rest ? 16 : 20} />
-              {s.done && rest && <span className="mt-0.5 text-[9px] font-semibold tabular-nums">{rest === "drop" ? "↳" : fmtDur(rest)}</span>}
+              <Check size={s.done && shownRest ? 16 : 20} />
+              {s.done && shownRest && <span className="mt-0.5 text-[9px] font-semibold tabular-nums">{rest === "drop" ? "↳" : fmtDur(rest)}</span>}
             </>
           )}
           {record && (
