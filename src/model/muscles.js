@@ -165,6 +165,21 @@ export function growthStatus(sets, freq) {
   return ["grow", "рост"];
 }
 
+// One workout (or one run of a program) is judged on its own scale: per session ~6 hard sets for a muscle is the
+// productive dose, past ~10 the extra sets add little and cost recovery (per-session volume studies, "junk volume").
+export const SESSION_DOSE = 6, SESSION_MAX = 10;
+export function sessionStatus(sets) {
+  if (sets < 2) return ["low", "мало"];
+  if (sets < SESSION_DOSE) return ["grow", "в работе"];
+  if (sets <= SESSION_MAX) return ["optimal", "полная доза"];
+  return ["high", "перебор за раз"];
+}
+export function sessionHint(sets) {
+  if (sets < SESSION_DOSE) return `ещё ${fmtSets(SESSION_DOSE - sets)} до полной дозы за тренировку`;
+  if (sets <= SESSION_MAX) return "на сегодня мышце хватит";
+  return "дальше за раз почти ничего не добавит — лучше на другой день";
+}
+
 // what a muscle's week still needs
 export function weekHint(sets, freq) {
   if (sets < 4) return `ещё ${fmtSets(4 - sets)} до роста`;

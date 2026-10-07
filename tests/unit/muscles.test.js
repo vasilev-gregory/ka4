@@ -96,3 +96,10 @@ test("planned load of programs: sets per muscle, freq = programs where it is a m
   assert.deepEqual(both.glutes, { sets: 6.5, freq: 1, by: { squat: 2.5, "hip-thrust": 4 } });
   assert.deepEqual(both.hams, { sets: 2, freq: 0, by: { "hip-thrust": 2 } });
 });
+
+test("one workout has its own scale: a session's dose, not the week's", async () => {
+  const { sessionStatus, sessionHint } = await import("../../src/model/muscles.js");
+  assert.deepEqual([1, 3, 6, 10, 12].map((n) => sessionStatus(n)[0]), ["low", "grow", "optimal", "optimal", "high"]);
+  assert.equal(sessionHint(4), "ещё 2 подх. до полной дозы за тренировку");
+  assert.equal(sessionHint(7), "на сегодня мышце хватит");
+});

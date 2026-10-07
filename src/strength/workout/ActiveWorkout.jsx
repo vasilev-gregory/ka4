@@ -1,7 +1,7 @@
 // The running workout: header with time and volume, exercise cards, add / finish / pause, the
 // "update the program?" question, undo of a deleted set, the exercise picker.
 import { useState } from "react";
-import { Play, Timer } from "lucide-react";
+import { PersonStanding, Play, Timer } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, plural, progTitle } from "../../core/util.js";
 import {
@@ -15,6 +15,7 @@ import { Button, DeleteButton, Sheet, useApp, useNow, useUndo } from "../../ui/k
 import { useRestorable } from "../../ui/navigation.js";
 import { useSortable } from "../../ui/sortable.js";
 import { Picker } from "../ExerciseList.jsx";
+import { WorkoutMuscles } from "../WorkoutMuscles.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
 import { WarmupCard } from "./WarmupCard.jsx";
 import { WorkoutHelp } from "./WorkoutHelp.jsx";
@@ -29,6 +30,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const [askUpdate, setAskUpdate] = useState(false);
   const [askFinish, setAskFinish] = useState(false);
   const [help, setHelp] = useState(false);
+  const [muscles, setMuscles] = useState(false); // the live muscles sheet
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge / delete
   const undo = useUndo();
   const now = useNow(1000, !a.paused);
@@ -132,9 +134,12 @@ export function ActiveWorkout({ data, up, exMap, open }) {
             {fmtTotals(st)}
             {segs.length > 1 && <span className="block">основная {fmtDur(dur.main)}{dur.extra >= 60000 ? `, +${fmtDur(dur.extra)}` : ""}</span>}
           </div>
+          <button onClick={() => setMuscles(true)} className="mt-1 flex w-full items-center justify-end gap-1 text-xs text-accent-400">
+            <PersonStanding size={14} /> Мышцы
+          </button>
           {/* the rest strip was hidden: bring it back */}
           {!a.restEndsAt && a.lastSetAt && !a.paused && data.settings.countdown !== false && (
-            <button onClick={() => up((d) => A.showRest(d, Date.now()))} className="mt-1 inline-flex items-center gap-1 text-xs text-accent-400">
+            <button onClick={() => up((d) => A.showRest(d, Date.now()))} className="mt-1 flex w-full items-center justify-end gap-1 text-xs text-accent-400">
               <Timer size={14} /> Таймер отдыха
             </button>
           )}
@@ -196,6 +201,12 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           </p>
           <Button block onClick={() => doFinish(true)} className="mb-2">Обновить программу</Button>
           <Button variant="quiet" block onClick={() => doFinish(false)}>Оставить программу как была</Button>
+        </Sheet>
+      )}
+      {muscles && (
+        <Sheet title="Мышцы сейчас" onClose={() => setMuscles(false)}>
+          <WorkoutMuscles data={data} w={a} exMap={exMap} open={open} className=""
+            empty={<p className="text-xs text-neutral-400">Отметь подход — здесь будет видно, какие мышцы он нагрузил и сколько уже за неделю.</p>} />
         </Sheet>
       )}
       {/* shown by itself on the first workout, later from «?» */}
