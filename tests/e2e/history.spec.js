@@ -22,6 +22,7 @@ test("history: month by default, paging, year overview drills down to a month an
   await expect(page.getByText("Октябрьская")).toBeVisible();
   await expect(page.getByText("Сентябрьская")).toHaveCount(0);
 
+  await expect(page.getByRole("button", { name: "Позже" })).toBeDisabled(); // nothing past today
   await page.getByRole("button", { name: "Раньше" }).click();
   await expect(page.getByText("Сентябрьская")).toBeVisible();
   await expect(page.getByText("Октябрьская")).toHaveCount(0);
@@ -32,6 +33,15 @@ test("history: month by default, paging, year overview drills down to a month an
   await expect(page.getByText("Октябрьская")).toBeVisible();
   await expect(page.getByText("Прошлогодняя")).toHaveCount(0);
   await expect(page.getByText(/2 тренировки, /)).toBeVisible();
+  // a year back holds the first workout, and further back there is nothing
+  await page.getByRole("button", { name: "Раньше" }).click();
+  await expect(period).toHaveText("2025");
+  await expect(page.getByRole("button", { name: "Раньше" })).toBeDisabled();
+  await page.getByRole("button", { name: /^янв/ }).click(); // a month with no workouts: nothing to explain, no «?»
+  await expect(page.getByText("В этом месяце тренировок не было.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Как считается" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Год", exact: true }).click();
+  await page.getByRole("button", { name: "Позже" }).click();
 
   await page.getByRole("button", { name: /^окт/ }).click();
   await expect(period).toHaveText("Октябрь 2026 г.");

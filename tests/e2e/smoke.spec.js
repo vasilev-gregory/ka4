@@ -55,3 +55,15 @@ test("every screen renders, strength and stretching", async ({ page }) => {
   await expect(page.getByText("Приседания со штангой").first()).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("after an update's reload the app says it was updated, once", async ({ page }) => {
+  await openApp(page);
+  await page.evaluate(() => sessionStorage.setItem("kach-updated", "1")); // what the reload of a new version leaves
+  await page.reload();
+  await expect(page.getByText(/^Обновлено ✓ · версия /)).toBeVisible();
+  await page.mouse.click(5, 300); // any touch takes it away at once
+  await expect(page.getByText(/^Обновлено ✓/)).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Тренировка" }).last()).toBeVisible();
+  await expect(page.getByText(/^Обновлено ✓/)).toHaveCount(0);
+});
