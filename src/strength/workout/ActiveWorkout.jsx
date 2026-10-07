@@ -1,7 +1,7 @@
 // The running workout: header with time and volume, exercise cards, add / finish / pause, the
 // "update the program?" question, undo of a deleted set, the exercise picker.
 import { useState } from "react";
-import { PersonStanding, Play, Timer } from "lucide-react";
+import { ClipboardList, Play, Timer } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, plural, progTitle } from "../../core/util.js";
 import {
@@ -15,7 +15,6 @@ import { Button, DeleteButton, Sheet, useApp, useNow, useUndo } from "../../ui/k
 import { useRestorable } from "../../ui/navigation.js";
 import { useSortable } from "../../ui/sortable.js";
 import { Picker } from "../ExerciseList.jsx";
-import { WorkoutMuscles } from "../WorkoutMuscles.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
 import { WarmupCard } from "./WarmupCard.jsx";
 import { WorkoutHelp } from "./WorkoutHelp.jsx";
@@ -23,14 +22,13 @@ import { WorkoutHelp } from "./WorkoutHelp.jsx";
 const UNKNOWN_EXERCISE = { name: "Удалённое упражнение", kind: "reps" };
 
 export function ActiveWorkout({ data, up, exMap, open }) {
-  const { bwAt } = useApp();
+  const { bwAt, nm1 } = useApp();
   const a = data.active;
   // {} = add, { group } = add, list opened on that group, { replace: ei } = swap that exercise
   const [picker, setPicker] = useRestorable("workout-picker", null);
   const [askUpdate, setAskUpdate] = useState(false);
   const [askFinish, setAskFinish] = useState(false);
   const [help, setHelp] = useState(false);
-  const [muscles, setMuscles] = useState(false); // the live muscles sheet
   const [sel, setSel] = useState(null); // {ei, set: Set<si>} while selecting sets to merge / delete
   const undo = useUndo();
   const now = useNow(1000, !a.paused);
@@ -134,8 +132,9 @@ export function ActiveWorkout({ data, up, exMap, open }) {
             {fmtTotals(st)}
             {segs.length > 1 && <span className="block">основная {fmtDur(dur.main)}{dur.extra >= 60000 ? `, +${fmtDur(dur.extra)}` : ""}</span>}
           </div>
-          <button onClick={() => setMuscles(true)} className="mt-1 flex w-full items-center justify-end gap-1 text-xs text-accent-400">
-            <PersonStanding size={14} /> Мышцы
+          {/* the card it would get if finished now: muscles, progress, text — without finishing */}
+          <button onClick={() => open({ type: "workoutNow" })} className="mt-1 flex w-full items-center justify-end gap-1 text-xs text-accent-400">
+            <ClipboardList size={14} /> Итог сейчас
           </button>
           {/* the rest strip was hidden: bring it back */}
           {!a.restEndsAt && a.lastSetAt && !a.paused && data.settings.countdown !== false && (
@@ -187,6 +186,8 @@ export function ActiveWorkout({ data, up, exMap, open }) {
         <Sheet title="Завершить тренировку?" onClose={() => setAskFinish(false)}>
           <p className="mb-4 text-xs text-neutral-400">
             Не отмечено {unticked} {plural(unticked, "подход", "подхода", "подходов")} — они не сохранятся. Отмеченные останутся в истории.
+            <span className="mt-1 block text-neutral-300">{a.exercises.map((e) => [nm1(exMap[e.exerciseId], "Удалённое упражнение"), e.sets.filter((x) => !x.done && x.t !== "w").length])
+              .filter(([, n]) => n).map(([name, n]) => `${name} — ${n}`).join(", ")}</span>
           </p>
           <Button block onClick={() => finish()} className="mb-2">Завершить</Button>
           <Button variant="secondary" block onClick={() => finish(true)} className="mb-1">Плохой день, не в зачёт</Button>
@@ -201,12 +202,6 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           </p>
           <Button block onClick={() => doFinish(true)} className="mb-2">Обновить программу</Button>
           <Button variant="quiet" block onClick={() => doFinish(false)}>Оставить программу как была</Button>
-        </Sheet>
-      )}
-      {muscles && (
-        <Sheet title="Мышцы сейчас" onClose={() => setMuscles(false)}>
-          <WorkoutMuscles data={data} w={a} exMap={exMap} open={open} className=""
-            empty={<p className="text-xs text-neutral-400">Отметь подход — здесь будет видно, какие мышцы он нагрузил и сколько уже за неделю.</p>} />
         </Sheet>
       )}
       {/* shown by itself on the first workout, later from «?» */}
