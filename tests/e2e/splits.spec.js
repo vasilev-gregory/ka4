@@ -105,6 +105,15 @@ test("hold programs to pick them: a new split of them, or into an existing one",
   await page.getByRole("button", { name: "В «Ноги»" }).click();
   await expect(page.getByText("3 тренировки в неделю.")).toBeVisible();
   await page.goBack();
+  // «Удалить» removes the picked programs at once; «Вернуть» brings them back
+  await hold(row("I. Ноги и плечи"));
+  await row("IV. Грудь и спина").click();
+  await page.getByTestId("picked-bar").getByRole("button", { name: "Удалить" }).click();
+  await expect(page.getByText("2 программы удалены")).toBeVisible();
+  await expect(row("I. Ноги и плечи")).toHaveCount(0);
+  await page.getByRole("button", { name: "Вернуть" }).click();
+  await expect(row("I. Ноги и плечи")).toBeVisible();
+  await expect(page.getByText(/^Сплит «Неделя I–IV»: 0 из 4/)).toBeVisible(); // back in their split too
   // «Отмена» drops the pick; a tap opens the program again
   await hold(row("IV. Грудь и спина"));
   await page.getByRole("button", { name: "Отмена" }).click();
