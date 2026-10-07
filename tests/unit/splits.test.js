@@ -35,7 +35,9 @@ test("the first split becomes active; deleting the active one passes it on; an e
   const d = seed();
   d.splits = []; d.activeSplitId = null;
   createSplit(d, "s1");
-  createSplit(d, "s2");
+  createSplit(d, "s2", ["p1", "p2"]); // made of programs picked on the workout tab
+  assert.deepEqual(d.splits[1].items, [{ programId: "p1" }, { programId: "p2" }]);
+  d.splits[1].items = [];
   assert.equal(d.activeSplitId, "s1");
   setActiveSplit(d, "s2");
   d.splits[1].items.push({ programId: d.programs[0].id }, { programId: d.programs[1].id });

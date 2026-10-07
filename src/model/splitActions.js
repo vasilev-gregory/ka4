@@ -1,8 +1,9 @@
 // Split changes: create (the first one becomes active), name and programs (edited as a draft, like a program),
 // make active, delete. Called as up((d) => action(d, …)).
 
-export function createSplit(d, id) {
-  d.splits.push({ id, name: "", items: [] });
+// programIds: the programs picked on the workout tab, in the order shown
+export function createSplit(d, id, programIds = []) {
+  d.splits.push({ id, name: "", items: programIds.map((programId) => ({ programId })) });
   if (!d.activeSplitId) d.activeSplitId = id;
 }
 

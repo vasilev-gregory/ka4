@@ -1,14 +1,15 @@
 // No workout running: the programs to start from (shared rows, ui/ProgramRows) — the active split's first, in its
 // order, marked with what this week did and which is next (model/splits) — the splits, and yesterday's auto-closed
-// workout asking to update its program.
+// workout asking to update its program. A hold on programs picks them to make a split of or add to one.
+import { useState } from "react";
 import { RUNNING_NOTE, runningSession } from "../../model/workout.js";
 import { activeSplit, splitMarks } from "../../model/splits.js";
 import { fmtDate, fmtWeekday, progTitle, uid } from "../../core/util.js";
 import { createProgram, resolvePendingProgramUpdate, startWorkout } from "../../model/workoutActions.js";
-import { createSplit } from "../../model/splitActions.js";
+import { addSplitPrograms, createSplit } from "../../model/splitActions.js";
 import { Button, Card, Header, useApp } from "../../ui/kit.jsx";
 import { ProgramRows } from "../../ui/ProgramRows.jsx";
-import { SplitRows } from "../SplitRows.jsx";
+import { PickedBar, SplitRows } from "../SplitRows.jsx";
 
 // a split program's line: «✓ пн» per workout this week, «следующая» on the one to do now
 function splitNote(m) {
@@ -32,10 +33,20 @@ export function ProgramList({ data, up, exMap, open }) {
     up((d) => createProgram(d, id));
     open({ type: "program", id });
   };
-  const newSplit = () => {
+  const [picked, setPicked] = useState([]); // program ids picked by a hold
+  const toggle = (id) => setPicked((ps) => (ps.includes(id) ? ps.filter((x) => x !== id) : [...ps, id]));
+  const pickedInOrder = () => ordered.map((p) => p.id).filter((id) => picked.includes(id));
+  const newSplit = (programIds = []) => {
     const id = uid();
-    up((d) => createSplit(d, id));
+    up((d) => createSplit(d, id, programIds));
+    setPicked([]);
     open({ type: "split", id });
+  };
+  const addTo = (splitId) => {
+    const ids = pickedInOrder();
+    up((d) => addSplitPrograms(d.splits.find((s) => s.id === splitId), ids));
+    setPicked([]);
+    open({ type: "split", id: splitId });
   };
   const start = (p) => up((d) => startWorkout(d, p));
   return (
@@ -59,12 +70,18 @@ export function ProgramList({ data, up, exMap, open }) {
       )}
       <ProgramRows onOpen={(id) => open({ type: "program", id })} onCreate={create} onWithout={() => start(null)}
         blocked={runningSession(data) === "stretch" ? RUNNING_NOTE.stretch : null}
-        onStart={(id) => start(data.programs.find((x) => x.id === id))}
+        onStart={(id) => start(data.programs.find((x) => x.id === id))} select={{ ids: picked, toggle }}
         programs={ordered.map((p) => ({
           id: p.id, name: p.name, canStart: p.items.length > 0, note: sm && splitNote(sm.marks[p.id]), next: !!sm?.marks[p.id]?.next,
           meta: p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений",
         }))} />
-      <SplitRows splits={data.splits} activeId={data.activeSplitId} onOpen={(id) => open({ type: "split", id })} onCreate={newSplit} />
+      <SplitRows splits={data.splits} activeId={data.activeSplitId} onOpen={(id) => open({ type: "split", id })} onCreate={() => newSplit()} />
+      {picked.length > 0 && (
+        <>
+          <div className="h-28" /> {/* room to scroll the list above the bar */}
+          <PickedBar n={picked.length} splits={data.splits} onNew={() => newSplit(pickedInOrder())} onAdd={addTo} onCancel={() => setPicked([])} />
+        </>
+      )}
     </div>
   );
 }
