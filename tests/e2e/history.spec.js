@@ -72,7 +72,7 @@ test("history: month by default, paging, year overview drills down to a month an
   await page.getByRole("button", { name: "6 октября" }).click();
   await expect(period).toHaveText("Вт, 6 октября");
   await expect(page.getByText("Октябрьская").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\..*до нормы на тренировку/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\..*до оптимума/ })).toBeVisible();
   await page.getByRole("button", { name: "Неделя" }).click();
 
   // the zoom is kept while a workout card is open

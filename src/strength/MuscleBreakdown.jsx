@@ -1,4 +1,4 @@
-// Hard sets per muscle on the shared load breakdown (ui/LoadBreakdown): the week's scale (10 a week «хорошо»), or one
+// Hard sets per muscle on the shared load breakdown (ui/LoadBreakdown): the week's scale (10 a week «оптимум»), or one
 // workout's per-muscle window (model/muscles sessionWindows), statuses and the exercises behind a muscle.
 // Used by the history, a workout and a program.
 import { fmtNum, plural } from "../core/util.js";
@@ -6,29 +6,29 @@ import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, sessionHint, sessionStat
 import { ByList, LoadBreakdown } from "../ui/LoadBreakdown.jsx";
 import { useApp } from "../ui/kit.jsx";
 
-const TARGET = 10; // hard sets a week at which a muscle is filled completely («хорошо»)
+const TARGET = 10; // hard sets a week at which a muscle is filled completely («оптимум»)
 const ITEMS = MUSCLES.map(([id, name]) => ({ id, name, parts: [id] }));
 const SCALE = {
   target: TARGET, barMax: 30, mark: TARGET, fill: "fill-rose-500", bar: "bg-rose-500", empty: "тяжёлых подходов не было",
-  legend: [[0, "0"], [4, "4 — рост"], [TARGET, "10+ — хорошо"]],
+  legend: [[0, "0"], [4, "4 — рост"], [TARGET, "10+ — оптимум"]],
   // statuses in the muscle colour: the fuller, the closer to the weekly target
   chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-rose-950 text-rose-300", optimal: "bg-rose-500 text-white", high: "bg-rose-200 text-rose-950" },
 };
-// one workout or program: each muscle against its own window, so values come as parts of its «отлично» (10 = full)
-const SINGLE = { ...SCALE, target: 10, barMax: 13, mark: 10, legend: [[0, "0"], [10, "отлично за тренировку"]] };
+// one workout or program: each muscle against its own window, so values come as parts of its «максимум» (10 = full)
+const SINGLE = { ...SCALE, target: 10, barMax: 13, mark: 10, legend: [[0, "0"], [10, "максимум за тренировку"]] };
 
 // "7,5 подх. · 2 раза"; averages over weeks are fractional
 const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum(freq)} ${Number.isInteger(freq) ? plural(freq, "раз", "раза", "раз") : "раза"}` : ""}`;
 
 // load: { muscleId: { sets, freq, by } }; windows(m): one workout / program — that muscle's window per workout
-// (statuses against it, no frequency); ongoing: a week not over yet («пока мало»); note(row): a line
+// (statuses against it, no frequency); note(row): a line
 // under a muscle; exMap, byNote ("за месяц"), open: the exercises behind a picked muscle and opening their cards
-export function MuscleBreakdown({ load, map = true, only, note, windows, ongoing = false, exMap, byNote, open }) {
+export function MuscleBreakdown({ load, map = true, only, note, windows, exMap, byNote, open }) {
   const single = !!windows;
   const { nm1 } = useApp();
   const shown = Object.fromEntries(Object.entries(load).map(([m, l]) => [m, {
     value: single ? Math.min(l.sets, SESSION_CAP) / windows(m).hi * 10 : l.sets,
-    text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets, windows(m)) : growthStatus(l.sets, ongoing),
+    text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets, windows(m)) : growthStatus(l.sets),
   }]));
   const expand = exMap && ((m) => load[m].by && (
     <ByList title={`Засчитались${byNote ? ` ${byNote}` : ""}`} entries={Object.entries(load[m].by).map(([id, n]) => {
