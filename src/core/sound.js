@@ -5,9 +5,15 @@ export function unlockAudio() {
   try {
     // iOS: "ambient" mixes with music instead of stopping it (but respects the silent switch)
     if (navigator.audioSession) navigator.audioSession.type = "ambient";
-    if (!actx) { const C = window.AudioContext || window.webkitAudioContext; actx = new C(); }
-    if (actx.state === "suspended") actx.resume();
+    if (!actx || actx.state === "closed") { const C = window.AudioContext || window.webkitAudioContext; actx = new C(); }
+    wake();
   } catch (e) {}
+}
+
+// iOS leaves the context "suspended" or "interrupted" (music started, a call, the app hidden): anything but running
+// gets resumed before a sound (works once a gesture has unlocked it)
+function wake() {
+  if (actx && actx.state !== "running") { const p = actx.resume(); if (p && p.catch) p.catch(() => {}); }
 }
 
 export function tone(freq, at, len, vol = 0.35) {
@@ -24,18 +30,18 @@ export function tone(freq, at, len, vol = 0.35) {
 // short tick for the 3-2-1 countdown
 export function tick() {
   if (!actx) return;
-  try { if (actx.state === "suspended") actx.resume(); tone(660, 0, 0.09, 0.3); } catch (e) {}
+  try { wake(); tone(660, 0, 0.09, 0.3); } catch (e) {}
 }
 
 // soft blip when rest starts
 export function blip() {
   if (!actx) return;
-  try { if (actx.state === "suspended") actx.resume(); tone(520, 0, 0.07, 0.15); } catch (e) {}
+  try { wake(); tone(520, 0, 0.07, 0.15); } catch (e) {}
 }
 
 export function beep() {
   if (!actx) return;
-  try { if (actx.state === "suspended") actx.resume(); tone(988, 0, 0.18); tone(988, 0.22, 0.18); tone(1319, 0.44, 0.45); } catch (e) {}
+  try { wake(); tone(988, 0, 0.18); tone(988, 0.22, 0.18); tone(1319, 0.44, 0.45); } catch (e) {}
 }
 
 // Vibration: a short buzz for a touch that took (long press, drag), a long one for "time to act" (with beep()).

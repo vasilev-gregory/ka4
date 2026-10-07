@@ -38,10 +38,10 @@ test("finished workout shows its muscles and its week; stretch mode hides streng
   await finishWorkout(page);
   const keep = page.getByText("Оставить программу как была");
   if (await keep.count()) await keep.click();
-  // the workout's own muscles first: one squat set, quads its main muscle; no growth status for a single workout
+  // the workout's own muscles first: one squat set, quads its main muscle; judged on the per-session scale
   await expect(page.getByRole("img", { name: "Спереди" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /квадрицепс.*1 подх\.$/ })).toBeVisible();
-  await expect(page.getByText("мало")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /квадрицепс.*1 подх\. мало/ })).toBeVisible();
+  await expect(page.getByText("ещё 5 подх. до полной дозы за тренировку")).toBeVisible();
   await page.getByRole("button", { name: "Неделя", exact: true }).click();
   await expect(page.getByRole("button", { name: /квадрицепс.*мало/ })).toBeVisible();
   await expect(page.getByText("ещё 3 подх. до роста")).toBeVisible();
@@ -195,4 +195,24 @@ test("rest: stays past its end with the overtime, hides, comes back; a typed val
   await expect.poll(() => weight.evaluate((el) => el.selectionEnd - el.selectionStart)).toBe(2);
   await weight.pressSequentially("65");
   await expect(weight).toHaveValue("65");
+});
+
+test("live muscles in the running workout: this workout on the per-session scale, and its week", async ({ page }) => {
+  await openApp(page);
+  await startWorkout(page);
+  await page.getByRole("button", { name: "Мышцы", exact: true }).click();
+  const sheet = page.getByRole("dialog", { name: "Мышцы сейчас" });
+  await expect(sheet.getByText(/Отметь подход/)).toBeVisible();
+  await page.mouse.click(10, 10);
+  for (let i = 0; i < 2; i++) {
+    await page.locator("input[inputmode=decimal]").nth(i).fill("60");
+    await page.locator("input[inputmode=numeric]").nth(i).fill("5");
+    await page.getByRole("button", { name: "Подход сделан" }).nth(i).click();
+  }
+  await page.getByRole("button", { name: "Мышцы", exact: true }).click();
+  await expect(sheet.getByRole("button", { name: /квадрицепс.*2 подх\..*в работе/ })).toBeVisible();
+  await expect(sheet.getByText("ещё 4 подх. до полной дозы за тренировку")).toBeVisible();
+  await sheet.getByRole("button", { name: "Неделя" }).click();
+  await expect(sheet.getByRole("button", { name: /квадрицепс.*2 подх\. · 1 раз.*мало/ })).toBeVisible();
+  await page.screenshot({ path: "/tmp/claude-0/live.png" });
 });
