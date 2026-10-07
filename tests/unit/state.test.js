@@ -62,3 +62,13 @@ test("a renamed built-in exercise gets its new Russian name, unless the user ren
   assert.match(m.exercises.find((e) => e.id === "reverse-pec-deck").ru, /^Обратные разведения в тренажёре/);
   assert.equal(m.exercises.find((e) => e.id === "one-arm-reverse-pec-deck").ru, "Мой пекдек");
 });
+
+test("v4: a saved column setup gets the rest stopwatch back once; switched off later, it stays off", () => {
+  const d = seed();
+  d.version = 3;
+  d.settings.columns = [{ key: "w", on: true }, { key: "r", on: true }, { key: "rest", on: false }];
+  const m = migrate(d);
+  assert.equal(m.settings.columns.find((c) => c.key === "rest").on, true);
+  m.settings.columns.find((c) => c.key === "rest").on = false;
+  assert.equal(migrate(m).settings.columns.find((c) => c.key === "rest").on, false);
+});
