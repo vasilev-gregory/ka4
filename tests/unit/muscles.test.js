@@ -101,9 +101,9 @@ test("planned load of programs: sets per muscle, freq = programs where it is a m
 
 test("one workout on its own scale, the week beside it as context", async () => {
   const { sessionStatus, sessionHint } = await import("../../src/model/muscles.js");
-  assert.deepEqual([1, 3, 5, 9, 12].map((n) => sessionStatus(n)[1]), ["старт", "рост", "оптимум", "максимум", "перебор за раз"]);
-  assert.equal(sessionHint(1, 1), "начало есть · до роста ещё 1 подх. · за неделю 1 из 10");
-  assert.equal(sessionHint(3, 7), "уже растёт ✓ · до оптимума ещё 1 подх. · за неделю 7 из 10");
-  assert.equal(sessionHint(5), "оптимум ✓"); // a program's plan: no week
-  assert.equal(sessionHint(9, 9), "максимум за тренировку ✓ · за неделю 9 из 10");
+  assert.deepEqual([2.5, 3, 5.5, 6, 11, 12].map((n) => sessionStatus(n)[1]), ["старт", "рост", "рост", "оптимум", "оптимум", "перебор за раз"]);
+  assert.equal(sessionHint(1, 1), "начало есть · до роста ещё 2 подх. · за неделю 1 из 10");
+  assert.equal(sessionHint(3, 7), "уже растёт ✓ · до оптимума ещё 3 подх. · за неделю 7 из 10");
+  assert.equal(sessionHint(6), "оптимум ✓"); // a program's plan: no week
+  assert.equal(sessionHint(9, 9), "оптимум ✓ · за неделю 9 из 10");
 });

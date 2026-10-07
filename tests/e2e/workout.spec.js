@@ -41,7 +41,7 @@ test("finished workout shows its muscles and its week; stretch mode hides streng
   // the workout's own muscles first: one squat set, quads its main muscle; judged on the per-session scale
   await expect(page.getByRole("img", { name: "Спереди" })).toBeVisible();
   await expect(page.getByRole("button", { name: /квадрицепс.*1 подх\. старт/ })).toBeVisible();
-  await expect(page.getByText("начало есть · до роста ещё 1 подх. · за неделю 1 из 10")).toBeVisible();
+  await expect(page.getByText("начало есть · до роста ещё 2 подх. · за неделю 1 из 10")).toBeVisible();
   await page.getByRole("button", { name: "Неделя", exact: true }).click();
   await expect(page.getByRole("button", { name: /квадрицепс.*старт/ })).toBeVisible();
   await expect(page.getByText("начало есть · до зоны роста ещё 3 подх.")).toBeVisible();
@@ -208,8 +208,8 @@ test("«Итог сейчас»: the running workout's card without finishing it
   }
   await page.getByRole("button", { name: "Итог сейчас" }).click();
   await expect(page.getByText("I. Ноги и плечи · итог сейчас")).toBeVisible();
-  await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\..*рост/ })).toBeVisible();
-  await expect(page.getByText("уже растёт ✓ · до оптимума ещё 2 подх. · за неделю 2 из 10")).toBeVisible();
+  await expect(page.getByRole("button", { name: /квадрицепс.*2 подх\..*старт/ })).toBeVisible();
+  await expect(page.getByText("начало есть · до роста ещё 1 подх. · за неделю 2 из 10")).toBeVisible();
   await expect(page.getByText("Удалить тренировку")).toHaveCount(0); // it isn't finished: nothing to delete
   await page.getByRole("button", { name: "Скопировать текстом" }).click();
   await expect(page.getByRole("button", { name: "Скопировано" })).toBeVisible();

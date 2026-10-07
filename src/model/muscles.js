@@ -181,14 +181,13 @@ export function weekHint(sets) {
 }
 
 // One workout on its own scale, whatever the week looks like: per session growth rises with hard sets up to ~11
-// (Remmert et al.: no detectable gain past that); the lower steps are practical guides — 2 sets already stimulate
-// growth, 4–7 is a solid session for a muscle, 8–11 as much as one session uses.
-export const SESSION_GROW = 2, SESSION_GOOD = 4, SESSION_MAX = 8, SESSION_CAP = 11;
+// (Remmert et al.: no detectable gain past that); the lower steps are practical guides — 3 hard sets (fractional: a
+// helping muscle's set is half) is a session that grows the muscle, 6–11 a full one.
+export const SESSION_GROW = 3, SESSION_GOOD = 6, SESSION_CAP = 11;
 export function sessionStatus(sets) {
   if (sets < SESSION_GROW) return ["low", "старт"];
   if (sets < SESSION_GOOD) return ["grow", "рост"];
-  if (sets < SESSION_MAX) return ["optimal", "оптимум"];
-  if (sets <= SESSION_CAP) return ["optimal", "максимум"];
+  if (sets <= SESSION_CAP) return ["optimal", "оптимум"];
   return ["high", "перебор за раз"];
 }
 // what one workout gave a muscle and the next step; week: the muscle's sets of that week so far (this workout
@@ -197,8 +196,7 @@ export function sessionHint(sets, week = null) {
   const wk = week == null ? "" : ` · за неделю ${fmtNum(week)} из ${WEEK_GOOD}`;
   if (sets < SESSION_GROW) return `начало есть · до роста ещё ${fmtSets(SESSION_GROW - sets)}${wk}`;
   if (sets < SESSION_GOOD) return `уже растёт ✓ · до оптимума ещё ${fmtSets(SESSION_GOOD - sets)}${wk}`;
-  if (sets < SESSION_MAX) return `оптимум ✓${wk}`;
-  if (sets <= SESSION_CAP) return `максимум за тренировку ✓${wk}`;
+  if (sets <= SESSION_CAP) return `оптимум ✓${wk}`;
   return `больше 11 за раз прироста почти не даёт — лучше на другой день${wk}`;
 }
 
