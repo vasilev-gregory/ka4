@@ -46,6 +46,7 @@ function Cell({ col, s, ex, edit }) {
 // label: "1", "2a", …; rest: ms before this set or "drop"; live: the running stopwatch is here (ms so far);
 // record: this set beat the exercise's best estimated 1RM
 export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, record, swipe, swipeProps, numberProps, edit, toggle }) {
+  const shownRest = rest === "drop" || rest >= 1000 ? rest : null; // under a second (warm-up closed by this tick): nothing to show
   // a short flash when the set gets confirmed (phones without vibration still notice)
   const rowRef = useRef(null);
   const wasDone = useRef(s.done);
@@ -78,8 +79,8 @@ export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, reco
             <span className="text-xs font-semibold tabular-nums">{fmtDur(live)}</span>
           ) : (
             <>
-              <Check size={s.done && rest ? 16 : 20} />
-              {s.done && rest && <span className="mt-0.5 text-[9px] font-semibold tabular-nums">{rest === "drop" ? "↳" : fmtDur(rest)}</span>}
+              <Check size={s.done && shownRest ? 16 : 20} />
+              {s.done && shownRest && <span className="mt-0.5 text-[9px] font-semibold tabular-nums">{rest === "drop" ? "↳" : fmtDur(rest)}</span>}
             </>
           )}
           {record && (
