@@ -34,6 +34,7 @@
 | Тренировка «не в зачёт» — что её пропускает (графики, рекорды, «прошлый раз») | `counts(w)` (`model/workout.js`); отметить — `setWorkoutOff` / `finishWorkout(…, off)`; что всё равно засчиталось — `stillCounted` (`model/muscles.js`) |
 | Мышцы упражнения, тяжёлые подходы на мышцу, статус роста | `model/muscles.js` |
 | Застой и следующий шаг прогрессии (заметка в тренировке, подсказки подходов) | `model/progression.js` (`nextStep`, `stepText`); в подсказки — `buildSets(…, next)` через `setsFor` в `workoutActions.js` |
+| Подходы завершённого упражнения строками, как в тренировке (только чтение) | `strength/SetTable` внутри `ExerciseRow` (children) |
 | Тренировка текстом (подходы со временем и отдыхом, прогресс, мышцы тренировки и недели) | `model/workoutText.js` `workoutText`; кнопка — `CopyText` в карточке тренировки |
 | Карточка идущей тренировки «как если бы закончил сейчас» | `workoutSoFar` (`model/workout.js`) + `WorkoutDetail live` (экран `workoutNow`) |
 | Снаряд упражнения (штанга, гантели, тренажёр, блок…) для фильтра | `model/equipment.js` `equipmentOf` |

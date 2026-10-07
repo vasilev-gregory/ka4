@@ -158,8 +158,9 @@ export function stillCounted(workouts, w, exMap) {
 // Rough evidence-based weekly targets per muscle (Schoenfeld et al. meta-analyses, RP volume landmarks): hard sets
 // taken close to failure; 10+ sets and 2+ sessions a week is the sweet spot, ~4–9 sets still grows, under 4 is
 // roughly maintenance, past 20 recovery suffers. Returns [key, label]: "low" | "grow" | "optimal" | "high".
-export function growthStatus(sets, freq) {
-  if (sets < 4) return ["low", "мало"];
+// ongoing: the week isn't over yet, so "мало" is only "пока мало".
+export function growthStatus(sets, freq, ongoing = false) {
+  if (sets < 4) return ["low", ongoing ? "пока мало" : "мало"];
   if (sets > 20) return ["high", "очень много"];
   if (sets >= 10 && freq >= 2) return ["optimal", "оптимум"];
   return ["grow", "рост"];

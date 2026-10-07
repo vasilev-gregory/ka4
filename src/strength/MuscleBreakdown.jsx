@@ -20,12 +20,12 @@ const SINGLE = { ...SCALE, target: SESSION_DOSE, barMax: SESSION_MAX + 2, mark: 
 const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum(freq)} ${Number.isInteger(freq) ? plural(freq, "раз", "раза", "раз") : "раза"}` : ""}`;
 
 // load: { muscleId: { sets, freq, by } }; single: one workout / program (the per-session scale and statuses, no
-// frequency); note(row): a line
+// frequency); ongoing: a week not over yet («пока мало»); note(row): a line
 // under a muscle; exMap, byNote ("за месяц"), open: the exercises behind a picked muscle and opening their cards
-export function MuscleBreakdown({ load, map = true, only, note, single = false, exMap, byNote, open }) {
+export function MuscleBreakdown({ load, map = true, only, note, single = false, ongoing = false, exMap, byNote, open }) {
   const { nm1 } = useApp();
   const shown = Object.fromEntries(Object.entries(load).map(([m, l]) => [m, {
-    value: l.sets, text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets) : growthStatus(l.sets, l.freq),
+    value: l.sets, text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets) : growthStatus(l.sets, l.freq, ongoing),
   }]));
   const expand = exMap && ((m) => load[m].by && (
     <ByList title={`Засчитались${byNote ? ` ${byNote}` : ""}`} entries={Object.entries(load[m].by).map(([id, n]) => {
