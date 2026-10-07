@@ -1,5 +1,6 @@
 // Reading a file someone picked or shared to Кач: our own backup, or another app's export.
-// Returns { kind: "backup", backup } | { kind: "workouts", source, workouts, measurements }; throws with a message to show.
+// Returns { kind: "backup", backup } | { kind: "workouts", source, workouts, measurements, bodyKg? }; throws with a message to show.
+// bodyKg: false — the app's kilograms on body-weight exercises are not an added weight (planImport drops them).
 import { parseBackup } from "../backup.js";
 import { parseCsv } from "./csv.js";
 import { isDiary, parseDiary } from "./diary.js";
@@ -31,7 +32,7 @@ export function readImport(name, text, bytes) {
   if (isDiary(headers)) {
     const { workouts, measurements } = parseDiary(text);
     if (!workouts.length && !measurements.length) throw new Error("В файле «Дневника тренировок» не нашлось тренировок.");
-    return { kind: "workouts", source: "diary", workouts, measurements };
+    return { kind: "workouts", source: "diary", workouts, measurements, bodyKg: false };
   }
   throw new Error("Не узнаю формат файла. Поддерживаются копия Кача и CSV-экспорт Hevy, GymKeeper и «Дневника тренировок».");
 }

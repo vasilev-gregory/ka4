@@ -193,3 +193,15 @@ test("«Дневник тренировок»: a workout per dated row, its exer
   const ex = seed().exercises;
   assert.deepEqual(w.exercises.map((e) => matchExercise(ex, e.name).id), ["squat", "suitcase-carry"]);
 });
+
+test("«Дневник тренировок»: kilograms on body-weight exercises are not an added weight — only the reps come in", async () => {
+  const { migrate } = await import("../../src/model/state.js");
+  const d = migrate(seed());
+  const r = readImport("diary.csv", ["ДАТА;ИНФОРМАЦИЯ;УПРАЖНЕНИЕ;ПОДХОДЫ;", "07.10.2026;39 мин;Подтягивания;50;кг;10;пвт;",
+    ";;Жим лежа · штанга;60;кг;8;пвт;"].join("\n"));
+  assert.equal(r.bodyKg, false);
+  const plan = planImport(d, r.workouts, r.measurements, { bodyKg: r.bodyKg });
+  assert.deepEqual([...plan.noKg], ["Подтягивания"]);
+  assert.deepEqual(plan.add[0].exercises.map((e) => e.sets[0]), [{ w: "", r: "10" }, { w: "60", r: "8" }]);
+  assert.equal(planImport(d, r.workouts).add[0].exercises[0].sets[0].w, "50", "other formats keep them (an added weight)");
+});

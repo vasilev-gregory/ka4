@@ -3,7 +3,8 @@
 // ("Жим лежа · штанга"), the rows under it with no name are its next sets. A set is two value;unit pairs:
 // "60;кг;10;пвт" (weight, reps) or "60;сек;16;кг" (seconds, weight). A set of 0 reps was planned, not done.
 // After a blank line comes МЕРА;ДАТА;ЗНАЧЕНИЕ;КОММЕНТАРИЙ — measurements, named as in our list (Вес, Талия, …).
-// There is no start time: a workout is put at noon of its day.
+// There is no start time: a workout is put at noon of its day. Kilograms on body-weight exercises (pull-ups, dips)
+// are whatever was typed there, not an added weight: readImport says so (bodyKg: false).
 import { MEASURES } from "../catalog.js";
 import { parseCsv } from "./csv.js";
 
