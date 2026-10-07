@@ -109,7 +109,9 @@ test("one workout on its own scale, the week beside it as context", async () => 
   assert.equal(sessionHint(11, 9), "взято всё — можно переключаться на другую группу · за неделю 9 из 10");
 });
 
-test("the basement-gym nick beside a workout's sets: one per hard set, and past 11 «кто ты, тварь?»", async () => {
-  const { sessionNick } = await import("../../src/model/muscles.js");
-  assert.deepEqual([0, 1.5, 3, 6, 11, 12].map(sessionNick), ["амёба", "инфузория", "пацан", "качок", "животное", "кто ты, тварь?"]);
+test("the basement-gym nick beside a workout's sets: all 17 plates over 0–11, and past 11 «кто ты, тварь?»", async () => {
+  const { sessionNick, SESSION_NICKS } = await import("../../src/model/muscles.js");
+  assert.deepEqual([0, 1.5, 3, 6, 11, 12].map(sessionNick), ["амёба", "дрыщ", "самец", "лифтёр", "мутант", "кто ты, тварь?"]);
+  const seen = new Set(Array.from({ length: 23 }, (_, i) => sessionNick(i / 2)));
+  assert.equal(seen.size, SESSION_NICKS.length); // every plate is reachable in half sets
 });
