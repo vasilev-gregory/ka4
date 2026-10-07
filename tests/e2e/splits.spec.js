@@ -56,6 +56,8 @@ test("from a program's muscle to exercises for it; a split only shows its muscle
   await page.getByRole("button", { name: "Добавить (1)" }).click();
   await expect(page.getByText("Жим штанги лёжа").first()).toBeVisible();
   await expect(idle.getByRole("button", { name: "грудь", exact: true })).toHaveCount(0);
+  // the closed picker drops its history entry right after; going back before that would only drop it
+  await expect.poll(() => page.evaluate(() => history.state && history.state.overlay)).toBeFalsy();
   await page.goBack();
 
   // a split only shows its week's muscles: exercises go into a program, not into a split
