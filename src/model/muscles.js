@@ -161,28 +161,28 @@ export function stillCounted(workouts, w, exMap) {
 // past that no detectable gain. Under ~4 a week is roughly maintenance.
 export const WEEK_GROW = 4, WEEK_GOOD = 10, WEEK_GREAT = 20, WEEK_CAP = 30, SESSION_CAP = 11;
 
-// A week's hard sets for a muscle: [key, label]: "low" | "grow" | "optimal" | "high".
-// ongoing: the week isn't over yet, so "мало" is only "пока мало".
-export function growthStatus(sets, ongoing = false) {
-  if (sets < WEEK_GROW) return ["low", ongoing ? "пока мало" : "мало"];
+// A week's hard sets for a muscle: [key, label]: "low" | "grow" | "optimal" | "high". Worded as steps up, not as a
+// shortfall: «старт» → «рост» (growing already) → «оптимум» → «максимум»; past 30 «предел».
+export function growthStatus(sets) {
+  if (sets < WEEK_GROW) return ["low", "старт"];
   if (sets < WEEK_GOOD) return ["grow", "рост"];
-  if (sets < WEEK_GREAT) return ["optimal", "хорошо"];
-  if (sets <= WEEK_CAP) return ["optimal", "отлично"];
+  if (sets < WEEK_GREAT) return ["optimal", "оптимум"];
+  if (sets <= WEEK_CAP) return ["optimal", "максимум"];
   return ["high", "предел"];
 }
 
-// what a muscle's week still needs
+// what a muscle's week reached and the next step
 export function weekHint(sets) {
-  if (sets < WEEK_GROW) return `ещё ${fmtSets(WEEK_GROW - sets)} до роста`;
-  if (sets < WEEK_GOOD) return `ещё ${fmtSets(WEEK_GOOD - sets)} до хорошей недели`;
-  if (sets < WEEK_GREAT) return `хорошо; до отличной ещё ${fmtSets(WEEK_GREAT - sets)}`;
-  if (sets <= WEEK_CAP) return "отличная неделя";
+  if (sets < WEEK_GROW) return `начало есть · до зоны роста ещё ${fmtSets(WEEK_GROW - sets)}`;
+  if (sets < WEEK_GOOD) return `уже растёт ✓ · до оптимума ещё ${fmtSets(WEEK_GOOD - sets)}`;
+  if (sets < WEEK_GREAT) return `оптимум ✓ · до максимума ещё ${fmtSets(WEEK_GREAT - sets)}`;
+  if (sets <= WEEK_CAP) return "максимум ✓ — неделя выжата";
   return "больше 30 в неделю прироста уже почти не даёт";
 }
 
-// One workout's window for a muscle, from how often the muscle is trained in a week: the week's "хорошо" (10) and
-// "отлично" (20) split over those workouts, never above what one session can use (11). hits: workouts a week that
-// train the muscle. Returns { lo: enough today, hi: as good as it gets today }.
+// One workout's window for a muscle, from how often the muscle is trained in a week: the week's «оптимум» (10) and
+// «максимум» (20) split over those workouts, never above what one session can use (11). hits: workouts a week that
+// train the muscle. Returns { lo: today's оптимум, hi: today's максимум }.
 export function sessionWindow(hits) {
   const h = Math.max(1, hits);
   const half = (x) => Math.round(x * 2) / 2;
@@ -206,16 +206,19 @@ export function sessionWindows(d, exMap) {
 }
 
 // One workout's sets for a muscle against its window: [key, label]
+// (the same steps as a week: «старт» → «рост» → «оптимум» → «максимум»)
 export function sessionStatus(sets, w) {
-  if (sets < w.lo / 2) return ["low", "мало"];
-  if (sets < w.lo) return ["grow", "рабочая"];
+  if (sets < w.lo / 2) return ["low", "старт"];
+  if (sets < w.lo) return ["grow", "рост"];
   if (sets > SESSION_CAP) return ["high", "перебор за раз"];
-  return ["optimal", sets >= w.hi ? "отлично" : "норма"];
+  return ["optimal", sets >= w.hi ? "максимум" : "оптимум"];
 }
 export function sessionHint(sets, w) {
-  if (sets < w.lo) return `до нормы на тренировку ещё ${fmtSets(w.lo - sets)} (норма ${fmtNum(w.lo)}–${fmtNum(w.hi)})`;
-  if (sets < w.hi) return `норма; до отличного ещё ${fmtSets(w.hi - sets)}`;
-  if (sets <= SESSION_CAP) return "лучше за тренировку не бывает";
+  const range = `(оптимум ${fmtNum(w.lo)}–${fmtNum(w.hi)})`;
+  if (sets < w.lo / 2) return `начало есть · до оптимума на тренировку ещё ${fmtSets(w.lo - sets)} ${range}`;
+  if (sets < w.lo) return `уже растёт ✓ · до оптимума ещё ${fmtSets(w.lo - sets)} ${range}`;
+  if (sets < w.hi) return `оптимум ✓ · до максимума ещё ${fmtSets(w.hi - sets)}`;
+  if (sets <= SESSION_CAP) return "максимум за тренировку ✓";
   return "больше 11 за раз прироста почти не даёт — лучше на другой день";
 }
 const fmtSets = (n) => `${fmtNum(Math.ceil(n * 2) / 2)} подх.`;

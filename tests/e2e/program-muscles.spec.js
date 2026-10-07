@@ -13,8 +13,8 @@ test("program editor: muscles by plan for this program; an exercise opens its ca
   await page.getByText("Ноги", { exact: true }).first().click();
   await expect(page.getByText("Мышцы по плану")).toBeVisible();
   await expect(page.getByRole("img", { name: "Спереди" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /средняя дельта.*3 подх\. рабочая до нормы на тренировку ещё 0,5 подх\. \(норма 3,5–6,5\)/ })).toBeVisible(); // one program: the per-session scale
-  await expect(page.getByRole("button", { name: /ягодицы.*2 подх\. мало/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /средняя дельта.*3 подх\. рост уже растёт ✓ · до оптимума ещё 0,5 подх\. \(оптимум 3,5–6,5\)/ })).toBeVisible(); // one program: the per-session scale
+  await expect(page.getByRole("button", { name: /ягодицы.*2 подх\. старт/ })).toBeVisible();
 
   await expect(page.getByRole("button", { name: "Все программы" })).toHaveCount(0); // inside one program, only it
   await page.getByRole("button", { name: /средняя дельта/ }).click();
