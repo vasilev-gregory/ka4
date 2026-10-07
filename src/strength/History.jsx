@@ -2,7 +2,7 @@
 // export. Finished, or the running one as it would be if finished now (live: «Итог сейчас», no delete / «не в зачёт»).
 import { useState } from "react";
 import { Trophy } from "lucide-react";
-import { fmtDur, fmtKg, fmtNum, plural } from "../core/util.js";
+import { fmtDur, fmtKg, fmtNum, plural, uid } from "../core/util.js";
 import { previousOfProgram, restBefore, restStats, stats, workoutSoFar } from "../model/workout.js";
 import { SetTable } from "./SetTable.jsx";
 import { workoutText } from "../model/workoutText.js";
@@ -14,7 +14,7 @@ import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
 import { Button, Card, DeleteButton, Header, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
 import { muscleLoad, stillCounted } from "../model/muscles.js";
-import { removeWorkout, setWorkoutOff } from "../model/workoutActions.js";
+import { programFromWorkout, removeWorkout, setWorkoutOff } from "../model/workoutActions.js";
 
 // "+2,5 кг", "−1 кг", "так же"
 const fmtDelta = (d) => (Math.abs(d) < 0.25 ? "так же" : `${d > 0 ? "+" : "−"}${fmtNum(Math.round(Math.abs(d) * 2) / 2)} кг`);
@@ -66,6 +66,9 @@ export function WorkoutDetail({ data, up, exMap, id, back, open, live = false })
       </DayOnly>
       <CopyText text={() => workoutText(data, w, exMap, bwAt, nm1, live)} />
       {!live && <>
+        <Button variant="secondary" block className="mt-2" onClick={() => { const pid = uid(); up((d) => programFromWorkout(d, w, pid, exMap)); open({ type: "program", id: pid }); }}>
+          Сделать программой
+        </Button>
         {w.off && <NotForNothing data={data} w={w} exMap={exMap} />}
         <SwitchRow title="Не в зачёт" className="mt-3" on={!!w.off} onClick={() => up((d) => setWorkoutOff(d, id, !w.off))}
           hint="Плохой день: остаётся в истории и в счёте тренировок, но не в графиках упражнений, рекордах и «прошлом разе»" />

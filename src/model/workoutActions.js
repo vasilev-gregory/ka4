@@ -260,6 +260,17 @@ export function createProgram(d, id) {
   d.programs.push({ id, name: "", items: [] });
 }
 
+// a program made from a finished workout (an imported history has none): its exercises in order, as many sets as
+// it had working sets (at least one); cardio planned at the minutes it took
+export function programFromWorkout(d, w, id, exMap) {
+  const items = w.exercises.map((e) => {
+    const ex = exMap[e.exerciseId];
+    if (ex && ex.kind === "cardio") return { exerciseId: e.exerciseId, sets: 1, min: Math.round(e.sets.reduce((t, s) => t + num(s.r), 0)) || CARDIO_PLAN.min };
+    return { exerciseId: e.exerciseId, sets: e.sets.filter((s) => s.t !== "w").length || 1 };
+  });
+  d.programs.push({ id, name: w.name, items });
+}
+
 export function removeProgram(d, id) {
   d.programs = d.programs.filter((x) => x.id !== id);
 }

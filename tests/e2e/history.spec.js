@@ -139,3 +139,13 @@ test("changing an exercise's muscles asks first: it recounts the whole history",
   await expect(ask).toHaveCount(0);
   await expect.poll(async () => (await stored(page)).exercises.find((e) => e.id === "squat").muscles).toEqual({ quads: 1, hams: 1 });
 });
+
+test("a workout from the history becomes a program in one tap", async ({ page }) => {
+  await page.getByText("Октябрьская").click();
+  await page.getByRole("button", { name: "Сделать программой" }).click();
+  await expect(page.getByPlaceholder("Название программы")).toHaveValue("Октябрьская");
+  await expect(page.getByText("Приседания со штангой")).toBeVisible();
+  await page.goBack(); // back from the editor: the program is kept
+  await tab(page, "Тренировка");
+  await expect(page.getByRole("button", { name: "Октябрьская Приседания со штангой" })).toBeVisible();
+});

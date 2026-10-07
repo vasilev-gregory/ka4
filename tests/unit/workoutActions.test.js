@@ -239,3 +239,17 @@ test("✓ with only partials typed: full reps are 0, not last time's", () => {
   assert.deepEqual([a.w, a.r, a.p], ["80", "0", "3"]);
   assert.deepEqual([b.w, b.r], ["80", "6"]); // nothing typed: last time's
 });
+
+test("a program from a finished workout: its exercises in order, working sets (at least 1), cardio at its minutes", () => {
+  const d = seed();
+  const exMap = { squat: { id: "squat", kind: "reps" }, run: { id: "run", kind: "cardio" } };
+  const w = { name: "Ноги", exercises: [
+    { exerciseId: "squat", sets: [blank({ t: "w", done: true }), blank({ done: true }), blank({ done: true })] },
+    { exerciseId: "dips", sets: [blank({ t: "w", done: true })] },
+    { exerciseId: "run", sets: [blank({ r: "12,5", done: true }), blank({ r: "10", done: true })] },
+  ] };
+  A.programFromWorkout(d, w, "p1", exMap);
+  assert.deepEqual(d.programs.find((p) => p.id === "p1"), { id: "p1", name: "Ноги", items: [
+    { exerciseId: "squat", sets: 2 }, { exerciseId: "dips", sets: 1 }, { exerciseId: "run", sets: 1, min: 23 },
+  ] });
+});
