@@ -60,7 +60,7 @@
  * @property {{ start: number, end?: number }[]} segments  continuations of the same day's workout (pause → continue)
  * @property {{ exerciseId: string, sets: WorkoutSet[] }[]} exercises
  * @property {{ doneAt: number|null }} [warmup]  the warm-up block (workouts started before it existed have none)
- * @property {"hevy"|"gymkeeper"} [source]  imported from another app
+ * @property {"hevy"|"gymkeeper"|"diary"} [source]  imported from another app («diary»: «Дневник тренировок»)
  * @property {boolean} [off]              «не в зачёт» (a bad day): counted as a workout, not in progress (workout.js counts)
  */
 

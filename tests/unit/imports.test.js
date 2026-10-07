@@ -49,7 +49,7 @@ test("exercise names from other apps find ours, never ignoring the equipment", (
   assert.equal(matchExercise(ex, "Zercher Squat"), null);
 });
 
-test("every exercise from the imported histories (Hevy, GymKeeper) is in the catalog", () => {
+test("every exercise from the imported histories (Hevy, GymKeeper, «Дневник тренировок») is in the catalog", () => {
   const names = JSON.parse(readFileSync(new URL("../fixtures/imported-exercise-names.json", import.meta.url), "utf8"));
   const ex = seed().exercises;
   assert.deepEqual(names.filter((n) => !matchExercise(ex, n)), []);
@@ -164,4 +164,32 @@ test("one-arm / one-leg notes put the sets into the one-sided variation", () => 
   applyImport(d, planImport(d, workouts), "gymkeeper");
   assert.deepEqual(d.workouts[0].exercises.map((e) => e.exerciseId),
     ["seated-row", "one-arm-seated-row", "one-arm-cable-lateral-raise", "single-leg-leg-press", "hip-thrust"]); // "1dumb": one dumbbell, not one arm
+});
+
+test("«Дневник тренировок»: a workout per dated row, its exercises and sets; 0 reps were not done; a timed set; measures", () => {
+  const DIARY = [
+    "ДАТА;ИНФОРМАЦИЯ;УПРАЖНЕНИЕ;ПОДХОДЫ;",
+    "07.10.2026;39 мин;Приседания · штанга;20;кг;20;пвт;",
+    ";;;60;кг;12;пвт;",
+    ";;;60;кг;0;пвт;",
+    ";;однорукий фермер;60;сек;16;кг;",
+    "06.10.2026;37 мин;Жим лежа (наклон) · гантели;17.5;кг;15;пвт;",
+    "",
+    "МЕРА;ДАТА;ЗНАЧЕНИЕ;КОММЕНТАРИЙ;",
+    "Вес;07.10.2026;81,5;утром;",
+    "Пульс;07.10.2026;60;;",
+  ].join("\n");
+  const r = readImport("diary.csv", DIARY);
+  assert.equal(r.source, "diary");
+  const [w, w2] = r.workouts;
+  assert.equal(w.startedAt, new Date(2026, 9, 7, 12).getTime());
+  assert.equal(w.finishedAt - w.startedAt, 39 * 60e3);
+  assert.deepEqual(w.exercises.map((e) => [e.name, e.time, e.sets]), [
+    ["Приседания (штанга)", false, [{ w: "20", r: "20" }, { w: "60", r: "12" }]],
+    ["однорукий фермер", true, [{ w: "16", r: "60" }]],
+  ]);
+  assert.equal(w2.exercises[0].name, "Жим лежа (наклон) (гантели)");
+  assert.deepEqual(r.measurements, [{ date: new Date(2026, 9, 7, 12).getTime(), values: { weight: "81.5" } }]);
+  const ex = seed().exercises;
+  assert.deepEqual(w.exercises.map((e) => matchExercise(ex, e.name).id), ["squat", "suitcase-carry"]);
 });

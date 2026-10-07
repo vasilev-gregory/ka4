@@ -1,5 +1,6 @@
 // CSV reader (RFC 4180: quoted fields, "" escapes, line breaks inside quotes, BOM, , or ; separator).
-// Returns rows as objects keyed by the header row.
+// Returns rows as objects keyed by the header row, and cells: the same rows as arrays (for files whose rows run
+// past their header).
 export function parseCsv(text) {
   const src = text.replace(/^\uFEFF/, "");
   const firstLine = src.slice(0, src.indexOf("\n") >>> 0);
@@ -25,5 +26,5 @@ export function parseCsv(text) {
   if (row.some((x) => x !== "")) rows.push(row);
   const [head = [], ...body] = rows;
   const keys = head.map((h) => h.trim());
-  return { headers: keys, rows: body.map((r) => Object.fromEntries(keys.map((k, i) => [k, (r[i] ?? "").trim()]))) };
+  return { headers: keys, rows: body.map((r) => Object.fromEntries(keys.map((k, i) => [k, (r[i] ?? "").trim()]))), cells: body.map((r) => r.map((c) => c.trim())) };
 }

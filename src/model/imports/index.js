@@ -2,10 +2,11 @@
 // Returns { kind: "backup", backup } | { kind: "workouts", source, workouts, measurements }; throws with a message to show.
 import { parseBackup } from "../backup.js";
 import { parseCsv } from "./csv.js";
+import { isDiary, parseDiary } from "./diary.js";
 import { isGymKeeper, parseGymKeeper } from "./gymkeeper.js";
 import { isHevy, parseHevy } from "./hevy.js";
 
-export const SOURCES = { hevy: "Hevy", gymkeeper: "GymKeeper" };
+export const SOURCES = { hevy: "Hevy", gymkeeper: "GymKeeper", diary: "«Дневника тренировок»" };
 
 // name: file name; text: its contents as text; bytes: Uint8Array (for binary formats)
 export function readImport(name, text, bytes) {
@@ -27,5 +28,10 @@ export function readImport(name, text, bytes) {
     if (!workouts.length && !measurements.length) throw new Error("В файле GymKeeper не нашлось тренировок.");
     return { kind: "workouts", source: "gymkeeper", workouts, measurements };
   }
-  throw new Error("Не узнаю формат файла. Поддерживаются копия Кача и CSV-экспорт Hevy и GymKeeper.");
+  if (isDiary(headers)) {
+    const { workouts, measurements } = parseDiary(text);
+    if (!workouts.length && !measurements.length) throw new Error("В файле «Дневника тренировок» не нашлось тренировок.");
+    return { kind: "workouts", source: "diary", workouts, measurements };
+  }
+  throw new Error("Не узнаю формат файла. Поддерживаются копия Кача и CSV-экспорт Hevy, GymKeeper и «Дневника тренировок».");
 }
