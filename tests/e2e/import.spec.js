@@ -48,13 +48,17 @@ test.describe("shared from another app", () => {
     }, { timeout: 15000 }).toBe(true);
     // what Android does when Кач is picked in the share sheet: POST the file to the share target
     const csv = readFileSync(HEVY, "utf8");
-    const landed = await page.evaluate(async (text) => {
-      const form = new FormData();
-      form.append("file", new File([text], "workout_data.csv", { type: "text/csv" }));
-      const res = await fetch("share-target", { method: "POST", body: form });
-      return res.url;
-    }, csv);
-    expect(landed).toContain("?shared=1");
+    // the takeover reload may still land after the controller shows up: a step it interrupts is simply tried again
+    await expect(async () => {
+      await page.waitForLoadState();
+      const landed = await page.evaluate(async (text) => {
+        const form = new FormData();
+        form.append("file", new File([text], "workout_data.csv", { type: "text/csv" }));
+        const res = await fetch("share-target", { method: "POST", body: form });
+        return res.url;
+      }, csv);
+      expect(landed).toContain("?shared=1");
+    }).toPass({ timeout: 15000 });
     await page.goto("./?shared=1");
     await expect(page.getByRole("dialog", { name: "Импорт из Hevy" })).toBeVisible();
     expect(page.url()).not.toContain("shared"); // a reload won't import again

@@ -14,7 +14,7 @@ const SCALE = {
   chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-rose-950 text-rose-300", optimal: "bg-rose-500 text-white", high: "bg-rose-200 text-rose-950" },
 };
 // one workout or program: its own scale — the dose for one session, not the week's
-const SINGLE = { ...SCALE, target: SESSION_DOSE, barMax: SESSION_MAX + 2, mark: SESSION_DOSE, legend: [[0, "0"], [3, "3"], [SESSION_DOSE, "6+ — полная доза за раз"]] };
+const SINGLE = { ...SCALE, target: SESSION_DOSE, barMax: SESSION_MAX + 2, mark: SESSION_DOSE, legend: [[0, "0"], [SESSION_DOSE, "6+ — полная доза за раз"]] };
 
 // "7,5 подх. · 2 раза"; averages over weeks are fractional
 const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum(freq)} ${Number.isInteger(freq) ? plural(freq, "раз", "раза", "раз") : "раза"}` : ""}`;
