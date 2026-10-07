@@ -13,7 +13,7 @@ const HEAD_JOKES = [
   "Голова: в программе её нет, но без неё и до зала не дойти",
 ];
 
-// items: [{ id, name, parts: body map ids }] in list order; load: { id: { value, text, status?: [key, label] } };
+// items: [{ id, name, parts: body map ids }] in list order; load: { id: { value, text, status?: [key, label], nick?: a joke on the chip } };
 // scale: { target: value filled completely, barMax, mark: value of the tick on the bar, legend: [[value, label]],
 //   fill: fill-* class, bar: bg-* class, chip: { statusKey: classes }, empty: caption of a part with no load };
 // map: draw the body; only: list just these ids; note(id): a line under a row; expand(id): what opens under a picked row
@@ -30,7 +30,7 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
   // a tapped shape picks the row it belongs to, one with a load first
   const pickPart = (m) => pick(m === HEAD ? HEAD : (rows.find((r) => r.parts.includes(m)) || items.find((it) => it.parts.includes(m)))?.id);
   const picked = items.find((it) => it.id === sel);
-  const statusText = (id) => (load[id].status ? ` — ${load[id].status[1]}` : "");
+  const statusText = (id) => (load[id].status ? ` — ${load[id].status[1]}` : "") + (load[id].nick ? ` (${load[id].nick})` : "");
   return (
     <div>
       {map && <>
@@ -64,7 +64,11 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
                 <div className="flex items-center gap-2 text-xs">
                   <span className="min-w-0 flex-1 truncate text-neutral-200">{r.name}</span>
                   <span className="tabular-nums text-neutral-400">{l.text}</span>
-                  {l.status && <span className={`min-w-20 shrink-0 whitespace-nowrap rounded-md px-1.5 py-0.5 text-center text-[11px] ${scale.chip[l.status[0]]}`}>{l.status[1]}</span>}
+                  {l.status && (
+                    <span className={`min-w-20 shrink-0 whitespace-nowrap rounded-md px-1.5 py-0.5 text-center text-[11px] leading-tight ${scale.chip[l.status[0]]}`}>
+                      {l.status[1]}{l.nick && <span className="block text-[10px] italic opacity-75">{l.nick}</span>}
+                    </span>
+                  )}
                 </div>
                 <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-700/60">
                   <div className={`absolute inset-y-0 left-0 rounded-full ${scale.bar}`} style={{ width: `${Math.min(100, (l.value / scale.barMax) * 100)}%` }} />

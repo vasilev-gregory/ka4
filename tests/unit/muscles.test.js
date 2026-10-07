@@ -110,8 +110,14 @@ test("one workout on its own scale, the week beside it as context", async () => 
 });
 
 test("the basement-gym nick beside a workout's sets: all 17 plates over 0–11, and past 11 «кто ты, тварь?»", async () => {
-  const { sessionNick, SESSION_NICKS } = await import("../../src/model/muscles.js");
-  assert.deepEqual([0, 1.5, 3, 6, 11, 12].map(sessionNick), ["амёба", "дрыщ", "самец", "лифтёр", "мутант", "кто ты, тварь?"]);
-  const seen = new Set(Array.from({ length: 23 }, (_, i) => sessionNick(i / 2)));
+  const { muscleNick, SESSION_NICKS } = await import("../../src/model/muscles.js");
+  assert.deepEqual([0, 1.5, 3, 6, 11, 12].map((n) => muscleNick(n)), ["амёба", "дрыщ", "самец", "лифтёр", "мутант", "кто ты, тварь?"]);
+  const seen = new Set(Array.from({ length: 23 }, (_, i) => muscleNick(i / 2)));
   assert.equal(seen.size, SESSION_NICKS.length); // every plate is reachable in half sets
+});
+
+test("a week's nick: the same 17 plates over its 0–30 scale, past 30 «кто ты, тварь?»", async () => {
+  const { muscleNick, WEEK_CAP, SESSION_NICKS } = await import("../../src/model/muscles.js");
+  assert.deepEqual([0, 1, 1.5, 10, 30, 31].map((n) => muscleNick(n, WEEK_CAP)), ["амёба", "амёба", "амёба", "мужик", "мутант", "кто ты, тварь?"]);
+  assert.equal(new Set(Array.from({ length: 31 }, (_, i) => muscleNick(i, WEEK_CAP))).size, SESSION_NICKS.length);
 });

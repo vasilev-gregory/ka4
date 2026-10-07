@@ -70,7 +70,7 @@
 | Мышцы / группы за период — один блок для истории и карточки сессии (день / неделя / месяц / год) | `PeriodCard` (заголовок, «?», «в среднем за неделю», пусто, свой переключатель — `onZoom`); считают `strength/MusclesPanel`, `stretch/StretchPanel` | второй блок мышц в карточке |
 | Упражнения сессии с подходами (карточка и «День» истории) | `WorkoutExercises` (`strength/History.jsx`), `StretchHeld` (`stretch/StretchSession.jsx`) | |
 | Календарь истории | `PeriodNav`, `usePeriod`, `PeriodCard` | |
-| Строка истории, заголовок карточки сессии, плитки чисел | `HistoryRow`, `SessionHeader`, `StatTiles` (`ui/Session.jsx`) | |
+| Строка истории, заголовок карточки сессии, плитки чисел, её упражнения только на «Дне» | `HistoryRow`, `SessionHeader`, `StatTiles`, `DayOnly` (`ui/Session.jsx`) | |
 | Список программ: строки, «+ Новая программа», «Без программы» | `ProgramRows` | |
 | Редактор программы: название, строки (перетащить, убрать с «Вернуть»), начать / удалить | `ProgramName`, `ProgramItems`, `ProgramFooter` (`ui/ProgramEdit.jsx`) | |
 | Выбор упражнений / растяжек (поиск, фильтры — ряды чипов `filters` от раздела, группы, «твои», несколько сразу, «уже в программе», создать новое) | `ExercisePicker` (`ui/ExercisePicker.jsx`) | свой экран выбора в разделе |

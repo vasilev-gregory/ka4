@@ -1,5 +1,5 @@
 // Pieces of a finished session shared by strength and stretching: its row in a history list, its card's title
-// with the date and the tiles with its numbers.
+// with the date, the tiles with its numbers, and its own content shown only on its day.
 import { fmtDate } from "../core/util.js";
 import { Header } from "./kit.jsx";
 
@@ -20,6 +20,17 @@ export function SessionHeader({ name, startedAt, back }) {
       <Header title={name} back={back} />
       <p className="-mt-3 mb-4 text-neutral-400">{fmtDate(startedAt)}</p>
     </>
+  );
+}
+
+// the session's own exercises under its card's period switch: on the day only; on a week / month / year they would
+// look like the period's, so a button back to the day instead
+export function DayOnly({ zoom, onDay, label, children }) {
+  if (zoom === "day") return children;
+  return (
+    <button onClick={onDay} className="mb-5 w-full rounded-xl bg-neutral-900 p-3 text-left text-sm text-neutral-400 active:bg-neutral-800">
+      {label} — в «Дне»
+    </button>
   );
 }
 

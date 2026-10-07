@@ -40,10 +40,16 @@ test("finished workout shows its muscles and its week; stretch mode hides streng
   if (await keep.count()) await keep.click();
   // the workout's own muscles first: one squat set, quads its main muscle; judged on the per-session scale
   await expect(page.getByRole("img", { name: "Спереди" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /квадрицепс.*1 подх\. · инфузория старт/ })).toBeVisible();
+  // the joke sits on the step's chip, under the step
+  await expect(page.getByRole("button", { name: /квадрицепс.*1 подх\. старт инфузория/ })).toBeVisible();
   await expect(page.getByText("ещё 2 подх. — «есть рост» · за неделю 1 из 10")).toBeVisible();
   await page.getByRole("button", { name: "Неделя", exact: true }).click();
-  await expect(page.getByRole("button", { name: /квадрицепс.*старт/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /квадрицепс.*старт амёба/ })).toBeVisible();
+  // off the day the workout's own exercises hide behind a way back to its day
+  await expect(page.getByText("Приседания со штангой")).toHaveCount(0);
+  await page.getByRole("button", { name: "Упражнения этой тренировки — в «Дне»" }).click();
+  await expect(page.getByText("Приседания со штангой")).toBeVisible();
+  await page.getByRole("button", { name: "Неделя", exact: true }).click();
   await expect(page.getByText("начало есть · до зоны роста ещё 3 подх.")).toBeVisible();
   await expect.poll(async () => (await stored(page)).workouts.length).toBe(1);
   expect((await stored(page)).active).toBeNull();
