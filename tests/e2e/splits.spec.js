@@ -80,3 +80,35 @@ test("in a workout's card a muscle only shows its numbers: nothing to pick from 
   await expect(page.getByText(/^Подобрать упражнение/)).toHaveCount(0);
   await expect(page.getByTestId("no-load")).toHaveCount(0);
 });
+
+test("hold programs to pick them: a new split of them, or into an existing one", async ({ page }) => {
+  await openApp(page);
+  const row = (name) => page.getByRole("button", { name: new RegExp(`^${name.replace(".", "\\.")}`) });
+  const hold = async (el) => {
+    const b = await el.boundingBox();
+    await page.mouse.move(b.x + 20, b.y + b.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(600);
+    await page.mouse.up();
+  };
+  await hold(row("III. Ноги и плечи"));
+  await expect(page.getByText("Выбрано: 1 — собрать в сплит")).toBeVisible();
+  await row("I. Ноги и плечи").click(); // a tap now picks another
+  await expect(page.getByText("Выбрано: 2 — собрать в сплит")).toBeVisible();
+  await page.getByTestId("picked-bar").getByRole("button", { name: "Новый сплит" }).click();
+  await expect(page.getByPlaceholder("Название сплита")).toBeVisible();
+  await expect(page.getByText("2 тренировки в неделю.")).toBeVisible();
+  await page.getByPlaceholder("Название сплита").fill("Ноги");
+  await page.goBack();
+  // into an existing split
+  await hold(row("II. Грудь и спина"));
+  await page.getByRole("button", { name: "В «Ноги»" }).click();
+  await expect(page.getByText("3 тренировки в неделю.")).toBeVisible();
+  await page.goBack();
+  // «Отмена» drops the pick; a tap opens the program again
+  await hold(row("IV. Грудь и спина"));
+  await page.getByRole("button", { name: "Отмена" }).click();
+  await expect(page.getByTestId("picked-bar")).toHaveCount(0);
+  await row("IV. Грудь и спина").click();
+  await expect(page.getByPlaceholder("Название программы")).toHaveValue("IV. Грудь и спина");
+});
