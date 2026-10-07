@@ -180,6 +180,13 @@ export function clearRest(d) {
   if (d.active) d.active.restEndsAt = null;
 }
 
+// bring the rest countdown back after «Хватит»: counted from the last set (past its end it shows the overtime)
+export function showRest(d, now = Date.now()) {
+  const a = d.active;
+  if (!a || a.paused) return;
+  a.restEndsAt = (a.lastSetAt || now) + d.settings.restSec * 1000;
+}
+
 // Move a visible set column (кг, повт., …) from one visible position to another; hidden columns keep their place.
 export function moveColumn(settings, from, to) {
   const full = columnConfig(settings);

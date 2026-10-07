@@ -175,3 +175,24 @@ test("an exercise done the same three times gets a next step: a note and the ste
   await expect(page.getByTestId("progress-step").first()).toHaveText(/3 тренировки подряд 100 кг × 8 — сегодня 100 кг × 9/);
   await expect(page.locator("input[inputmode=numeric][placeholder='9']").first()).toBeVisible();
 });
+
+test("rest: stays past its end with the overtime, hides, comes back; a typed value is selected on focus", async ({ page }) => {
+  await page.clock.install();
+  await openApp(page);
+  await startWorkout(page);
+  const weight = page.locator("input[inputmode=decimal]").first();
+  await weight.fill("60");
+  await page.locator("input[inputmode=numeric]").first().fill("5");
+  await page.getByRole("button", { name: "Подход сделан" }).first().click();
+  await expect(page.getByRole("button", { name: "Хватит" })).toBeVisible();
+  await page.clock.runFor(125e3); // 2:00 rest + 5 s
+  await expect(page.getByText(/^\+0:0[45]$/)).toBeVisible(); // past the end: still there, counting the overtime
+  await page.getByRole("button", { name: "Скрыть" }).click();
+  await page.getByRole("button", { name: "Таймер отдыха" }).click();
+  await expect(page.getByRole("button", { name: "Скрыть" })).toBeVisible();
+
+  await weight.focus(); // editing the weight: the old one is selected, typing replaces it
+  await expect.poll(() => weight.evaluate((el) => el.selectionEnd - el.selectionStart)).toBe(2);
+  await weight.pressSequentially("65");
+  await expect(weight).toHaveValue("65");
+});

@@ -208,3 +208,16 @@ test("one session at a time: a workout doesn't start while a stretching run goes
   A.startWorkout(d, d.programs[0], 1000);
   assert.equal(runningSession(d), "strength");
 });
+
+test("the hidden rest countdown comes back counted from the last set; not while paused", () => {
+  const d = withWorkout([blank({ w: "80", r: "5" }), blank()]);
+  A.toggleSet(d, 0, 0, T0 + 1000);
+  A.clearRest(d);
+  assert.equal(d.active.restEndsAt, null);
+  A.showRest(d, T0 + 30e3);
+  assert.equal(d.active.restEndsAt, T0 + 1000 + 90e3);
+  A.clearRest(d);
+  d.active.paused = true;
+  A.showRest(d, T0 + 40e3);
+  assert.equal(d.active.restEndsAt, null);
+});

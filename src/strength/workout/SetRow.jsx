@@ -13,11 +13,11 @@ function rirFromInput(raw, shown) {
   return digit === "" ? null : Math.min(4, parseInt(digit, 10));
 }
 
-// an empty field with last time's value takes it on focus, selected, so typing replaces it
+// on focus the value is selected, so typing replaces it; an empty field with last time's value takes it first
 const takeHint = (value, hint, key, edit) => (e) => {
-  if (value !== "" || !hint) return;
   const el = e.target;
-  edit({ [key]: String(hint) });
+  if (value === "" && hint) edit({ [key]: String(hint) });
+  else if (value === "") return;
   requestAnimationFrame(() => el.select());
 };
 
@@ -32,7 +32,7 @@ function Cell({ col, s, ex, edit }) {
       onChange={(e) => edit({ r: numericInput(e.target.value, ex.kind === "cardio") })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
   );
   if (col === "p") return ex.kind === "time" ? <span className="w-9" /> : (
-    <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы"
+    <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы" onFocus={takeHint(s.p || "", "", "p", edit)}
       onChange={(e) => edit({ p: numericInput(e.target.value, false) })} className={`w-9 ${BOX} ${doneText || "text-neutral-300"}`} />
   );
   const shown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
