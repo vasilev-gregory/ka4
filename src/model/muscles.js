@@ -186,12 +186,12 @@ export function weekHint(sets) {
 export const SESSION_GROW = 3, SESSION_GOOD = 6, SESSION_CAP = 11;
 // Every extra set in the window is a step of its own, so each one pays off: [from sets, label, chip key]
 export const SESSION_STEPS = [
-  [0, "старт", "low"], [3, "есть рост", "grow"], [4, "хороший рост", "grow"], [5, "крепко", "grow"],
-  [6, "оптимум", "optimal"], [7, "сильно", "optimal"], [9, "мощно", "optimal"], [11, "максимум за раз", "optimal"],
+  [0, "старт", "low"], [3, "есть рост", "grow"], [4, "хороший рост", "grow"], [5, "крепкий рост", "grow"],
+  [6, "оптимальный рост", "optimal"], [7, "сильный рост", "optimal"], [9, "мощный рост", "optimal"], [11, "максимальный рост", "optimal"],
 ];
 const stepOf = (sets) => SESSION_STEPS.filter(([from]) => sets >= from).length - 1;
 export function sessionStatus(sets) {
-  if (sets > SESSION_CAP) return ["high", "перебор за раз"];
+  if (sets > SESSION_CAP) return ["high", "мышце хватит"];
   const [, label, key] = SESSION_STEPS[stepOf(sets)];
   return [key, label];
 }
@@ -199,11 +199,11 @@ export function sessionStatus(sets) {
 // included), shown as context, or null (a program's plan has no week)
 export function sessionHint(sets, week = null) {
   const wk = week == null ? "" : ` · за неделю ${fmtNum(week)} из ${WEEK_GOOD}`;
-  if (sets > SESSION_CAP) return `больше 11 за раз прироста почти не даёт — лучше на другой день${wk}`;
+  if (sets > SESSION_CAP) return `этой мышце на сегодня хватит — силы лучше отдать другой группе${wk}`;
   const i = stepOf(sets);
   const next = SESSION_STEPS[i + 1];
   // the step reached is on the chip already: the hint says the next one
-  return next ? `ещё ${fmtSets(next[0] - sets)} — «${next[1]}»${wk}` : `хватит на сегодня, дальше — на другой день${wk}`;
+  return next ? `ещё ${fmtSets(next[0] - sets)} — «${next[1]}»${wk}` : `взято всё — можно переключаться на другую группу${wk}`;
 }
 
 const fmtSets = (n) => `${fmtNum(Math.ceil(n * 2) / 2)} подх.`;

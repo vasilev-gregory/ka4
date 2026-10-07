@@ -53,7 +53,7 @@ export function workoutText(data, w, exMap, bwAt, nameOf, live = false) {
   const rowsOf = (load, line) => MUSCLES.filter(([m]) => load[m]).map(([m, name]) => `   ${name}: ${line(m, load[m])}`);
   const rows = (load, line) => rowsOf(load, (m, l) => line(l));
   if (Object.keys(own).length) {
-    out.push("", "Мышцы за тренировку (тяжёлые подходы, помогающая мышца — половина; рост — от 3, оптимум — 6–11):");
+    out.push("", "Мышцы за тренировку (тяжёлые подходы, помогающая мышца — половина; рост — от 3, оптимальный — 6–11):");
     out.push(...rowsOf(own, (m, l) => `${fmtNum(l.sets)} подх. — ${sessionStatus(l.sets)[1]}; ${sessionHint(l.sets, week[m] ? week[m].sets : 0)}`));
     out.push("", "Мышцы за неделю (рост — от 4 подходов, оптимум — от 10, максимум — 20–30):");
     const times = (n) => (n ? ` · ${n} ${plural(n, "раз", "раза", "раз")}` : "");
