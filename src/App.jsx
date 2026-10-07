@@ -2,6 +2,7 @@
 // mode, and the global overlays (save error, backup reminder, rest countdown, mode toast).
 import { useState, useEffect, useMemo } from "react";
 import { unlockAudio } from "./core/sound.js";
+import { setSessionRunning } from "./core/appUpdate.js";
 import { MeasureEditor, MeasuresTab } from "./measures/Measures.jsx";
 import { usePersistentData } from "./model/usePersistentData.js";
 import { makeBodyWeightAt, makeNames, RUNNING_NOTE, runningSession } from "./model/workout.js";
@@ -57,6 +58,9 @@ function Shell({ data, up, replace, saved }) {
   const { bodyWeight, namesRu } = data.settings;
   const appCtx = useMemo(() => ({ bwAt: makeBodyWeightAt(measurements || [], bodyWeight || 0), ...makeNames(namesRu !== false) }), [measurements, bodyWeight, namesRu]);
   const exMap = useMemo(() => Object.fromEntries(exercises.map((e) => [e.id, e])), [exercises]);
+  // a new version waits with its reload until no workout or stretch runs
+  const sessionOn = !!runningSession(data);
+  useEffect(() => { setSessionRunning(sessionOn); }, [sessionOn]);
 
   const [modeToast, setModeToast] = useState(false);
   useEffect(() => { if (!modeToast) return; const t = setTimeout(() => setModeToast(false), 700); return () => clearTimeout(t); }, [modeToast]);

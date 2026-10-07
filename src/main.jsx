@@ -2,20 +2,20 @@
 import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import { protectStorage } from "./storage.js";
+import { newVersionReady } from "./core/appUpdate.js";
 import "./index.css";
 
 // ask the browser not to evict our data under storage pressure
 protectStorage();
 
-// When a freshly deployed service worker takes over, reload once so the new version shows
-// on the first relaunch. All state (including a running workout or stretch) is saved on the device
-// (IndexedDB + localStorage) and flushed when the page hides, so the reload loses nothing.
+// When a freshly deployed service worker takes over, reload once so the new version shows — but not during a
+// workout or a stretch (core/appUpdate waits for the session to end).
 if ("serviceWorker" in navigator) {
   let reloaded = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (reloaded) return;
     reloaded = true;
-    window.location.reload();
+    newVersionReady();
   });
 }
 
