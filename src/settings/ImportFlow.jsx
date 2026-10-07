@@ -48,7 +48,8 @@ export function ImportFlow({ file, data, up, replace, onDone, onClose }) {
     );
   }
 
-  const plan = planImport(data, r.workouts, r.measurements);
+  const opts = { bodyKg: r.bodyKg !== false };
+  const plan = planImport(data, r.workouts, r.measurements, opts);
   const first = plan.add[0], last = plan.add[plan.add.length - 1];
   const n = plan.add.length, nm = plan.measures.length;
   return (
@@ -72,11 +73,16 @@ export function ImportFlow({ file, data, up, replace, onDone, onClose }) {
             </p>
           </div>
         )}
+        {plan.noKg.size > 0 && (
+          <p className="text-xs text-neutral-400">
+            {[...plan.noKg].join(", ")}: вес не переносится — в {SOURCES[r.source]} это не дополнительный вес. Нагрузка считается от веса тела, как у своих.
+          </p>
+        )}
         {(n > 0 || nm > 0) && <p className="text-xs text-neutral-500">Всё добавляется к тому, что уже есть, ничего не заменяется.</p>}
       </div>
       {(n > 0 || nm > 0) && (
         <Button block className="mb-2" onClick={() => {
-          up((d) => applyImport(d, planImport(d, r.workouts, r.measurements), r.source));
+          up((d) => applyImport(d, planImport(d, r.workouts, r.measurements, opts), r.source));
           onDone(n > 0 ? `Добавлено ${n} ${plural(n, "тренировка", "тренировки", "тренировок")}` : `Добавлено замеров: ${nm}`);
         }}>Импортировать</Button>
       )}

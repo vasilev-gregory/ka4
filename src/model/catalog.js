@@ -179,6 +179,14 @@ export const SEED_EX = [
   ["Exercise bike", "Велотренажёр", "кардио", "cardio"],
   ["Stair climber", "Степпер-лестница", "кардио", "cardio"],
   ["Jump rope", "Скакалка", "кардио", "cardio"],
+  // from «Дневник тренировок»
+  ["Decline barbell bench press", "Жим штанги лёжа головой вниз", "грудь"],
+  ["Barbell rear delt row", "Тяга штанги в наклоне на задние дельты", "плечи"],
+  ["Machine lateral raise", "Махи в стороны в тренажёре", "плечи"],
+  ["Seated calf raise", "Подъёмы на носки сидя в тренажёре", "икры"],
+  ["Smith machine shoulder press", "Жим над головой в Смите", "плечи"],
+  ["Standing cable leg curl", "Сгибание ноги стоя в кроссовере", "ноги"],
+  ["Dumbbell fly", "Разводка гантелей лёжа", "грудь"],
 ];
 
 // Energy cost of cardio, MET at a moderate effort (Compendium of Physical Activities, 2024). With a distance,

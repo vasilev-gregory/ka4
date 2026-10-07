@@ -27,8 +27,9 @@ const sameDay = (a, b) => new Date(a).toDateString() === new Date(b).toDateStrin
 
 // What an import would do, without changing anything: { add: workouts to add (only exercises we have),
 // already: workouts that are here already, matched: Map name -> our exercise,
-// missing: Map name -> sets count (not in Кач: not imported), measures: measurements to add (days without one) }
-export function planImport(d, workouts, measurements = []) {
+// missing: Map name -> sets count (not in Кач: not imported), measures: measurements to add (days without one),
+// noKg: names of body-weight exercises whose kilograms were left out (bodyKg: false — they weren't an added weight) }
+export function planImport(d, workouts, measurements = [], { bodyKg = true } = {}) {
   const matched = new Map(), missing = new Map();
   const fresh = workouts.filter((w) => !d.workouts.some((x) => Math.abs(x.startedAt - w.startedAt) < SAME_TIME));
   fresh.forEach((w) => w.exercises.forEach((e) => {
@@ -38,11 +39,18 @@ export function planImport(d, workouts, measurements = []) {
     }
     if (missing.has(e.name)) missing.set(e.name, missing.get(e.name) + e.sets.length);
   }));
+  const noKg = new Set();
+  const bodyOnly = (e) => {
+    const ex = matched.get(e.name);
+    if (bodyKg || !(ex.bw || ex.assist) || !e.sets.some((s) => s.w)) return e;
+    noKg.add(e.name);
+    return { ...e, sets: e.sets.map((s) => ({ ...s, w: "" })) };
+  };
   const add = fresh
-    .map((w) => ({ ...w, exercises: w.exercises.filter((e) => matched.has(e.name) && e.sets.length) }))
+    .map((w) => ({ ...w, exercises: w.exercises.filter((e) => matched.has(e.name) && e.sets.length).map(bodyOnly) }))
     .filter((w) => w.exercises.length);
   const measures = measurements.filter((m) => !(d.measurements || []).some((x) => sameDay(x.date, m.date)));
-  return { add, already: workouts.length - fresh.length, matched, missing, measures };
+  return { add, already: workouts.length - fresh.length, matched, missing, measures, noKg };
 }
 
 // Adds the planned workouts as finished ones (source: where they came from) and the measurements.

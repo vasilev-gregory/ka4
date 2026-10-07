@@ -30,7 +30,7 @@ export function BackupSection({ data, up, replace }) {
       </div>
       <Button block onClick={shareFile} className="mb-2">Отправить копию файлом</Button>
       <Button variant="secondary" block onClick={() => fileRef.current && fileRef.current.click()}>Загрузить из файла</Button>
-      <p className="mt-1 text-xs text-neutral-500">Копия Кача или CSV-экспорт Hevy и GymKeeper — добавятся к текущим данным. На Android файл можно сразу «Поделиться» в Кач.</p>
+      <p className="mt-1 text-xs text-neutral-500">Копия Кача или CSV-экспорт Hevy, GymKeeper и «Дневника тренировок» — добавятся к текущим данным. На Android файл можно сразу «Поделиться» в Кач.</p>
       <input ref={fileRef} type="file" accept=".json,.csv,.db,application/json,text/csv" onChange={pickFile} className="hidden" />
       {file && (
         <ImportFlow file={file} data={data} up={up} replace={replace}
