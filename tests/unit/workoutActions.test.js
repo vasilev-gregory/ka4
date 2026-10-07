@@ -34,6 +34,15 @@ test("partial reps mean failure (RIR 0), but not on a warm-up", () => {
   assert.equal(d.active.exercises[0].sets[1].rir, undefined);
 });
 
+test("the dial on ✓ marks the set done with the RIR picked (over the RIR 0 of partials); on a done set only the RIR changes", () => {
+  const d = withWorkout([blank({ hw: "80", hr: "6", hp: "2" })]);
+  A.markSetRir(d, 0, 0, 2, T0 + 1000);
+  const s = d.active.exercises[0].sets[0];
+  assert.deepEqual([s.done, s.w, s.rir, s.at], [true, "80", 2, T0 + 1000]);
+  A.markSetRir(d, 0, 0, 4, T0 + 5000);
+  assert.deepEqual([s.done, s.rir, s.at], [true, 4, T0 + 1000]);
+});
+
 test("no rest countdown in the middle of a drop set, nor with the countdown off", () => {
   const d = withWorkout([blank({ g: "x" }), blank({ g: "x" }), blank()]);
   A.toggleSet(d, 0, 0, T0);

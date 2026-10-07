@@ -243,3 +243,26 @@ test("a reload in the middle of a workout (a new version) loses nothing: ticked 
   if (await keep.count()) await keep.click();
   await expect.poll(async () => (await stored(page)).workouts[0]?.exercises[0].sets.map((s) => s.w)).toEqual(["60", "70"]);
 });
+
+test("hold ✓ and slide to a RIR: the set is done with it; let go at the centre: nothing", async ({ page }) => {
+  await openApp(page);
+  await startWorkout(page);
+  const check = page.getByRole("button", { name: "Подход сделан" }).first();
+  const b = await check.boundingBox();
+  const cx = b.x + b.width / 2, cy = b.y + b.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await expect(page.getByTestId("rir-dial")).toBeVisible(); // opens after a hold
+  await page.mouse.move(cx, cy - 20); // still at the centre
+  await page.mouse.up();
+  await expect(page.getByTestId("rir-dial")).toHaveCount(0);
+  await expect(check).not.toHaveClass(/bg-accent-400/);
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await expect(page.getByTestId("rir-dial")).toBeVisible();
+  await page.mouse.move(cx - 40, cy - 10, { steps: 4 });
+  await page.mouse.move(cx - 72, cy, { steps: 4 }); // left: the middle of the fan, 2
+  await page.mouse.up();
+  await expect(check).toHaveClass(/bg-accent-400/);
+  await expect.poll(async () => (await stored(page)).active.exercises[0].sets[0]).toMatchObject({ done: true, rir: 2 });
+});

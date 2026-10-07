@@ -29,6 +29,7 @@
 
 | Задача | Где |
 |---|---|
+| Отметить подход с RIR удержанием ✓ (веер) | `strength/workout/RirDial.jsx` → `markSetRir` (`model/workoutActions.js`) | |
 | Подходы, объём, время, отдых тренировки; текст итогов | `model/workout.js` (`stats`, `fmtTotals`, `restStats`) |
 | Как часто и недавно делалось упражнение («твои» вверху выбора) | `model/workout.js` `exerciseUsage` |
 | Рекорды, расчётный 1ПМ, сравнение с прошлым разом и с прошлой той же программой | `model/records.js` |
