@@ -64,7 +64,7 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
                 <div className="flex items-center gap-2 text-xs">
                   <span className="min-w-0 flex-1 truncate text-neutral-200">{r.name}</span>
                   <span className="tabular-nums text-neutral-400">{l.text}</span>
-                  {l.status && <span className={`w-20 shrink-0 rounded-md py-0.5 text-center text-[11px] ${scale.chip[l.status[0]]}`}>{l.status[1]}</span>}
+                  {l.status && <span className={`min-w-20 shrink-0 whitespace-nowrap rounded-md px-1.5 py-0.5 text-center text-[11px] ${scale.chip[l.status[0]]}`}>{l.status[1]}</span>}
                 </div>
                 <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-700/60">
                   <div className={`absolute inset-y-0 left-0 rounded-full ${scale.bar}`} style={{ width: `${Math.min(100, (l.value / scale.barMax) * 100)}%` }} />

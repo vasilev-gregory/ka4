@@ -2,7 +2,7 @@
 // workout's own scale (model/muscles sessionStatus) with its week beside it, statuses and the exercises behind a muscle.
 // Used by the history, a workout and a program.
 import { fmtNum, plural } from "../core/util.js";
-import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, SESSION_GOOD, SESSION_MAX, sessionHint, sessionStatus } from "../model/muscles.js";
+import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, SESSION_GOOD, SESSION_GROW, sessionHint, sessionStatus } from "../model/muscles.js";
 import { ByList, LoadBreakdown } from "../ui/LoadBreakdown.jsx";
 import { useApp } from "../ui/kit.jsx";
 
@@ -14,9 +14,9 @@ const SCALE = {
   // statuses in the muscle colour: the fuller, the closer to the weekly target
   chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-rose-950 text-rose-300", optimal: "bg-rose-500 text-white", high: "bg-rose-200 text-rose-950" },
 };
-// one workout or program: its own scale, full at «максимум» (8)
-const SINGLE = { ...SCALE, target: SESSION_MAX, barMax: SESSION_CAP + 1, mark: SESSION_GOOD,
-  legend: [[0, "0"], [SESSION_GOOD, "4 — оптимум"], [SESSION_MAX, "8+ — максимум"]] };
+// one workout or program: its own scale, full at «оптимум» (6)
+const SINGLE = { ...SCALE, target: SESSION_GOOD, barMax: SESSION_CAP + 1, mark: SESSION_GOOD,
+  legend: [[0, "0"], [SESSION_GROW, "3 — рост"], [SESSION_GOOD, "6+ — оптимум"]] };
 
 // "7,5 подх. · 2 раза"; averages over weeks are fractional
 const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum(freq)} ${Number.isInteger(freq) ? plural(freq, "раз", "раза", "раз") : "раза"}` : ""}`;
@@ -48,8 +48,8 @@ export const MusclesWhy = () => (
     вспомогательная — половину (присед: квадрицепс — подход, ягодицы — половина); тренировка засчитывается мышце, если она была основной.
     Ориентир по исследованиям (Pelland и др., 2024–25): рост — от 4 подходов в неделю, хорошо — от 10 (черта на шкале), отлично — 20,
     после ~30 прироста почти нет; сколько раз в неделю — почти не важно, важен объём. На схеме мышца заливается по мере подходов,
-    полностью — к 10 в неделю. Одна тренировка — своя шкала: 2 подхода — уже рост, 4–7 — оптимум, 8–11 — максимум за раз,
-    больше 11 за раз прироста не видно (лучше на другой день); рядом — сколько у мышцы за неделю.
+    полностью — к 10 в неделю. Одна тренировка — своя шкала: 3 подхода — уже рост, 6–11 — оптимум, больше 11 за раз прироста не видно
+    (лучше на другой день); рядом — сколько у мышцы за неделю.
     Тап по мышце на схеме или в списке выделяет её и раскрывает упражнения, из которых сложились её подходы.
   </p>
 );
