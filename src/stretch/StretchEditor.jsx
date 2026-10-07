@@ -57,7 +57,7 @@ export function StretchEditor({ stretch, upStretch, id, back, open, play, busy, 
       {Object.keys(plan).length > 0 && (
         <div className="mt-4 rounded-xl bg-neutral-900 p-3">
           <div className="mb-2 font-semibold">Мышцы по плану</div>
-          <StretchBreakdown areas={plan} single exMap={exMap} byNote="в этой программе" open={inRun ? null : open} />
+          <StretchBreakdown areas={plan} single exMap={exMap} byNote="в этой программе" open={inRun ? null : open} find={(a) => setPicker({ area: a })} />
         </div>
       )}
       <div className="mt-4 rounded-xl bg-neutral-900 p-3">
@@ -102,7 +102,7 @@ export function StretchEditor({ stretch, upStretch, id, back, open, play, busy, 
       </>}
 
       {picker && (
-        <StretchPicker stretch={stretch} upStretch={upStretch} onClose={() => setPicker(false)} already={p.items.map((x) => x.exerciseId)}
+        <StretchPicker stretch={stretch} upStretch={upStretch} onClose={() => setPicker(false)} already={p.items.map((x) => x.exerciseId)} area={picker.area}
           onPick={(list) => { change((pp) => S.addToProgram(pp, list)); setPicker(false); }} />
       )}
     </div>

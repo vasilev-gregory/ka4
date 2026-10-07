@@ -38,11 +38,11 @@ const FILTERS = [
 ];
 
 // onPick(ex) for one; onPickMany(list) to pick several; already: ids in the program; group: the chip chosen at the start
-export function Picker({ data, up, onPick, onPickMany, onClose, group = "", already, title = "Добавить упражнение" }) {
+export function Picker({ data, up, onPick, onPickMany, onClose, group = "", muscle = "", already, title = "Добавить упражнение" }) {
   const tags = (e, inMine) => [inMine && e.group, e.kind === "time" && "на время", e.kind === "cardio" && (inMine || group !== "кардио") && "кардио"].filter(Boolean);
   return (
     <ExercisePicker title={title} items={data.exercises} groups={GROUPS} groupOf={(e) => e.group} filters={FILTERS}
-      start={group === "кардио" ? { muscle: "cardio" } : {}} usage={exerciseUsage(data.workouts, data.programs)}
+      start={group === "кардио" ? { muscle: "cardio" } : muscle ? { muscle } : {}} usage={exerciseUsage(data.workouts, data.programs)}
       already={already} tags={tags} onPick={onPick} onPickMany={onPickMany} onClose={onClose} newLabel="+ Новое упражнение"
       createForm={({ name, cancel, done }) => (
         <NewExercise name={name} group={group} cancel={cancel} done={(ex) => { up((d) => createExercise(d, ex)); done(ex); }} />

@@ -79,6 +79,7 @@
 | Изменение сплитов: создать, активный, удалить; программы сплита — черновиком, как строки программы | `model/splitActions.js`; удаление программы из сплитов — в `removeProgram` | |
 | Редактор сплита, список сплитов | `strength/SplitEditor.jsx` (общие `ProgramName`, `ProgramItems`), `strength/SplitRows.jsx` | |
 | Мышцы плана (программа — шкала одной тренировки, сплит — недели) | `strength/ProgramMuscles` (`programs`, `week`) | |
+| От мышцы плана к упражнениям на неё (только редакторы программы / сплита / растяжки) | `find` у `LoadBreakdown` (через `MuscleBreakdown` / `StretchBreakdown` / `ProgramMuscles`) → выбор с фильтром (`Picker` `muscle`, `StretchPicker` `area`) | ⚙ `find` в истории / карточке тренировки |
 | Выбор упражнений / растяжек (поиск, фильтры — ряды чипов `filters` от раздела, группы, «твои», несколько сразу, «уже в программе», создать новое) | `ExercisePicker` (`ui/ExercisePicker.jsx`) | свой экран выбора в разделе |
 | Подтверждение / вопрос снизу | `Sheet` | |
 | Графики | `<Trend>` | ⚙ `recharts` напрямую |

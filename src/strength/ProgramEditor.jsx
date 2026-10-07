@@ -44,7 +44,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
       })} />
       <Button variant="dashed" block onClick={() => setPicker(true)} className="mt-2">Добавить упражнение</Button>
       <p className="mt-2 text-xs text-neutral-500">Число справа — сколько подходов подставить при старте, у кардио — план в минутах или километрах (тап по единице). Изменения сохраняются сразу.</p>
-      <ProgramMuscles programs={[p]} exMap={exMap} open={open} />
+      <ProgramMuscles programs={[p]} exMap={exMap} open={open} find={(m) => setPicker({ muscle: m })} />
 
       <ProgramFooter canStart={!runningSession(data) && p.items.length > 0}
         startLabel={{ strength: "Уже идёт тренировка", stretch: "Идёт растяжка" }[runningSession(data)] || "Начать тренировку"}
@@ -52,7 +52,7 @@ export function ProgramEditor({ data, up, exMap, id, back, goWorkout, open }) {
         onDelete={() => { up((d) => removeProgram(d, id)); back(); }} />
 
       {picker && (
-        <Picker data={data} up={up} onClose={() => setPicker(false)} onPick={pick} already={p.items.map((x) => x.exerciseId)}
+        <Picker data={data} up={up} onClose={() => setPicker(false)} onPick={pick} already={p.items.map((x) => x.exerciseId)} muscle={picker.muscle}
           title={picker.replace !== undefined ? "Заменить упражнение" : undefined}
           onPickMany={picker.replace !== undefined ? undefined : (list) => {
             change((pp) => addProgramItems(pp, list));

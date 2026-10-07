@@ -23,10 +23,11 @@ function NewStretch({ name: start, cancel, done }) {
   );
 }
 
-// onPick(list): the chosen stretches; already: ids in the program; title / action: the screen's title and the button's word
-export function StretchPicker({ stretch, upStretch, onPick, onClose, already = [], title = "Добавить растяжку", action = "Добавить" }) {
+// onPick(list): the chosen stretches; already: ids in the program; title / action: the screen's title and the button's word;
+// area: open on that area's chip (from the plan's areas)
+export function StretchPicker({ stretch, upStretch, onPick, onClose, already = [], title = "Добавить растяжку", action = "Добавить", area = "" }) {
   return (
-    <ExercisePicker title={title} items={stretch.exercises} groups={[...ST_AREAS, NO_AREA]} groupOf={areaOf} usage={stretchUsage(stretch)}
+    <ExercisePicker title={title} items={stretch.exercises} groups={[...ST_AREAS, NO_AREA]} groupOf={areaOf} start={area ? { group: area } : {}} usage={stretchUsage(stretch)}
       already={already} tags={(e) => (e.sides ? ["2 стороны"] : [])} onPickMany={onPick} onClose={onClose} action={action} newLabel="+ Новая растяжка"
       createForm={({ name, cancel, done }) => (
         <NewStretch name={name} cancel={cancel} done={(ex) => { upStretch((s) => createExercise(s, ex)); done(ex); }} />

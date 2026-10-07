@@ -16,8 +16,10 @@ const HEAD_JOKES = [
 // items: [{ id, name, parts: body map ids }] in list order; load: { id: { value, text, status?: [key, label], nick?: a joke on the chip } };
 // scale: { target: value filled completely, barMax, mark: value of the tick on the bar, legend: [[value, label]],
 //   fill: fill-* class, bar: bg-* class, chip: { statusKey: classes }, empty: caption of a part with no load };
-// map: draw the body; only: list just these ids; note(id): a line under a row; expand(id): what opens under a picked row
-export function LoadBreakdown({ items, load, scale, map = true, only, note, expand }) {
+// map: draw the body; only: list just these ids; note(id): a line under a row; expand(id): what opens under a picked row;
+// find: { label, go(id) } — only where a plan is made (program / split editors): a picked part, or one left with no
+// load, leads to the exercises for it («Подобрать упражнение»); elsewhere a tap only shows
+export function LoadBreakdown({ items, load, scale, map = true, only, note, expand, find }) {
   const [sel, setSel] = useState(null);
   const [joke, setJoke] = useState(-1);
   const rows = items.filter((it) => load[it.id]?.value > 0 && (!only || only.includes(it.id)));
@@ -30,6 +32,7 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
   // a tapped shape picks the row it belongs to, one with a load first
   const pickPart = (m) => pick(m === HEAD ? HEAD : (rows.find((r) => r.parts.includes(m)) || items.find((it) => it.parts.includes(m)))?.id);
   const picked = items.find((it) => it.id === sel);
+  const idle = find ? items.filter((it) => it.parts.length && !(load[it.id]?.value > 0) && (!only || only.includes(it.id))) : [];
   const statusText = (id) => (load[id].status ? ` — ${load[id].status[1]}` : "") + (load[id].nick ? ` (${load[id].nick})` : "");
   return (
     <div>
@@ -77,10 +80,27 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
                 {note && <div className="mt-0.5 text-[11px] text-neutral-500">{note(r.id)}</div>}
               </button>
               {sel === r.id && expand && expand(r.id)}
+              {sel === r.id && find && (
+                <button onClick={() => find.go(r.id)} className="mx-1.5 mb-2 rounded-lg bg-neutral-700 px-3 py-1.5 text-xs text-neutral-100 active:bg-neutral-600">
+                  {find.label} на «{r.name}»
+                </button>
+              )}
             </div>
           );
         })}
       </div>
+      {idle.length > 0 && (
+        <div className="mt-3 px-1.5" data-testid="no-load">
+          <div className="mb-1 text-[11px] text-neutral-500">Без нагрузки — тап, чтобы подобрать:</div>
+          <div className="flex flex-wrap gap-1.5">
+            {idle.map((it) => (
+              <button key={it.id} onClick={() => find.go(it.id)} className="rounded-md bg-neutral-800 px-2 py-1 text-xs text-neutral-300 active:bg-neutral-700">
+                {it.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
