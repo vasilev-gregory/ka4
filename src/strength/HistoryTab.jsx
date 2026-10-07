@@ -2,7 +2,7 @@
 // and its workouts.
 import { fmtNum, plural } from "../core/util.js";
 import { fmtTotals, fmtWDur, stats } from "../model/workout.js";
-import { weekLoad } from "../model/muscles.js";
+import { muscleLoad, sessionWindows, weekLoad } from "../model/muscles.js";
 import { workoutKcal } from "../model/energy.js";
 import { periodSummary } from "../model/periods.js";
 import { inPeriod } from "../model/calendar.js";
@@ -11,12 +11,20 @@ import { PeriodCard, PeriodNav, TOTAL_NOTE, usePeriod } from "../ui/PeriodNav.js
 import { HistoryRow } from "../ui/Session.jsx";
 import { MuscleBreakdown, MusclesWhy } from "./MuscleBreakdown.jsx";
 
-// week: hard sets per muscle. month / year: totals and the average week per muscle.
-function PeriodPanel({ zoom, range, workouts, exMap, open }) {
+// day: that day's hard sets per muscle against the per-workout norm (as a workout's card). week: hard sets per muscle.
+// month / year: totals and the average week per muscle.
+function PeriodPanel({ data, zoom, range, workouts, exMap, open }) {
   const now = useNow(60e3);
   const { bwAt } = useApp();
   let title, load, empty;
-  if (zoom === "week") {
+  if (zoom === "day") {
+    const day = inPeriod(workouts, range);
+    const n = day.length;
+    // one workout that day (the usual case): the same muscles as in its card, under its name
+    title = n === 1 ? day[0].name : n ? `${n} ${plural(n, "тренировка", "тренировки", "тренировок")}` : "";
+    load = muscleLoad(workouts, exMap, range.from, range.to).muscles;
+    empty = n ? "Тяжёлых подходов не было." : "В этот день тренировок не было.";
+  } else if (zoom === "week") {
     const an = weekLoad(workouts, exMap, range.from);
     title = `тренировок: ${an.days}`;
     load = an.muscles;
@@ -30,8 +38,9 @@ function PeriodPanel({ zoom, range, workouts, exMap, open }) {
   }
   const any = Object.keys(load).length > 0;
   return (
-    <PeriodCard title={title} averaged={zoom !== "week" && any} why={<MusclesWhy />}>
-      {any ? <MuscleBreakdown load={load} exMap={exMap} open={open} byNote={TOTAL_NOTE[zoom]} ongoing={zoom === "week" && range.to > now} />
+    <PeriodCard title={title} averaged={(zoom === "month" || zoom === "year") && any} why={<MusclesWhy />}>
+      {any ? <MuscleBreakdown load={load} exMap={exMap} open={open} byNote={TOTAL_NOTE[zoom]} ongoing={zoom === "week" && range.to > now}
+        windows={zoom === "day" ? sessionWindows(data, exMap) : undefined} />
         : <p className="text-xs text-neutral-500">{empty}</p>}
     </PeriodCard>
   );
@@ -49,7 +58,7 @@ export function HistoryTab({ data, exMap, open }) {
       <Header title="История силовых" />
       <PeriodNav period={period} dates={all.map((w) => w.startedAt)}>
         {/* the running workout counts in the week's sets, but not in the totals of a month / year */}
-        <PeriodPanel zoom={zoom} range={range} workouts={zoom === "week" ? all : data.workouts} exMap={exMap} open={open} />
+        <PeriodPanel data={data} zoom={zoom} range={range} workouts={zoom === "week" || zoom === "day" ? all : data.workouts} exMap={exMap} open={open} />
       </PeriodNav>
       {data.workouts.length === 0 && <p className="text-neutral-400">Здесь появятся завершённые тренировки.</p>}
       <div className="space-y-2">

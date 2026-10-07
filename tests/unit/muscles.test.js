@@ -104,7 +104,7 @@ test("one workout's norm per muscle: the week's 10–20 split over the workouts 
   assert.deepEqual(sessionWindow(1.5), { lo: 6.5, hi: 11 }); // a split: the muscle in half of three workouts
   assert.deepEqual(sessionWindow(1), { lo: 10, hi: 11 });
   const w = sessionWindow(2); // { lo: 5, hi: 10 }
-  assert.deepEqual([1, 3, 5, 10, 12].map((n) => sessionStatus(n, w)[1]), ["мало", "почти", "норма", "отлично", "перебор за раз"]);
+  assert.deepEqual([1, 3, 5, 10, 12].map((n) => sessionStatus(n, w)[1]), ["мало", "рабочая", "норма", "отлично", "перебор за раз"]);
   assert.equal(sessionHint(2.5, w), "до нормы на тренировку ещё 2,5 подх. (норма 5–10)");
   assert.equal(sessionHint(7, w), "норма; до отличного ещё 3 подх.");
   // from the programs: legs in 2 of 4 programs, 4 workouts a week -> legs twice a week
@@ -114,7 +114,7 @@ test("one workout's norm per muscle: the week's 10–20 split over the workouts 
   const d = { settings: { perWeek: 4 }, programs: [P(["squat"]), P(["bench"]), P(["squat"]), P(["bench"])] };
   assert.deepEqual(sessionWindows(d, exMap)("quads"), { lo: 5, hi: 10 });
   assert.deepEqual(sessionWindows({ settings: {}, programs: [] }, exMap)("quads"), sessionWindow(3)); // no programs: every workout
-  assert.deepEqual(sessionWindows(d, exMap)("glutes"), sessionWindow(4)); // only helps in the programs: every workout
+  assert.deepEqual(sessionWindows(d, exMap)("glutes"), sessionWindow(2)); // helping in the squat programs counts too
 });
 
 test("a week not over yet says «пока мало», not «мало»", async () => {
