@@ -2,7 +2,7 @@
 // workout's own scale (model/muscles sessionStatus) with its week beside it, statuses and the exercises behind a muscle.
 // Used by the history, a workout and a program.
 import { fmtNum, plural } from "../core/util.js";
-import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, SESSION_GOOD, SESSION_GROW, sessionHint, sessionStatus } from "../model/muscles.js";
+import { growthStatus, MUSCLES, musclesOf, SESSION_CAP, SESSION_GOOD, SESSION_GROW, sessionHint, sessionNick, sessionStatus } from "../model/muscles.js";
 import { ByList, LoadBreakdown } from "../ui/LoadBreakdown.jsx";
 import { useApp } from "../ui/kit.jsx";
 
@@ -16,7 +16,7 @@ const SCALE = {
 };
 // one workout or program: its own scale, full at «оптимум» (6)
 const SINGLE = { ...SCALE, target: SESSION_GOOD, barMax: SESSION_CAP + 1, mark: SESSION_GOOD,
-  legend: [[0, "0"], [SESSION_GROW, "3 — рост"], [SESSION_GOOD, "6+ — оптимум"]] };
+  legend: [[0, "0"], [SESSION_GROW, "3 — рост"], [SESSION_GOOD, "6+ — оптимальный"]] };
 
 // "7,5 подх. · 2 раза"; averages over weeks are fractional
 const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum(freq)} ${Number.isInteger(freq) ? plural(freq, "раз", "раза", "раз") : "раза"}` : ""}`;
@@ -27,7 +27,7 @@ const fmtLoad = (sets, freq) => `${fmtNum(sets)} подх.${freq ? ` · ${fmtNum
 export function MuscleBreakdown({ load, map = true, only, note, single = false, week, exMap, byNote, open }) {
   const { nm1 } = useApp();
   const shown = Object.fromEntries(Object.entries(load).map(([m, l]) => [m, {
-    value: l.sets, text: single ? fmtLoad(l.sets) : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets) : growthStatus(l.sets),
+    value: l.sets, text: single ? `${fmtLoad(l.sets)} · ${sessionNick(l.sets)}` : fmtLoad(l.sets, l.freq), status: single ? sessionStatus(l.sets) : growthStatus(l.sets),
   }]));
   const expand = exMap && ((m) => load[m].by && (
     <ByList title={`Засчитались${byNote ? ` ${byNote}` : ""}`} entries={Object.entries(load[m].by).map(([id, n]) => {
@@ -48,8 +48,8 @@ export const MusclesWhy = () => (
     вспомогательная — половину (присед: квадрицепс — подход, ягодицы — половина); тренировка засчитывается мышце, если она была основной.
     Ориентир по исследованиям (Pelland и др., 2024–25): рост — от 4 подходов в неделю, хорошо — от 10 (черта на шкале), отлично — 20,
     после ~30 прироста почти нет; сколько раз в неделю — почти не важно, важен объём. На схеме мышца заливается по мере подходов,
-    полностью — к 10 в неделю. Одна тренировка — своя шкала: 3 подхода — уже рост, 6–11 — оптимум, больше 11 за раз прироста не видно
-    (лучше на другой день); рядом — сколько у мышцы за неделю.
+    полностью — к 10 в неделю. Одна тренировка — своя шкала: 3 подхода — уже рост, 6–11 — оптимальный рост, больше 11 за раз прироста не видно
+    (силы лучше отдать другой группе); рядом — сколько у мышцы за неделю.
     Тап по мышце на схеме или в списке выделяет её и раскрывает упражнения, из которых сложились её подходы.
   </p>
 );
