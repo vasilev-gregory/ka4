@@ -63,3 +63,15 @@ test("a program's split: the active one when it holds the program, else the firs
   assert.equal(splitOf(d, "b").id, "s2");
   assert.equal(splitOf(d, "c"), null);
 });
+
+test("several programs deleted at once leave the splits; the undo puts back the programs and their places in splits", async () => {
+  const { removePrograms, restorePrograms } = await import("../../src/model/workoutActions.js");
+  const d = seed();
+  const was = structuredClone({ programs: d.programs, splits: d.splits });
+  const ids = [d.programs[0].id, d.programs[2].id];
+  removePrograms(d, ids);
+  assert.equal(d.programs.length, 2);
+  assert.equal(d.splits[0].items.length, 2);
+  restorePrograms(d, was);
+  assert.deepEqual(d.splits[0].items.map((it) => it.programId), was.programs.map((p) => p.id));
+});

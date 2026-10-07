@@ -1,5 +1,5 @@
 // The splits under the programs: a row per split (a tap opens it; the active one says so) and «+ Новый сплит»; and
-// the bar for programs picked by a hold: a new split of them, or into an existing one.
+// the bar for programs picked by a hold: a new split of them, into an existing one, or delete them.
 import { plural, progTitle } from "../core/util.js";
 import { Button } from "../ui/kit.jsx";
 import { useBackCloses } from "../ui/navigation.js";
@@ -28,15 +28,18 @@ export function SplitRows({ splits, activeId, onOpen, onCreate }) {
   );
 }
 
-// n programs picked: «Новый сплит» of them, «В «…»» an existing split, «Отмена» (the system back too)
-export function PickedBar({ n, splits, onNew, onAdd, onCancel }) {
+// n programs picked: «Новый сплит» of them, «В «…»» an existing split, «Удалить» them, «Отмена» (the system back too)
+export function PickedBar({ n, splits, onNew, onAdd, onDelete, onCancel }) {
   useBackCloses(onCancel);
   return (
     <div className="safe-bottom fixed inset-x-0 bottom-0 z-50 border-t border-neutral-800 bg-black px-4 pt-3" data-testid="picked-bar">
       <div className="mx-auto max-w-md pb-3">
         <div className="mb-2 flex items-center justify-between text-xs text-neutral-400">
           <span>Выбрано: {n} — собрать в сплит</span>
-          <button onClick={onCancel} className="p-1 text-neutral-300">Отмена</button>
+          <span className="flex gap-3">
+            <button onClick={onDelete} className="p-1 text-red-400">Удалить</button>
+            <button onClick={onCancel} className="p-1 text-neutral-300">Отмена</button>
+          </span>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button className="flex-1" onClick={onNew}>Новый сплит</Button>

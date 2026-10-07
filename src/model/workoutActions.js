@@ -326,6 +326,13 @@ export function closeStaleWorkout(d0, now = Date.now()) {
   return d;
 }
 
+// several programs at once (picked on the workout tab); the undo puts back the programs and the splits as they were
+export const removePrograms = (d, ids) => ids.forEach((id) => removeProgram(d, id));
+export function restorePrograms(d, { programs, splits }) {
+  d.programs = programs;
+  d.splits = splits;
+}
+
 // a program left with no name and nothing in it (made by «+ Новая программа», then left) is dropped
 export function dropEmptyProgram(d, id) {
   const p = d.programs.find((x) => x.id === id);

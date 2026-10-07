@@ -1,13 +1,13 @@
 // No workout running: the programs to start from (shared rows, ui/ProgramRows) — the active split's first, in its
 // order, marked with what this week did and which is next (model/splits) — the splits, and yesterday's auto-closed
-// workout asking to update its program. A hold on programs picks them to make a split of or add to one.
+// workout asking to update its program. A hold on programs picks them to make a split of, add to one, or delete.
 import { useState } from "react";
 import { RUNNING_NOTE, runningSession } from "../../model/workout.js";
 import { activeSplit, splitMarks } from "../../model/splits.js";
-import { fmtDate, fmtWeekday, progTitle, uid } from "../../core/util.js";
-import { createProgram, resolvePendingProgramUpdate, startWorkout } from "../../model/workoutActions.js";
+import { fmtDate, fmtWeekday, plural, progTitle, uid } from "../../core/util.js";
+import { createProgram, removePrograms, resolvePendingProgramUpdate, restorePrograms, startWorkout } from "../../model/workoutActions.js";
 import { addSplitPrograms, createSplit } from "../../model/splitActions.js";
-import { Button, Card, Header, useApp } from "../../ui/kit.jsx";
+import { Button, Card, Header, useApp, useUndo } from "../../ui/kit.jsx";
 import { ProgramRows } from "../../ui/ProgramRows.jsx";
 import { PickedBar, SplitRows } from "../SplitRows.jsx";
 
@@ -42,6 +42,14 @@ export function ProgramList({ data, up, exMap, open }) {
     setPicked([]);
     open({ type: "split", id });
   };
+  const undo = useUndo();
+  const removePicked = () => {
+    const was = { programs: structuredClone(data.programs), splits: structuredClone(data.splits) };
+    const n = picked.length;
+    up((d) => removePrograms(d, picked));
+    setPicked([]);
+    undo.offer(`${n} ${plural(n, "программа удалена", "программы удалены", "программ удалено")}`, () => up((d) => restorePrograms(d, was)));
+  };
   const addTo = (splitId) => {
     const ids = pickedInOrder();
     up((d) => addSplitPrograms(d.splits.find((s) => s.id === splitId), ids));
@@ -75,11 +83,12 @@ export function ProgramList({ data, up, exMap, open }) {
           id: p.id, name: p.name, canStart: p.items.length > 0, note: sm && splitNote(sm.marks[p.id]), next: !!sm?.marks[p.id]?.next,
           meta: p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений",
         }))} />
+      {undo.toast}
       <SplitRows splits={data.splits} activeId={data.activeSplitId} onOpen={(id) => open({ type: "split", id })} onCreate={() => newSplit()} />
       {picked.length > 0 && (
         <>
           <div className="h-28" /> {/* room to scroll the list above the bar */}
-          <PickedBar n={picked.length} splits={data.splits} onNew={() => newSplit(pickedInOrder())} onAdd={addTo} onCancel={() => setPicked([])} />
+          <PickedBar n={picked.length} splits={data.splits} onNew={() => newSplit(pickedInOrder())} onAdd={addTo} onDelete={removePicked} onCancel={() => setPicked([])} />
         </>
       )}
     </div>
