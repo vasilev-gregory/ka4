@@ -1,5 +1,6 @@
 // Small pure helpers: ids, number parsing, formatting, dates.
-export const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+// a UUID, unique across devices (for a future sync); outside a secure context (plain http) the old time + random id
+export const uid = () => globalThis.crypto?.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 export const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
