@@ -7,6 +7,7 @@ import { usePersistentData } from "./model/usePersistentData.js";
 import { makeBodyWeightAt, makeNames, RUNNING_NOTE, runningSession } from "./model/workout.js";
 import { SettingsTab } from "./settings/SettingsTab.jsx";
 import { BackupNag } from "./shell/BackupNag.jsx";
+import { MoveBanner } from "./shell/MoveBanner.jsx";
 import { PullToRefresh } from "./ui/PullToRefresh.jsx";
 import { SharedImport } from "./shell/SharedImport.jsx";
 import { TabBar } from "./shell/TabBar.jsx";
@@ -121,6 +122,7 @@ function Shell({ data, up, replace, saved }) {
           </div>
         )}
         <div className={`mx-auto max-w-md ${["pb-20", "pb-40", "pb-60", "pb-80"][bars]}`}>
+          {!view && <MoveBanner data={data} up={up} />}
           {content}
           {tab === "workout" && !view && !data.active && <BackupNag data={data} up={up} />}
         </div>
