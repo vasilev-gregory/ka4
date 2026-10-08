@@ -4,7 +4,10 @@ import { finishWorkout, openApp, startWorkout } from "./helpers.js";
 
 test("the active split marks this week's workouts and points at the next program", async ({ page }) => {
   await openApp(page);
-  await expect(page.getByText("Сплит «Неделя I–IV»: 0 из 4 на этой неделе")).toBeVisible();
+  await expect(page.getByText("Сплит «Неделя I–IV» · 0 из 4 на этой неделе")).toBeVisible();
+  // the split's programs in a frame of their own; a program not in it below, under «Другие программы»
+  await expect(page.getByTestId("program-group").getByRole("button", { name: "Начать" })).toHaveCount(4);
+  await expect(page.getByText("Другие программы")).toHaveCount(0); // all four are in the split
   await expect(page.getByText("следующая по сплиту")).toHaveCount(1);
   await expect(page.getByRole("button", { name: /^I\. Ноги и плечи.*следующая по сплиту/ })).toBeVisible();
   await startWorkout(page);
@@ -13,7 +16,7 @@ test("the active split marks this week's workouts and points at the next program
   const keep = page.getByText("Оставить программу как была");
   if (await keep.count()) await keep.click();
   await page.getByRole("button", { name: "Тренировка" }).last().click();
-  await expect(page.getByText("Сплит «Неделя I–IV»: 1 из 4 на этой неделе")).toBeVisible();
+  await expect(page.getByText("Сплит «Неделя I–IV» · 1 из 4 на этой неделе")).toBeVisible();
   await expect(page.getByRole("button", { name: /^I\. Ноги и плечи.*✓ / })).toBeVisible();
   await expect(page.getByRole("button", { name: /^II\. Грудь и спина.*следующая по сплиту/ })).toBeVisible();
 });
@@ -30,7 +33,7 @@ test("a new split: programs added (one twice), made active, its week's muscles; 
   await expect(page.getByText("Мышцы за неделю по плану")).toBeVisible();
   await page.getByRole("button", { name: /Активный сплит/ }).click(); // the first split stays active until this one takes over
   await page.goBack();
-  await expect(page.getByText("Сплит «Фулбади»: 0 из 3 на этой неделе")).toBeVisible();
+  await expect(page.getByText("Сплит «Фулбади» · 0 из 3 на этой неделе")).toBeVisible();
   await expect(page.getByRole("button", { name: /^II\. Грудь и спина.*следующая по сплиту/ })).toBeVisible();
   await page.getByRole("button", { name: /^Фулбади/ }).click();
   await page.getByRole("button", { name: "Удалить сплит" }).click();
@@ -113,7 +116,7 @@ test("hold programs to pick them: a new split of them, or into an existing one",
   await expect(row("I. Ноги и плечи")).toHaveCount(0);
   await page.getByRole("button", { name: "Вернуть" }).click();
   await expect(row("I. Ноги и плечи")).toBeVisible();
-  await expect(page.getByText(/^Сплит «Неделя I–IV»: 0 из 4/)).toBeVisible(); // back in their split too
+  await expect(page.getByText(/^Сплит «Неделя I–IV» · 0 из 4/)).toBeVisible(); // back in their split too
   // «Отмена» drops the pick; a tap opens the program again
   await hold(row("IV. Грудь и спина"));
   await page.getByRole("button", { name: "Отмена" }).click();

@@ -71,14 +71,11 @@ export function ProgramList({ data, up, exMap, open }) {
           </div>
         </Card>
       )}
-      {sm && (
-        <button onClick={() => open({ type: "split", id: split.id })} className="mb-2 block w-full text-left text-xs text-neutral-400">
-          Сплит «{progTitle(split)}»: {sm.doneCount === sm.total ? "неделя закрыта ✓" : `${sm.doneCount} из ${sm.total} на этой неделе`}
-        </button>
-      )}
       <ProgramRows onOpen={(id) => open({ type: "program", id })} onCreate={create} onWithout={() => start(null)}
         blocked={runningSession(data) === "stretch" ? RUNNING_NOTE.stretch : null}
         onStart={(id) => start(data.programs.find((x) => x.id === id))} select={{ ids: picked, toggle }}
+        group={sm && { ids: sm.order, onTitle: () => open({ type: "split", id: split.id }),
+          title: `Сплит «${progTitle(split)}» · ${sm.doneCount === sm.total ? "неделя закрыта ✓" : `${sm.doneCount} из ${sm.total} на этой неделе`}` }}
         programs={ordered.map((p) => ({
           id: p.id, name: p.name, canStart: p.items.length > 0, note: sm && splitNote(sm.marks[p.id]), next: !!sm?.marks[p.id]?.next,
           meta: p.items.map((i) => nm1(exMap[i.exerciseId])).filter(Boolean).join(", ") || "Пока без упражнений",
