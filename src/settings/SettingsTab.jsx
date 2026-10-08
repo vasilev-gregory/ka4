@@ -53,10 +53,10 @@ function ModeColor({ settings, mode, up }) {
   return (
     <Card className="mb-3">
       <div className="mb-2 font-semibold">Цвет {mode === "stretch" ? "растяжки" : "силовой"}</div>
-      <div className="flex justify-between">
+      <div className="grid grid-cols-3 gap-y-3">
         {Object.entries(PALETTES).map(([k, p]) => (
           <button key={k} onClick={() => up((d) => { d.settings[key] = k; })} aria-label={p.name} aria-pressed={k === cur}
-            disabled={k === taken} className="flex w-1/4 flex-col items-center gap-1 text-[11px] text-neutral-400 disabled:opacity-30">
+            disabled={k === taken} className="flex flex-col items-center gap-1 text-[11px] text-neutral-400 disabled:opacity-30">
             <span style={{ background: p.c[2] }} className={`h-9 w-9 rounded-full ${k === cur ? "ring-2 ring-white ring-offset-2 ring-offset-neutral-900" : ""}`} />
             {k === taken ? `у ${mode === "stretch" ? "силовой" : "растяжки"}` : p.name}
           </button>
