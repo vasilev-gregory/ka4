@@ -173,9 +173,10 @@ export function stillCounted(workouts, w, exMap) {
 export const WEEK_GROW = 4, WEEK_GOOD = 10, WEEK_GREAT = 20, WEEK_CAP = 30;
 
 // A week's hard sets for a muscle: [key, label]: "low" | "grow" | "optimal" | "high". Worded as steps up, not as a
-// shortfall: «старт» → «рост» (growing already) → «оптимум» → «максимум»; past 30 «предел».
+// shortfall: «поддержка» (keeps what is there, too little to grow) → «рост» (growing already) → «оптимум» →
+// «максимум»; past 30 «предел».
 export function growthStatus(sets) {
-  if (sets < WEEK_GROW) return ["low", "старт"];
+  if (sets < WEEK_GROW) return ["low", "поддержка"];
   if (sets < WEEK_GOOD) return ["grow", "рост"];
   if (sets < WEEK_GREAT) return ["optimal", "оптимум"];
   if (sets <= WEEK_CAP) return ["optimal", "максимум"];
@@ -197,7 +198,7 @@ export function weekHint(sets) {
 export const SESSION_GROW = 3, SESSION_GOOD = 6, SESSION_CAP = 11;
 // Every extra set in the window is a step of its own, so each one pays off: [from sets, label, chip key]
 export const SESSION_STEPS = [
-  [0, "старт", "low"], [3, "есть рост", "grow"], [4, "хороший рост", "grow"], [5, "крепкий рост", "grow"],
+  [0, "поддержка", "low"], [3, "есть рост", "grow"], [4, "хороший рост", "grow"], [5, "крепкий рост", "grow"],
   [6, "оптимальный рост", "optimal"], [7, "сильный рост", "optimal"], [9, "мощный рост", "optimal"], [11, "максимальный рост", "optimal"],
 ];
 const stepOf = (sets) => SESSION_STEPS.filter(([from]) => sets >= from).length - 1;
