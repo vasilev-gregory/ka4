@@ -4,11 +4,12 @@
 
 Деплой: push в `main` → GitHub Actions → https://vasilev-gregory.github.io/ka4/
 
-VK Cloud (своё доменное имя, приложение в корне): тот же push, задание `vkcloud` в `.github/workflows/deploy.yml`. Включается, когда
+VK Cloud (https://kach.hb.ru-msk.vkcloud-storage.ru/index.html — адрес бакета, без своего домена): тот же push, задание `vkcloud` в `.github/workflows/deploy.yml`. Включается, когда
 в репозитории заданы переменная `VKCLOUD_BUCKET` (имя бакета) и секреты `VKCLOUD_ACCESS_KEY` / `VKCLOUD_SECRET_KEY`;
 необязательные переменные `VKCLOUD_ENDPOINT` (S3-адрес, по умолчанию `https://hb.ru-msk.vkcloud-storage.ru`) и `VKCLOUD_BASE`
 (путь приложения, по умолчанию `/`). Сборка под другой путь: `BASE_PATH=/ npm run build` (по умолчанию `/ka4/`, на нём же тесты).
-Домен подключается через CDN VK Cloud с бакетом-источником и сертификатом Let's Encrypt.
+Открывать именно адрес с бакетом в имени хоста (`<бакет>.hb…`), не `hb…/<бакет>/`: у второго один адрес на всех клиентов VK Cloud,
+и данные браузера были бы общими с чужими бакетами. Свой домен потом — CDN VK Cloud с бакетом-источником (данные придётся перенести копией).
 
 Локально: `npm i && npm run dev` (Node 22+)
 

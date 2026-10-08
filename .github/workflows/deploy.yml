@@ -44,7 +44,7 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
-  # VK Cloud Object Storage, the app at the root of its own domain (via VK CDN). Off until the repo variable
+  # VK Cloud Object Storage: the app at the root of the bucket's own host, https://<bucket>.hb.ru-msk.vkcloud-storage.ru/index.html. Off until the repo variable
   # VKCLOUD_BUCKET is set; keys in the secrets VKCLOUD_ACCESS_KEY / VKCLOUD_SECRET_KEY. Optional variables:
   # VKCLOUD_ENDPOINT (the S3 endpoint), VKCLOUD_BASE (the path the app lives at, "/" by default).
   vkcloud:
@@ -76,3 +76,7 @@ jobs:
       # The rest (index.html, sw.js, manifest, version.json, icons) is checked on every load, so an update shows up at once.
       - run: aws s3 sync dist/assets "$S3/assets" --endpoint-url "$ENDPOINT" --acl public-read --cache-control "public, max-age=31536000, immutable"
       - run: aws s3 sync dist "$S3" --endpoint-url "$ENDPOINT" --acl public-read --cache-control "no-cache" --exclude "assets/*" --delete
+      # the CLI does not know the .webmanifest type
+      - run: >-
+          aws s3 cp dist/manifest.webmanifest "$S3/manifest.webmanifest" --endpoint-url "$ENDPOINT" --acl public-read
+          --cache-control "no-cache" --content-type "application/manifest+json"

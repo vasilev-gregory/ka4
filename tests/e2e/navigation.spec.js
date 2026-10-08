@@ -42,6 +42,8 @@ test("system back folds a running stretch into the strip; it goes on and ends fr
   await page.getByRole("button", { name: "Закрыть" }).first().click();
   await expect.poll(async () => (await stored(page)).stretch.sessions.length).toBe(1);
   expect((await stored(page)).stretch.sessions[0].complete).toBe(false);
+  // the player drops its history entry a tick after it closes; a back before that would only drop it
+  await expect.poll(() => page.evaluate(() => history.state?.overlay ?? 0)).toBe(0);
   await page.goBack(); // the entry the player had is gone with it: back leaves the editor
   await expect(page.getByRole("button", { name: "+ Новая программа" })).toBeVisible();
 });
