@@ -85,7 +85,7 @@ test("a long pull down from the top checks for an update (the same as Settings' 
   await expect(page.getByText(/^У тебя последняя версия, \d+$/)).toBeVisible();
 });
 
-test("each mode has its colour (strength yellow, stretching teal by default) and can take any palette", async ({ page }) => {
+test("each mode has its colour (strength yellow, stretching teal by default), any palette but the other mode's", async ({ page }) => {
   await openApp(page);
   const accent = () => page.evaluate(() => getComputedStyle(document.querySelector(".min-h-screen")).getPropertyValue("--color-accent-500").trim());
   await expect.poll(accent).toBe("#f59e0b");
@@ -97,6 +97,7 @@ test("each mode has its colour (strength yellow, stretching teal by default) and
   await switchMode(page, "Растяжка");
   await expect.poll(accent).toBe("#14b8a6");
   await tab(page, "Настройки");
+  await expect(page.getByRole("button", { name: "красный" })).toBeDisabled();
   await page.getByRole("button", { name: "северное сияние" }).click();
   await expect.poll(accent).toBe("#1fcf86");
 });

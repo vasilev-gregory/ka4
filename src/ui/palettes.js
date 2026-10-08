@@ -9,9 +9,15 @@ export const PALETTES = {
 };
 // each mode's colour when none is picked
 export const DEFAULT_COLOR = { strength: "amber", stretch: "teal" };
+export const COLOR_KEY = { strength: "strengthColor", stretch: "stretchColor" };
+// the modes never share a colour: strength's wins, a clashing stretching colour falls back to its default (or amber)
 export const colorOf = (settings, mode) => {
-  const v = settings[mode === "stretch" ? "stretchColor" : "strengthColor"];
-  return PALETTES[v] ? v : DEFAULT_COLOR[mode];
+  const pick = (m) => (PALETTES[settings[COLOR_KEY[m]]] ? settings[COLOR_KEY[m]] : DEFAULT_COLOR[m]);
+  const s = pick("strength");
+  if (mode !== "stretch") return s;
+  const t = pick("stretch");
+  if (t !== s) return t;
+  return DEFAULT_COLOR.stretch !== s ? DEFAULT_COLOR.stretch : DEFAULT_COLOR.strength;
 };
 
 export function applyPalettes(settings) {

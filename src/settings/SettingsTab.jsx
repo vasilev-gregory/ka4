@@ -5,7 +5,7 @@ import { fmtDur, fmtNum, num, numericInput } from "../core/util.js";
 import { ST_DEFAULTS, ST_FIELDS } from "../model/catalog.js";
 import { setCountdown } from "../model/workoutActions.js";
 import { Card, Header, SecStepper, Segmented, Stepper, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
-import { colorOf, PALETTES } from "../ui/palettes.js";
+import { colorOf, COLOR_KEY, PALETTES } from "../ui/palettes.js";
 import { BackupSection } from "./BackupSection.jsx";
 import { ColumnsSettings } from "./ColumnsSettings.jsx";
 import { StorageStatus } from "./StorageStatus.jsx";
@@ -45,19 +45,20 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
   );
 }
 
-// the current mode's colour: any palette for either mode (ui/palettes)
+// the current mode's colour: any palette but the other mode's (ui/palettes)
 function ModeColor({ settings, mode, up }) {
   const cur = colorOf(settings, mode);
-  const key = mode === "stretch" ? "stretchColor" : "strengthColor";
+  const taken = colorOf(settings, mode === "stretch" ? "strength" : "stretch");
+  const key = COLOR_KEY[mode];
   return (
     <Card className="mb-3">
       <div className="mb-2 font-semibold">Цвет {mode === "stretch" ? "растяжки" : "силовой"}</div>
       <div className="flex justify-between">
         {Object.entries(PALETTES).map(([k, p]) => (
           <button key={k} onClick={() => up((d) => { d.settings[key] = k; })} aria-label={p.name} aria-pressed={k === cur}
-            className="flex w-1/4 flex-col items-center gap-1 text-[11px] text-neutral-400">
+            disabled={k === taken} className="flex w-1/4 flex-col items-center gap-1 text-[11px] text-neutral-400 disabled:opacity-30">
             <span style={{ background: p.c[2] }} className={`h-9 w-9 rounded-full ${k === cur ? "ring-2 ring-white ring-offset-2 ring-offset-neutral-900" : ""}`} />
-            {p.name}
+            {k === taken ? `у ${mode === "stretch" ? "силовой" : "растяжки"}` : p.name}
           </button>
         ))}
       </div>
