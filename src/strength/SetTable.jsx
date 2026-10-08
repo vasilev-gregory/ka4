@@ -1,5 +1,5 @@
 // A finished exercise's sets as rows, read-only, laid out like the running workout: number (warm-up «Р», a drop
-// set / ladder as 2a, 2b with the accent edge), weight, reps, partials and RIR when any set has them, the rest before.
+// set as 2a, 2b with the accent edge), weight, reps, partials and RIR when any set has them, the rest before.
 import { fmtDur, fmtNum, num } from "../core/util.js";
 import { setLabels } from "../model/workout.js";
 

@@ -81,7 +81,7 @@ export function cycleMuscle(ex, m) {
   return cur;
 }
 
-// Hard sets of one exercise in a workout: done, not warm-ups, RIR 0–3; a drop set / ladder counts once.
+// Hard sets of one exercise in a workout: done, not warm-ups, RIR 0–3; a drop set counts once.
 export function hardSets(sets) {
   let n = 0;
   sets.forEach((s, i) => {
