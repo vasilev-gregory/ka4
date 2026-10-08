@@ -1,4 +1,5 @@
-// Bottom tab bar. A sideways swipe on it switches strength <-> stretching.
+// Bottom tab bar: icons only (a word under them said less than the icon and not always the truth); the name is the
+// button's aria-label. A sideways swipe on it switches strength <-> stretching.
 import { Dumbbell, History, Settings, Ruler, PersonStanding } from "lucide-react";
 import { useFlick } from "../ui/gestures.js";
 
@@ -19,11 +20,10 @@ export function TabBar({ tab, onTab, onSwipe, stretchMode, running }) {
         {TABS.map(([k, label, Icon0]) => {
           const Icon = k === "workout" && stretchMode ? PersonStanding : Icon0;
           return (
-            <button key={k} onClick={() => onTab(k)}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs ${tab === k ? "text-accent-400" : "text-neutral-500"}`}>
-              <Icon size={20} />
-              {label}
-              {k === "workout" && running && <span className="absolute right-1/4 top-1.5 h-2 w-2 rounded-full bg-accent-400" />}
+            <button key={k} onClick={() => onTab(k)} aria-label={label} aria-current={tab === k ? "page" : undefined}
+              className={`relative flex flex-1 items-center justify-center py-3.5 ${tab === k ? "text-accent-400" : "text-neutral-500"}`}>
+              <Icon size={24} />
+              {k === "workout" && running && <span className="absolute right-[calc(50%-18px)] top-2.5 h-2 w-2 rounded-full bg-accent-400" />}
             </button>
           );
         })}

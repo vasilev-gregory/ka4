@@ -26,6 +26,7 @@ import { StretchHome } from "./stretch/StretchHome.jsx";
 import { StretchRun } from "./stretch/StretchRun.jsx";
 import { playProgram, playQuick, setRunFolded } from "./model/stretchRunActions.js";
 import { AppCtx, Button, DeleteButton, FloatingStack } from "./ui/kit.jsx";
+import { applyPalettes } from "./ui/palettes.js";
 import { useWakeLock } from "./ui/useWakeLock.js";
 import { useNavigation } from "./ui/navigation.js";
 
@@ -55,9 +56,9 @@ function Shell({ data, up, replace, saved }) {
   // stretching screens only get the stretching part of the data
   const upStretch = (fn) => up((d) => { fn(d.stretch); });
 
-  // strength's accent picked in the settings: a class on <html>, so portals (dial, sheets) get it too (index.css)
-  const amber = data.settings.strengthColor === "amber";
-  useEffect(() => { document.documentElement.classList.toggle("strength-amber", amber); }, [amber]);
+  // each mode's colour picked in the settings, put on <html> so portals (dial, sheets) get it too (ui/palettes)
+  const { strengthColor, stretchColor } = data.settings;
+  useEffect(() => { applyPalettes({ strengthColor, stretchColor }); }, [strengthColor, stretchColor]);
 
   const { measurements, exercises } = data;
   const { bodyWeight, namesRu } = data.settings;
