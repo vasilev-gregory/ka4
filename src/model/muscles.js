@@ -10,10 +10,10 @@ export const MUSCLES = [
   ["chest", "грудь", "грудь"],
   ["frontdelt", "передняя дельта", "плечи"], ["sidedelt", "средняя дельта", "плечи"], ["reardelt", "задняя дельта", "плечи"],
   ["lats", "широчайшие", "спина"], ["traps", "верх трапеций", "спина"], ["midback", "ромбовидные", "спина"],
-  ["lowback", "поясница", "спина"],
+  ["lowback", "разгибатели спины", "спина"],
   ["biceps", "бицепс", "бицепс"], ["triceps", "трицепс", "трицепс"], ["forearms", "предплечья", "предплечья"],
   ["quads", "квадрицепс", "ноги"], ["glutes", "ягодицы", "ноги"], ["hams", "бицепс бедра", "ноги"], ["calves", "икры", "икры"],
-  ["abs", "пресс", "кор"],
+  ["abs", "пресс", "кор"], ["obliques", "косые мышцы живота", "кор"],
 ];
 export const MUSCLE_NAME = Object.fromEntries(MUSCLES.map(([id, name]) => [id, name]));
 
@@ -48,6 +48,8 @@ const RULES = [
   ["спина", /hyperextension|superman|гиперэкст|супермен/, { lowback: 1, glutes: 0.5, hams: 0.5 }],
   ["спина", /chin-up|подтяг.*обратн|обратн.*подтяг/, { lats: 1, biceps: 1 }],
   ["спина", /pulldown|pull-up|подтяг|верхн/, { lats: 1, biceps: 0.5, midback: 0.5 }],
+  // bent over with nothing under the chest: the spinal erectors hold the torso
+  ["спина", /bent-over|t-bar|т-гриф|штанг.*наклон/, { lats: 1, midback: 1, reardelt: 0.5, biceps: 0.5, lowback: 0.5 }],
   ["спина", null, { lats: 1, midback: 1, reardelt: 0.5, biceps: 0.5 }], // rows: the shoulder blades squeezed together
   ["бицепс", null, { biceps: 1 }],
   ["трицепс", /dips|брус/, { triceps: 1, chest: 0.5, frontdelt: 0.5 }],
@@ -56,7 +58,12 @@ const RULES = [
   ["предплечья", null, { forearms: 1 }],
   ["икры", null, { calves: 1 }],
   ["кор", /deadlift$|^станов|^мертв/, { glutes: 1, hams: 1, lowback: 1, quads: 0.5, traps: 0.5 }],
+  // holding still against a pull to one side (anti-rotation, anti-side-bend): the obliques
+  ["кор", /waiter|над головой/, { frontdelt: 1, traps: 1, obliques: 0.5 }],
+  ["кор", /get-up|турецк/, { obliques: 1, frontdelt: 1, glutes: 0.5 }],
+  ["кор", /suitcase|одной рук/, { obliques: 1, forearms: 1, traps: 0.5 }],
   ["кор", /walk|carry|прогулк|фермер|перенос/, { forearms: 1, traps: 1, abs: 0.5 }],
+  ["кор", /pallof|side-plank|woodchop|twist|cross-crunch|паллоф|боков|поворот|русск|перекр/, { obliques: 1, abs: 0.5 }],
   ["кор", /bird-dog/, { lowback: 1, abs: 0.5 }],
   ["кор", /burpee|берпи/, { quads: 1, chest: 0.5 }],
   ["кор", null, { abs: 1 }],

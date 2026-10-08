@@ -124,11 +124,20 @@ test("a week's nick: the same 17 plates over its 0–30 scale, past 30 «кто 
 
 test("the back: rows work the middle of the back between the shoulder blades, shrugs the upper trapezius", () => {
   assert.deepEqual(musclesOf(ex("seated-row")), { lats: 1, midback: 1, reardelt: 0.5, biceps: 0.5 });
-  assert.deepEqual(musclesOf(ex("bent-over-barbell-row")), { lats: 1, midback: 1, reardelt: 0.5, biceps: 0.5 });
+  assert.deepEqual(musclesOf(ex("bent-over-barbell-row")), { lats: 1, midback: 1, reardelt: 0.5, biceps: 0.5, lowback: 0.5 });
   assert.deepEqual(musclesOf(ex("barbell-shrug")), { traps: 1 });
   assert.equal(musclesOf(ex("face-pull")).midback, 0.5);
 });
 
 test("a kettlebell lift is a squat: the quads, not a hinge", () => {
   assert.deepEqual(musclesOf(ex("kettlebell-lift")), { quads: 1, glutes: 0.5 });
+});
+
+test("bent over with nothing under the chest, the spinal erectors help; stabilizers work the obliques", () => {
+  assert.equal(musclesOf(ex("bent-over-barbell-row")).lowback, 0.5);
+  assert.equal(musclesOf(ex("t-bar-row")).lowback, 0.5);
+  assert.equal(musclesOf(ex("seated-row")).lowback, undefined); // the chest against the pad
+  assert.deepEqual(musclesOf(ex("pallof-press")), { obliques: 1, abs: 0.5 });
+  assert.equal(musclesOf(ex("suitcase-carry")).obliques, 1);
+  assert.equal(musclesOf(ex("side-plank")).obliques, 1);
 });

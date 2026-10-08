@@ -27,7 +27,8 @@ const BUILT_IN = {
   "suitcase-carry": ["dumbbell"], "bench-dips": ["body"], "barbell-hack-squat": ["barbell"],
   "machine-lat-pulldown": ["machine"], "one-arm-machine-lat-pulldown": ["machine"],
   "dumbbell-sumo-squat": ["dumbbell"], "dumbbell-deadlift": ["dumbbell"], "dumbbell-lying-leg-curl": ["dumbbell"], "arnold-press": ["dumbbell"],
-  "plate-front-raise": ["barbell"], "sled-push": ["machine"], "step-up": ["body"], "wall-sit": ["body"], "superman": ["body"], "v-up": ["body"], "mountain-climber": ["body"],
+  "plate-front-raise": ["barbell"], "sled-push": ["machine"], "step-up": ["body"],
+  "dead-bug": ["body"], "russian-twist": ["body"], "side-plank": ["body"], "wall-sit": ["body"], "superman": ["body"], "v-up": ["body"], "mountain-climber": ["body"],
 };
 
 // what an exercise is done with: [key…], maybe empty (cardio, or nothing known)
