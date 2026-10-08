@@ -14,7 +14,7 @@ test("program editor: muscles by plan for this program; an exercise opens its ca
   await expect(page.getByText("Мышцы по плану")).toBeVisible();
   await expect(page.getByRole("img", { name: "Спереди" })).toBeVisible();
   await expect(page.getByRole("button", { name: /средняя дельта.*3 подх\. есть рост самец ещё 1 подх\. — «хороший рост»/ })).toBeVisible(); // one program: the per-session scale
-  await expect(page.getByRole("button", { name: /ягодицы.*2 подх\. старт дрыщ/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /ягодицы.*2 подх\. поддержка дрыщ/ })).toBeVisible();
 
   await expect(page.getByRole("button", { name: "Все программы" })).toHaveCount(0); // inside one program, only it
   await page.getByRole("button", { name: /средняя дельта/ }).click();

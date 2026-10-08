@@ -78,7 +78,7 @@ test("hard sets per muscle: helping muscles get half, sessions count only as a m
 });
 
 test("growth status and what the week still needs", () => {
-  assert.deepEqual(growthStatus(3.5), ["low", "старт"]);
+  assert.deepEqual(growthStatus(3.5), ["low", "поддержка"]);
   assert.deepEqual(growthStatus(6), ["grow", "рост"]);
   assert.deepEqual(growthStatus(10), ["optimal", "оптимум"]); // frequency doesn't matter once the volume is there
   assert.deepEqual(growthStatus(25), ["optimal", "максимум"]);
@@ -102,7 +102,7 @@ test("planned load of programs: sets per muscle, freq = programs where it is a m
 test("one workout on its own scale, the week beside it as context", async () => {
   const { sessionStatus, sessionHint } = await import("../../src/model/muscles.js");
   assert.deepEqual([2.5, 3, 4, 5.5, 6, 8, 9, 11, 12].map((n) => sessionStatus(n)[1]),
-    ["старт", "есть рост", "хороший рост", "крепкий рост", "оптимальный рост", "сильный рост", "мощный рост", "максимальный рост", "мышце хватит"]); // every set a step
+    ["поддержка", "есть рост", "хороший рост", "крепкий рост", "оптимальный рост", "сильный рост", "мощный рост", "максимальный рост", "мышце хватит"]); // every set a step
   assert.equal(sessionHint(1, 1), "ещё 2 подх. — «есть рост» · за неделю 1 из 10");
   assert.equal(sessionHint(3, 7), "ещё 1 подх. — «хороший рост» · за неделю 7 из 10");
   assert.equal(sessionHint(6), "ещё 1 подх. — «сильный рост»"); // a program's plan: no week
