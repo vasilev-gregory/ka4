@@ -82,7 +82,15 @@ test("history: month by default, paging, year overview drills down to a month an
   await from.getByRole("button", { name: /Приседания со штангой.*помогает.*1 подх\./ }).click();
   await expect(page.getByText("Мышцы: квадрицепс; помогают: ягодицы")).toBeVisible();
   await page.goBack();
+  // a day tapped in the month keeps the month's calendar: the next day is a tap away
+  await page.getByRole("button", { name: "6 октября", exact: true }).click();
+  await expect(period).toHaveText("Вт, 6 октября");
+  await expect(page.getByRole("button", { name: "31 октября" })).toBeVisible();
+  await page.getByRole("button", { name: "7 октября", exact: true }).click();
+  await expect(period).toHaveText("Ср, 7 октября");
+  await expect(page.getByRole("button", { name: "31 октября" })).toBeVisible();
   await page.getByRole("button", { name: "Неделя" }).click();
+  await expect(page.getByRole("button", { name: "31 октября" })).toHaveCount(0);
 
   // a day: tap it in the week; its muscles on the per-workout norm, as in the workout's card
   await page.getByRole("button", { name: "6 октября" }).click();
