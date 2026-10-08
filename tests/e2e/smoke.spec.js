@@ -84,3 +84,16 @@ test("a long pull down from the top checks for an update (the same as Settings' 
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await expect(page.getByText(/^У тебя последняя версия, \d+$/)).toBeVisible();
 });
+
+test("strength is red by default, yellow if picked in the settings; stretching keeps its own colour", async ({ page }) => {
+  await openApp(page);
+  const accent = () => page.evaluate(() => getComputedStyle(document.querySelector(".min-h-screen")).getPropertyValue("--color-accent-500").trim());
+  await expect.poll(accent).toBe("#f43f5e");
+  await tab(page, "Настройки");
+  await page.getByRole("button", { name: "жёлтый" }).click();
+  await expect.poll(accent).toBe("#f59e0b");
+  await page.reload();
+  await expect.poll(accent).toBe("#f59e0b");
+  await switchMode(page, "Растяжка");
+  await expect.poll(accent).toBe("#14b8a6");
+});

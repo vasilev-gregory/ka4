@@ -6,11 +6,11 @@ import reactHooks from "eslint-plugin-react-hooks";
 
 const BROWSER_STORAGE = "Browser storage lives in src/storage.js only (storage / storageStatus / protectStorage).";
 const date = "CallExpression[callee.object.name='Date'][callee.property.name='now']";
-const ACCENT_MSG = "Use the accent colour (bg-accent-400, …), not amber/teal: the mode decides the colour.";
+const ACCENT_MSG = "Use the accent colour (bg-accent-400, …), not amber/rose/teal: the mode and the settings decide the colour.";
 // no-restricted-syntax lists are replaced, not merged, by later blocks: every block repeats ACCENT
 const ACCENT = [
-  { selector: "Literal[value=/\\b(amber|teal)-\\d/]", message: ACCENT_MSG },
-  { selector: "TemplateElement[value.raw=/\\b(amber|teal)-\\d/]", message: ACCENT_MSG },
+  { selector: "Literal[value=/\\b(amber|teal|rose)-\\d/]", message: ACCENT_MSG },
+  { selector: "TemplateElement[value.raw=/\\b(amber|teal|rose)-\\d/]", message: ACCENT_MSG },
 ];
 
 export default [

@@ -25,6 +25,7 @@
  * @property {boolean} [countdown]        rest countdown on (default) / off
  * @property {boolean} [sound]            timer sounds on (default) / off
  * @property {"strength"|"stretch"} [mode]
+ * @property {"red"|"amber"} [strengthColor]  strength mode's accent (default red)
  * @property {boolean} [namesRu]          Russian exercise names first (default); false = English first
  * @property {boolean} [gestureHintSeen]  the gestures hint on the first workout was dismissed
  * @property {string} [bodyWeight]        manual body weight, used when there are no measurements
