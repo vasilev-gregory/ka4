@@ -2,7 +2,7 @@
 // inside up()) and mutates it; time comes in as `now` so the rules are testable.
 import { num, progTitle, uid } from "../core/util.js";
 import {
-  buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, itemsOf, lastActivity, normalizeGroups, programDiff, programItem, runningSession, segmentsOf, setColumns,
+  buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, itemsOf, lastActivity, lastTick, normalizeGroups, programDiff, programItem, runningSession, segmentsOf, setColumns,
 } from "./workout.js";
 import { moveItem } from "../core/util.js";
 import { nextStep } from "./progression.js";
@@ -74,19 +74,29 @@ export function toggleWarmup(d, ei, si) {
 
 // ✓ on a set. Confirming without typing means "same as last time"; partial reps mean the set went to
 // failure; a confirmed set ends a pause and starts the rest countdown (not in the middle of a drop set).
+// Its rest is fixed at the tick (since the previous tick, none across a pause): other ticks in any order never
+// move it. Unticking steps the running rest back to the tick before; the countdown goes with its set.
 export function toggleSet(d, ei, si, now = Date.now()) {
   const a = d.active;
   const s = a.exercises[ei].sets[si];
   s.done = !s.done;
-  if (!s.done) { delete s.at; return; }
+  if (!s.done) {
+    if (s.at === a.lastSetAt) a.restEndsAt = null;
+    delete s.at; delete s.rest;
+    a.lastSetAt = lastTick(a);
+    return;
+  }
   if (s.w === "" && s.hw) s.w = s.hw;
   // only partials typed: no full reps were done, so 0 (not last time's reps)
   if (s.r === "" && num(s.p) > 0) s.r = "0";
   if (s.r === "" && s.hr) s.r = s.hr;
   if (!s.p && s.hp) s.p = s.hp;
   if (num(s.p) > 0 && s.t !== "w") s.rir = 0;
+  const prev = a.lastSetAt;
   if (a.paused) resumeWorkout(d, now);
   if (a.warmup && !a.warmup.doneAt) a.warmup.doneAt = now; // went straight to the sets: warm-up is over
+  const pausedSince = segmentsOf(a).some((sg) => sg.end && prev && sg.end > prev && sg.end <= now);
+  s.rest = prev && !pausedSince ? now - prev : null;
   s.at = now; // for rest-time stats
   a.lastSetAt = now;
   const next = a.exercises[ei].sets[si + 1];

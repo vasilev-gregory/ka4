@@ -253,3 +253,20 @@ test("a program from a finished workout: its exercises in order, working sets (a
     { exerciseId: "squat", sets: 2 }, { exerciseId: "dips", sets: 1 }, { exerciseId: "run", sets: 1, min: 23 },
   ] });
 });
+
+test("ticks in any order: each set keeps the rest fixed at its tick; unticking steps the running rest back", () => {
+  const d = withWorkout([blank(), blank(), blank()]);
+  d.active.exercises.push({ exerciseId: "dips", sets: [blank()] });
+  A.toggleSet(d, 0, 0, T0 + 30e3); // the first tick: no rest before it
+  A.toggleSet(d, 0, 2, T0 + 70e3); // set 3 before set 2
+  assert.equal(liveRestKey(d.active), "0:1", "the stopwatch waits on the skipped set 2");
+  A.toggleSet(d, 0, 1, T0 + 120e3);
+  assert.deepEqual(restBefore(d.active), { "0:1": 50e3, "0:2": 40e3 });
+  A.toggleSet(d, 0, 2, T0 + 125e3); // untick set 3: set 2 keeps its 50 s
+  assert.deepEqual(restBefore(d.active), { "0:1": 50e3 });
+  assert.equal(d.active.lastSetAt, T0 + 120e3);
+  A.toggleSet(d, 0, 1, T0 + 130e3); // untick set 2, the last tick: back to set 1's, its countdown gone
+  assert.equal(d.active.lastSetAt, T0 + 30e3);
+  assert.equal(d.active.restEndsAt, null);
+  assert.equal(liveRestKey(d.active), "0:1");
+});
