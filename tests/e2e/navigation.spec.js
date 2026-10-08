@@ -67,17 +67,22 @@ test("closed by the system in the background, the app opens where it was left: t
   await expect(again.getByText("II. Грудь и спина", { exact: true })).toBeVisible();
 });
 
-test("picker filters: by the muscle an exercise works most and by equipment", async ({ page }) => {
+test("picker filters: buttons opening their chips — by the muscle an exercise works most and by equipment", async ({ page }) => {
   await openApp(page);
   await page.getByText("I. Ноги и плечи", { exact: true }).click();
   await page.getByRole("button", { name: "Добавить упражнение" }).click();
   const picker = page.getByTestId("picker");
+  await picker.getByRole("button", { name: /^Мышца: все/ }).click(); // a button opens its chips
   await picker.getByTestId("filter-muscle").getByRole("button", { name: "средняя дельта" }).click();
+  await expect(picker.getByTestId("filter-muscle")).toHaveCount(0); // picked: the chips fold away
+  await expect(picker.getByRole("button", { name: /^Мышца: средняя дельта/ })).toBeVisible();
   await expect(picker.getByText("Махи гантелями в стороны")).toBeVisible();
   await expect(picker.getByText("Жим ногами", { exact: true })).toHaveCount(0);
+  await picker.getByRole("button", { name: /^Снаряд/ }).click();
   await picker.getByTestId("filter-equip").getByRole("button", { name: "блок" }).click();
   await expect(picker.getByText("Махи в сторону на нижнем блоке")).toBeVisible();
   await expect(picker.getByText("Махи гантелями в стороны")).toHaveCount(0);
+  await picker.getByRole("button", { name: /^Снаряд: блок/ }).click();
   await picker.getByTestId("filter-equip").getByRole("button", { name: "блок" }).click(); // tapped again: off
   await expect(picker.getByText("Махи гантелями в стороны")).toBeVisible();
 });

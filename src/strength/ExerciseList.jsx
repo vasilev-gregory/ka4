@@ -32,9 +32,9 @@ function NewExercise({ name: start, group, cancel, done }) {
 }
 
 const FILTERS = [
-  { id: "muscle", chips: [...MUSCLES.map(([m, l]) => [m, l]), ["cardio", "кардио"]],
+  { id: "muscle", label: "Мышца", chips: [...MUSCLES.map(([m, l]) => [m, l]), ["cardio", "кардио"]],
     fits: (e, m) => (m === "cardio" ? e.kind === "cardio" : musclesOf(e)[m] >= 1) },
-  { id: "equip", chips: EQUIPMENT.map(([k, l]) => [k, l]), fits: (e, k) => equipmentOf(e).includes(k) },
+  { id: "equip", label: "Снаряд", chips: EQUIPMENT.map(([k, l]) => [k, l]), fits: (e, k) => equipmentOf(e).includes(k) },
 ];
 
 // onPick(ex) for one; onPickMany(list) to pick several; already: ids in the program; group: the chip chosen at the start
