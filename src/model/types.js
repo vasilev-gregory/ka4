@@ -46,6 +46,7 @@
  * @property {string} [photo]             own picture, a JPEG data URL
  * @property {Record<string, number>} [muscles]  muscles it works, muscle id -> 1 (main) | 0.5 (helping); none = muscles.js rules
  * @property {string[]} [equip]          what it is done with (model/equipment.js keys); none = read from the names
+ * @property {string} [aka]               other names it goes by, for the search (built-in ones: catalog EX_AKA)
  */
 
 /** @typedef {{ id: string, name: string, items: ProgramItem[] }} Program  name may be "" (shown as "Без названия") */
@@ -116,7 +117,7 @@
  * @property {number} [entered]           phases entered so far (a new phase's signal, even the same phase again)
  */
 
-/** @typedef {{ id: string, name: string, ru?: string, sides: boolean, area?: string, photo?: string }} StretchExercise  sides: done on both sides */
+/** @typedef {{ id: string, name: string, ru?: string, aka?: string, sides: boolean, area?: string, photo?: string }} StretchExercise  sides: done on both sides; aka: other names, for the search */
 
 /** @typedef {{ prep: number, work: number, sw: number, rest: number, rounds: number, roundRest: number, mode: "circuit"|"sequence" }} StretchTiming  seconds */
 

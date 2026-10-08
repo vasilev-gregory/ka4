@@ -84,7 +84,6 @@ export const SEED_EX = [
   ["One-arm incline dumbbell press", "Жим гантели одной рукой на наклонной", "грудь"],
   ["One-arm incline cable press", "Жим одной рукой на наклонной в блоке", "грудь"],
   // from GymKeeper (second phone)
-  ["Barbell glute bridge", "Ягодичный мостик со штангой", "ноги"],
   ["Sumo deadlift", "Становая тяга сумо", "ноги"],
   ["Romanian deadlift", "Румынская тяга со штангой", "ноги"],
   ["Lying leg curl", "Сгибание ног лёжа в тренажёре", "ноги"],
@@ -93,7 +92,6 @@ export const SEED_EX = [
   ["Close-grip chin-up", "Подтягивания обратным узким хватом", "спина"],
   ["Barbell curl", "Сгибание рук со штангой", "бицепс"],
   ["Triceps dips", "Брусья на трицепс", "трицепс"],
-  ["Single-leg glute bridge", "Ягодичный мостик на одной ноге", "ноги"],
   ["Single-leg lying leg curl", "Сгибание одной ноги лёжа", "ноги"],
   ["One-arm machine chest press", "Жим от груди одной рукой в тренажёре", "грудь"],
   ["One-arm push-up", "Отжимания на одной руке", "грудь"],
@@ -248,6 +246,58 @@ export const ST_OLD_NAMES = {
 export const ST_FIXES = [
   ["st-lat", "Широчайшие: на коленях, руки вперёд и в сторону", { ru: "Широчайшие: на коленях, руки вперёд, таз к пяткам" }],
 ];
+
+// built-in exercises that turned out to be one and the same: [the dropped id, the kept id]; saved data moves over
+// (migrate in model/state.js)
+export const EX_MERGES = [["barbell-glute-bridge", "hip-thrust"], ["single-leg-glute-bridge", "single-leg-hip-thrust"]];
+
+// other names the built-in exercises go by, for the search only (gym slang, other apps, the other language's
+// variants): finding one without knowing how it is written here. The user's own go in an exercise's `aka`.
+export const EX_AKA = {
+  "squat": "присед приседания back squat",
+  "hip-thrust": "glute bridge ягодичный мостик ягодичный подъём хип траст хиптраст",
+  "single-leg-hip-thrust": "single leg glute bridge ягодичный мостик на одной ноге хип траст",
+  "bulgarian-split-squat": "болгарские сплит приседания split squat болгарка",
+  "lateral-raise": "махи в стороны боковые подъёмы side raise разведения гантелей стоя",
+  "overhead-press": "армейский жим military press ohp жим над головой",
+  "upright-row": "протяжка тяга к подбородку",
+  "barbell-bench-press": "жим лёжа жим лежа bench press",
+  "dumbbell-bench-press": "жим гантелей лёжа db bench",
+  "dips": "брусья",
+  "machine-pec-fly": "бабочка пекдек pec deck",
+  "cable-crossover": "кроссовер сведения в кроссовере cable fly",
+  "lat-pulldown": "вертикальная тяга тяга к груди",
+  "pull-up": "подтягивания chin up подтягивания прямым хватом",
+  "bent-over-barbell-row": "тяга в наклоне барбелл ров barbell row",
+  "seated-row": "горизонтальная тяга cable row тяга блока к поясу",
+  "triceps-kickback": "лыжник kickback разгибание руки в наклоне",
+  "cable-extension": "разгибания на трицепс pushdown triceps pushdown жим вниз",
+  "wrist-curl": "сгибания кистей запястья",
+  "calf-raise": "икры подъёмы на носки голень",
+  "deadlift": "становая станова тяга",
+  "romanian-deadlift": "румынка рдл rdl мёртвая тяга stiff leg",
+  "single-leg-romanian-deadlift": "румынка на одной ноге rdl",
+  "farmer-s-walk": "фермерская прогулка прогулка фермера",
+  "reverse-pec-deck": "обратная бабочка обратный пекдек задняя дельта",
+  "hyperextension": "гиперы гипер back extension",
+  "barbell-shrug": "шраги трапеции",
+  "dumbbell-shrug": "шраги трапеции",
+  "leg-press": "жим платформы",
+  "front-squat": "фронтальный присед",
+  "seated-overhead-barbell-extension": "французский жим french press skull crusher",
+  "close-grip-bench-press": "жим узким хватом",
+  "hammer-strength-press": "хаммер hammer",
+  "t-bar-row": "т-гриф тяга т грифа",
+  "crunch": "пресс скручивания",
+  "hanging-knee-raise": "подъём ног в висе пресс",
+  "inverted-row": "австралийские подтягивания горизонтальные подтягивания",
+  "assisted-pull-up": "гравитрон",
+  "bird-dog": "птица собака",
+  "single-leg-squat": "пистолетик pistol squat",
+  "leg-extension": "разгибания ног квадрицепс",
+  "leg-curl": "сгибания ног бицепс бедра",
+  "lying-leg-curl": "сгибания ног лёжа бицепс бедра",
+};
 
 // built-in exercises renamed later, the same way: [id, the old Russian name, the new one]
 export const EX_RENAMES = [

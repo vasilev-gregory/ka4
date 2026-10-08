@@ -72,3 +72,18 @@ test("v4: a saved column setup gets the rest stopwatch back once; switched off l
   m.settings.columns.find((c) => c.key === "rest").on = false;
   assert.equal(migrate(m).settings.columns.find((c) => c.key === "rest").on, false);
 });
+
+test("merged built-ins: a duplicate goes, its history and plans move to the kept one", () => {
+  const d = seed();
+  d.exercises.push({ id: "barbell-glute-bridge", name: "Barbell glute bridge", ru: "Ягодичный мостик со штангой", group: "ноги", kind: "reps" });
+  d.programs[0].items.push({ exerciseId: "barbell-glute-bridge", sets: 3 });
+  d.workouts.push({ id: "w", startedAt: 1, finishedAt: 2, exercises: [{ exerciseId: "barbell-glute-bridge", sets: [{ w: "100", r: "8", done: true }] }] });
+  d.active = { exercises: [{ exerciseId: "barbell-glute-bridge", sets: [] }] };
+  const m = migrate(d);
+  assert.equal(m.exercises.filter((e) => e.id === "barbell-glute-bridge").length, 0);
+  assert.equal(m.exercises.filter((e) => e.id === "hip-thrust").length, 1);
+  assert.equal(m.programs[0].items.at(-1).exerciseId, "hip-thrust");
+  assert.equal(m.workouts[0].exercises[0].exerciseId, "hip-thrust");
+  assert.equal(m.active.exercises[0].exerciseId, "hip-thrust");
+  assert.equal(seed().exercises.some((e) => e.id === "single-leg-glute-bridge"), false);
+});

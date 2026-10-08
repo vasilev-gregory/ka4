@@ -12,7 +12,7 @@
 
 | Задача | Где (единственное место) | Нельзя |
 |---|---|---|
-| Форма сохранённых данных | `model/types.js` (JSDoc), умолчания — в `migrate()` (`model/state.js`) | новое поле без описания в `types.js` |
+| Форма сохранённых данных | `model/types.js` (JSDoc), умолчания — в `migrate()` (`model/state.js`; слияние дублей каталога — `EX_MERGES`) | новое поле без описания в `types.js` |
 | Чтение / запись на устройство | `src/storage.js` | ⚙ `localStorage` / `indexedDB` / `navigator.storage` в другом месте |
 | Новая версия: проверка, сброс кэша, перезагрузка с «Обновляю приложение…» и «Обновлено ✓» после; обновление по просьбе человека | `core/appUpdate.js` (`updateApp` — кнопка `settings/UpdateButton` и жест `ui/PullToRefresh`; вызывает `main.jsx`) | |
 | Изменение данных силы: тренировка, подходы, отдых, программы (и из тренировки — `programFromWorkout`), свои упражнения, удаление тренировки | `model/workoutActions.js` | ⚙ `d.workouts / d.programs / d.exercises / d.active` менять в экране |
@@ -86,7 +86,7 @@
 | Подтверждение / вопрос снизу | `Sheet` | |
 | Графики | `<Trend>` | ⚙ `recharts` напрямую |
 | Открыться там, где оставили (вкладка, экраны, открытый выбор и его отметки) | `useNavigation` + `useRestorable(ключ, начальное)` вместо `useState` (`ui/navigation.js`), место — `uiPlace` (`storage.js`) | хранить место в данных приложения |
-| Поиск в выборе упражнений (слова, окончания, «ближе всего») | `model/picker.js` (`matchesQuery`, `pickerSections`) | фильтровать список в экране |
+| Поиск в выборе упражнений (слова, окончания, «ближе всего», другие названия: `EX_AKA` в каталоге и `aka` упражнения) | `model/picker.js` (`matchesQuery`, `pickerSections`) | фильтровать список в экране |
 | Экраны и «назад» | таблица `SCREENS` в `App.jsx` + `open({ type })`; слой поверх экранов (шторка, выбор, плеер) — `useBackCloses(закрыть)` (`ui/navigation.js`) | ⚙ `history.pushState / back / go` вне `ui/navigation.js` |
 
 ## Идущая сессия (одинаково для силы и растяжки)

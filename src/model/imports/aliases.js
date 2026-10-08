@@ -151,8 +151,8 @@ export const ALIASES = [
   ["Приседания (штанга)", "squat"],
   ["Становая тяга сумо (штанга)", "sumo-deadlift"],
   ["Румынская тяга (штанга)", "romanian-deadlift"],
-  ["Ягодичный мостик (штанга)", "barbell-glute-bridge"],
-  ["Ягодичный мостик", "barbell-glute-bridge"], // logged with a barbell's weights
+  ["Ягодичный мостик (штанга)", "hip-thrust"],
+  ["Ягодичный мостик", "hip-thrust"], // logged with a barbell's weights
   ["Ягодичный мостик на скамье (штанга)", "hip-thrust"],
   ["Сгибание ног (тренажер)", "leg-curl"],
   ["Сгибание ноги стоя (нижний блок)", "standing-cable-leg-curl"],

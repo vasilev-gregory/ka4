@@ -60,3 +60,14 @@ test("every built-in exercise has its equipment", async () => {
   const none = seed().exercises.filter((e) => e.kind !== "cardio" && !equipmentOf(e).length).map((e) => e.id);
   assert.deepEqual(none, []);
 });
+
+test("picker: found by the other names an exercise goes by — built-in ones and the user's own", () => {
+  const list = [
+    { id: "hip-thrust", name: "Hip thrust", ru: "Ягодичный мост со штангой", group: "ноги" },
+    { id: "x", name: "Zottman curl", aka: "сгибания Зоттмана", group: "бицепс" },
+  ];
+  assert.ok(matchesQuery(list[0], "glute bridge"));
+  assert.ok(matchesQuery(list[0], "ягодичный мостик"));
+  assert.ok(matchesQuery(list[1], "зоттман"));
+  assert.ok(!matchesQuery(list[1], "мостик"));
+});
