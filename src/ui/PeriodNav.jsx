@@ -17,17 +17,22 @@ export const TOTAL_NOTE = { day: "за день", week: "за неделю", mon
 
 // survives leaving the tab for a card and coming back; one per history (key)
 const remembered = {};
-const remember = (key, zoom, at) => { remembered[key] = { zoom, at }; };
+const remember = (key, zoom, at, grid) => { remembered[key] = { zoom, at, grid }; };
 // on another zoom: around today when the current period holds it, else from the period's start
 const anchorFor = (range) => { const now = Date.now(); return now >= range.from && now < range.to ? now : range.from; };
 
-// { zoom, range, go(zoom, ts), shift(k), rezoom(zoom) } of a history's calendar, month by default
+// { zoom, range, grid, go(zoom, ts), shift(k), rezoom(zoom) } of a history's calendar, month by default; grid: the
+// calendar drawn on a day — the week or the month it was picked from (so a month's days can be tapped one by one)
 export function usePeriod(key) {
   const [zoom, setZoom] = useState(() => remembered[key]?.zoom || "month");
   const [at, setAt] = useState(() => remembered[key]?.at ?? Date.now());
-  const go = (z, t) => { remember(key, z, t); setZoom(z); setAt(t); };
+  const [grid, setGrid] = useState(() => remembered[key]?.grid || "month");
+  const go = (z, t) => {
+    const g = z === "week" || z === "month" ? z : grid;
+    remember(key, z, t, g); setZoom(z); setAt(t); setGrid(g);
+  };
   const range = periodOf(zoom, at);
-  return { zoom, range, go, shift: (k) => go(zoom, shiftPeriod(zoom, at, k)), rezoom: (z) => go(z, anchorFor(range)) };
+  return { zoom, range, grid, go, shift: (k) => go(zoom, shiftPeriod(zoom, at, k)), rezoom: (z) => go(z, anchorFor(range)) };
 }
 
 function periodLabel(zoom, { from, to }) {
@@ -39,31 +44,28 @@ function periodLabel(zoom, { from, to }) {
   return `${dayMonth(from)} – ${dayMonth(to - DAY)}${y}`;
 }
 
-// one calendar row; days outside `month` (if given) are dimmed; onDay(ts): a tap on a day opens it (else the row is
-// one button, onClick); day: the day picked (outlined)
-function WeekRow({ ws, month, trained, selected, onClick, onDay, day }) {
+// one calendar row; days outside `month` (if given) are dimmed; onDay(ts): a tap on a day opens it; day: the day picked (outlined)
+function WeekRow({ ws, month, trained, onDay, day }) {
   const today = new Date().toDateString();
-  const Cell = onDay ? "button" : "div";
-  const Row = onDay ? "div" : "button";
   return (
-    <Row onClick={onDay ? undefined : onClick} className={`grid w-full grid-cols-7 rounded-lg py-0.5 text-center ${selected ? "bg-neutral-800" : ""}`}>
+    <div className="grid w-full grid-cols-7 rounded-lg py-0.5 text-center">
       {Array.from({ length: 7 }, (_, i) => {
         const d = new Date(ws + i * DAY + 3600e3);
         const on = trained.has(d.toDateString());
         const dim = month != null && d.getMonth() !== month;
         const picked = day != null && new Date(day).toDateString() === d.toDateString();
         return (
-          <Cell key={i} className="flex justify-center py-0.5"
-            {...(onDay ? { onClick: () => onDay(d.getTime()), "aria-label": d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" }) } : {})}>
+          <button key={i} className="flex justify-center py-0.5" onClick={() => onDay(d.getTime())}
+            aria-label={d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}>
             <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs tabular-nums
               ${on ? "bg-accent-400 font-semibold text-black" : dim ? "text-neutral-700" : "text-neutral-300"}
               ${picked ? "ring-2 ring-neutral-100" : d.toDateString() === today && !on ? "ring-1 ring-accent-400" : ""}`}>
               {d.getDate()}
             </span>
-          </Cell>
+          </button>
         );
       })}
-    </Row>
+    </div>
   );
 }
 
@@ -98,6 +100,7 @@ function YearGrid({ year, dates, onMonth }) {
 // period: from usePeriod; dates: start times of the workouts / sessions; children: the period's panel (flicks with it)
 export function PeriodNav({ period, dates, children }) {
   const { zoom, range, go, shift, rezoom } = period;
+  const view = zoom === "day" ? period.grid : zoom; // the calendar drawn: a day keeps the week or month it came from
   // nothing to see before the first session or after today
   const now = useNow(60e3);
   const can = (k) => (k < 0 ? range.from > Math.min(now, ...dates) : range.to <= now);
@@ -105,7 +108,8 @@ export function PeriodNav({ period, dates, children }) {
   const flick = useFlick((dir) => step(-dir));
   const trained = new Set(dates.map((t) => new Date(t).toDateString()));
   const weeks = [];
-  if (zoom === "month") for (let ws = weekStartOf(range.from); ws < range.to; ws = weekStartOf(ws + 8 * DAY)) weeks.push(ws);
+  const month = view === "month" ? periodOf("month", range.from) : null;
+  if (month) for (let ws = weekStartOf(month.from); ws < month.to; ws = weekStartOf(ws + 8 * DAY)) weeks.push(ws);
   return (
     <>
       <Segmented options={ZOOMS} value={zoom} onChange={rezoom} />
@@ -116,15 +120,16 @@ export function PeriodNav({ period, dates, children }) {
           <button onClick={() => step(1)} disabled={!can(1)} className="rotate-180 p-2 text-neutral-400 disabled:opacity-20" aria-label="Позже"><ChevronLeft size={20} /></button>
         </div>
         {zoom !== "year" && <DayNames />}
-        {(zoom === "week" || zoom === "day") && (
+        {view === "week" && (
           <WeekRow ws={weekStartOf(range.from)} trained={trained} day={zoom === "day" ? range.from : null} onDay={(t) => go("day", t)} />
         )}
-        {zoom === "month" && weeks.map((ws) => (
-          <WeekRow key={ws} ws={ws} month={new Date(range.from).getMonth()} trained={trained} onClick={() => go("week", ws)} />
+        {view === "month" && weeks.map((ws) => (
+          <WeekRow key={ws} ws={ws} month={new Date(range.from).getMonth()} trained={trained}
+            day={zoom === "day" ? range.from : null} onDay={(t) => go("day", t)} />
         ))}
         {zoom === "year" && <YearGrid year={new Date(range.from).getFullYear()} dates={dates} onMonth={(t) => go("month", t)} />}
         <p className="mt-1 text-center text-[11px] text-neutral-500">
-          {{ day: "Тап по другому дню — его разбор", week: "Тап по дню — его разбор", month: "Тап по неделе — её разбор", year: "Тап по месяцу — его календарь" }[zoom]}
+          {{ day: "Тап по другому дню — его разбор", week: "Тап по дню — его разбор", month: "Тап по дню — его разбор", year: "Тап по месяцу — его календарь" }[zoom]}
         </p>
         {children}
       </div>
