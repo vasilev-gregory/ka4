@@ -88,12 +88,12 @@ test("a long pull down from the top checks for an update (the same as Settings' 
 test("each mode has its colour (strength yellow, stretching teal by default), any palette but the other mode's", async ({ page }) => {
   await openApp(page);
   const accent = () => page.evaluate(() => getComputedStyle(document.querySelector(".min-h-screen")).getPropertyValue("--color-accent-500").trim());
-  await expect.poll(accent).toBe("#f59e0b");
+  await expect.poll(accent).toBe("#ffcc00");
   await tab(page, "Настройки");
   await page.getByRole("button", { name: "красный" }).click();
-  await expect.poll(accent).toBe("#f43f5e");
+  await expect.poll(accent).toBe("#ff6b6b");
   await page.reload();
-  await expect.poll(accent).toBe("#f43f5e");
+  await expect.poll(accent).toBe("#ff6b6b");
   await switchMode(page, "Растяжка");
   await expect.poll(accent).toBe("#14b8a6");
   await tab(page, "Настройки");

@@ -110,11 +110,11 @@ export function useFolds(key) {
 
 // What an exercise works, as a card like the other blocks: the body map at its usual size (parts filled: main ones
 // full, helping ones half) and a line saying it in words.
-export function ExerciseBody({ title = "Мышцы", parts, fill, color, children }) {
+export function ExerciseBody({ title = "Мышцы", parts, fill, children }) {
   return (
     <div className="mb-4 rounded-xl bg-neutral-900 p-3">
       <div className="mb-2 font-semibold">{title}</div>
-      <BodyMap parts={parts} fill={fill} color={color} title={title} />
+      <BodyMap parts={parts} fill={fill} title={title} />
       <p className="mt-2 text-center text-xs text-neutral-400">{children}</p>
     </div>
   );

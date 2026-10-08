@@ -12,24 +12,26 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
 /* Accent colour: each mode's own, picked in the settings (ui/palettes.js puts strength's as --s-*, stretching's as --t-* on
    <html>; the fallbacks are the defaults). Use bg-accent-400 etc., never the palette names directly. */
 @theme {
-  --color-accent-200: var(--s-200, #fde68a);
-  --color-accent-300: var(--s-300, #fcd34d);
-  --color-accent-400: var(--s-400, #fbbf24);
-  --color-accent-500: var(--s-500, #f59e0b);
-  --color-accent-700: var(--s-700, #b45309);
-  --color-accent-900: var(--s-900, #78350f);
-  --color-accent-950: var(--s-950, #451a03);
+  --color-accent-200: var(--s-200, #fff3a3);
+  --color-accent-300: var(--s-300, #ffe566);
+  --color-accent-400: var(--s-400, #ffd93d);
+  --color-accent-500: var(--s-500, #ffcc00);
+  --color-accent-700: var(--s-700, #b38f00);
+  --color-accent-900: var(--s-900, #665200);
+  --color-accent-950: var(--s-950, #332900);
 }
 /* a strength element inside the stretching mode (the pill of a workout going on) keeps the strength colours */
 .mode-strength {
-  --color-accent-200: var(--s-200, #fde68a);
-  --color-accent-300: var(--s-300, #fcd34d);
-  --color-accent-400: var(--s-400, #fbbf24);
-  --color-accent-500: var(--s-500, #f59e0b);
-  --color-accent-700: var(--s-700, #b45309);
-  --color-accent-900: var(--s-900, #78350f);
-  --color-accent-950: var(--s-950, #451a03);
+  --color-accent-200: var(--s-200, #fff3a3);
+  --color-accent-300: var(--s-300, #ffe566);
+  --color-accent-400: var(--s-400, #ffd93d);
+  --color-accent-500: var(--s-500, #ffcc00);
+  --color-accent-700: var(--s-700, #b38f00);
+  --color-accent-900: var(--s-900, #665200);
+  --color-accent-950: var(--s-950, #332900);
 }
+/* a soft tint of the accent (a status chip «рост»): mixed into grey, since a see-through yellow on the dark is brown */
+@utility bg-accent-soft { background-color: color-mix(in oklch, var(--color-accent-500) 35%, #404040); }
 .mode-stretch {
   --color-accent-200: var(--t-200, #99f6e4);
   --color-accent-300: var(--t-300, #5eead4);

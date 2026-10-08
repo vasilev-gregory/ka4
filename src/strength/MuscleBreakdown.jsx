@@ -10,10 +10,10 @@ const TARGET = 10; // hard sets a week at which a muscle is filled completely (�
 const ITEMS = MUSCLES.map(([id, name]) => ({ id, name, parts: [id] }));
 const SCALE = {
   target: TARGET, barMax: WEEK_CAP * 1.1, marks: [WEEK_GROW, TARGET, WEEK_CAP], // ticks: growth starts, «оптимум», the ceiling
-  fill: "fill-accent-500", bar: "bg-accent-500", empty: "тяжёлых подходов не было",
+  bar: "bg-accent-500", empty: "тяжёлых подходов не было",
   legend: [[0, "0"], [4, "4 — рост"], [TARGET, "10+ — оптимум"]],
   // statuses in the mode's accent, as stretching's, one hue getting stronger: a pale tint (рост) → solid (оптимум) → deep (past it)
-  chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-accent-500/25 text-accent-200", optimal: "bg-accent-500 text-black", high: "bg-accent-700 text-white" },
+  chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-accent-soft text-accent-200", optimal: "bg-accent-500 text-black", high: "bg-accent-700 text-white" },
 };
 // one workout or program: its own scale, full at «оптимум» (6)
 const SINGLE = { ...SCALE, target: SESSION_GOOD, barMax: SESSION_CAP + 1, marks: [SESSION_GROW, SESSION_GOOD, SESSION_CAP],

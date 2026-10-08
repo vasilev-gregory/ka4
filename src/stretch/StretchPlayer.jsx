@@ -80,7 +80,7 @@ export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
               {shownEx && exPhoto(shownEx) && <ExImg ex={shownEx} size={140} />}
               {parts.length > 0 && (
                 <div className="flex flex-col items-center">
-                  <BodyMap parts={parts} fill={Object.fromEntries(parts.map((m) => [m, 1]))} color="fill-accent-500" small title="Что тянется" />
+                  <BodyMap parts={parts} fill={Object.fromEntries(parts.map((m) => [m, 1]))} small title="Что тянется" />
                   <div className="mt-1 text-[11px] text-accent-300">{areaOf(shownEx)}</div>
                 </div>
               )}

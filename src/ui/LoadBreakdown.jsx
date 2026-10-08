@@ -2,7 +2,7 @@
 // with a legend, a caption for the picked part, and the list with a bar and a status; a picked row opens up to
 // show what made up its load. What is counted and how it is judged comes in as data and a scale.
 import { useRef, useState } from "react";
-import { BodyMap, fillOpacity, HEAD } from "./BodyMap.jsx";
+import { BodyMap, HEAD, muscleFill } from "./BodyMap.jsx";
 
 // a tap on the head: not a muscle, so a joke instead of numbers; each tap the next one
 const HEAD_JOKES = [
@@ -15,7 +15,7 @@ const HEAD_JOKES = [
 
 // items: [{ id, name, parts: body map ids }] in list order; load: { id: { value, text, status?: [key, label], nick?: a joke on the chip } };
 // scale: { target: value filled completely, barMax, marks: values of the ticks on the bar, legend: [[value, label]],
-//   fill: fill-* class, bar: bg-* class, chip: { statusKey: classes }, empty: caption of a part with no load };
+//   bar: bg-* class, chip: { statusKey: classes }, empty: caption of a part with no load };
 // map: draw the body; only: list just these ids; note(id): a line under a row; expand(id): what opens under a picked row;
 // find: { label, go(id) } — only in a program's editor (exercises go into a program): a picked part (loaded or not) gets
 // «Подобрать упражнение», a double tap on the map goes there at once; elsewhere a tap only shows
@@ -46,11 +46,11 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
   return (
     <div>
       {map && <>
-        <BodyMap parts={items.flatMap((it) => it.parts)} fill={fill} color={scale.fill} selected={picked ? picked.parts : []} onSelect={pickPart} />
+        <BodyMap parts={items.flatMap((it) => it.parts)} fill={fill} selected={picked ? picked.parts : []} onSelect={pickPart} />
         <div className="mx-auto mt-2 max-w-64">
           <svg viewBox="0 0 100 4" preserveAspectRatio="none" className="h-2 w-full">
             {Array.from({ length: 20 }, (_, i) => (
-              <rect key={i} x={i * 5} width="5.2" height="4" className={scale.fill} fillOpacity={fillOpacity(i / 20 || 0.001)} />
+              <rect key={i} x={i * 5} width="5.2" height="4" style={{ fill: muscleFill(i / 20 || 0.001) }} />
             ))}
           </svg>
           <div className="relative mt-0.5 h-3 text-[10px] text-neutral-500">
