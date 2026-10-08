@@ -243,6 +243,13 @@ export function normalizeGroups(sets) {
   sets.forEach((s) => { if (s.g && cnt[s.g] < 2) delete s.g; });
 }
 
+// the line of a folded exercise: its sets; in a running workout, how many are done and those
+export function foldSummary(sets, kind) {
+  const done = sets.filter((s) => s.done);
+  if (done.length === sets.length) return fmtSets(sets, kind);
+  return done.length ? `сделано ${done.length} из ${sets.length}: ${fmtSets(done, kind)}` : `ещё не начато · подходов: ${sets.length}`;
+}
+
 export function fmtSets(sets, kind) {
   if (kind === "cardio") return sets.map((s) => `${fmtNum(num(s.r))} мин${num(s.w) ? ` · ${fmtNum(num(s.w))} км` : ""}`).join(", ");
   const parts = sets
