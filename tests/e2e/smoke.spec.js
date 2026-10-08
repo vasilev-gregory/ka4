@@ -67,3 +67,20 @@ test("after an update's reload the app says it was updated, once", async ({ page
   await expect(page.getByRole("button", { name: "Тренировка" }).last()).toBeVisible();
   await expect(page.getByText(/^Обновлено ✓/)).toHaveCount(0);
 });
+
+test("a long pull down from the top checks for an update (the same as Settings' button)", async ({ page, context }) => {
+  await openApp(page);
+  const cdp = await context.newCDPSession(page);
+  const pull = async (dy) => {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 200, y: 150 }] });
+    for (let k = 1; k <= 10; k++) { await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 200, y: 150 + (dy * k) / 10 }] }); await page.waitForTimeout(15); }
+  };
+  await pull(60); // a short pull: nothing happens on release
+  await expect(page.getByText("Потяни, чтобы обновить")).toBeVisible();
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect(page.getByTestId("pull-refresh")).toHaveCount(0);
+  await pull(200);
+  await expect(page.getByText("Отпусти — обновить")).toBeVisible();
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect(page.getByText(/^У тебя последняя версия, \d+$/)).toBeVisible();
+});

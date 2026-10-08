@@ -7,6 +7,7 @@ import { usePersistentData } from "./model/usePersistentData.js";
 import { makeBodyWeightAt, makeNames, RUNNING_NOTE, runningSession } from "./model/workout.js";
 import { SettingsTab } from "./settings/SettingsTab.jsx";
 import { BackupNag } from "./shell/BackupNag.jsx";
+import { PullToRefresh } from "./ui/PullToRefresh.jsx";
 import { SharedImport } from "./shell/SharedImport.jsx";
 import { TabBar } from "./shell/TabBar.jsx";
 import { ExerciseDetail } from "./strength/ExerciseDetail.jsx";
@@ -118,6 +119,7 @@ function Shell({ data, up, replace, saved }) {
           {content}
           {tab === "workout" && !view && !data.active && <BackupNag data={data} up={up} />}
         </div>
+        <PullToRefresh />
         <FloatingStack>
           {/* a session going on is always in sight: off its own screen, a pill in the corner leads back to it */}
           {workoutPill && <WorkoutPill active={data.active} onOpen={() => { if (stretchMode) switchMode("strength"); nav.setTab("workout"); }} />}
