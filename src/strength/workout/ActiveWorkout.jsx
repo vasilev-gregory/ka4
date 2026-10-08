@@ -14,6 +14,7 @@ import { useHoldReorder, useLongPress, useSwipeRows } from "../../ui/gestures.js
 import { Button, DeleteButton, Sheet, useApp, useNow, useUndo } from "../../ui/kit.jsx";
 import { useRestorable } from "../../ui/navigation.js";
 import { useSortable } from "../../ui/sortable.js";
+import { useFolds } from "../../ui/ExerciseCard.jsx";
 import { Picker } from "../ExerciseList.jsx";
 import { ExerciseCard } from "./ExerciseCard.jsx";
 import { WarmupCard } from "./WarmupCard.jsx";
@@ -34,6 +35,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   const now = useNow(1000, !a.paused);
   const sort = useSortable((from, to) => up((d) => A.moveExercise(d, from, to)));
   const { drag: colDrag, headerProps } = useHoldReorder((from, to) => up((d) => A.moveColumn(d.settings, from, to)));
+  const folds = useFolds(`workout:${a.startedAt}`); // folded by a tap only
   const longPress = useLongPress();
   const { swipe, bind: swipeBind } = useSwipeRows({ disabled: !!sel, onStart: longPress.cancel });
   const { swipe: exSwipe, bind: exSwipeBind } = useSwipeRows({ disabled: !!sel || sort.dragging });
@@ -160,7 +162,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           records={recordSets(e.sets, exMap[e.exerciseId], bwAt(a.startedAt), bestE1rm(data.workouts, e.exerciseId, exMap[e.exerciseId], bwAt))}
           cols={cols} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
           g={{ swipe, swipeBind, exSwipe, exSwipeBind, headerProps, colDrag, numberProps: numberProps(ei) }}
-          sel={sel} rests={rests} liveKey={liveKey} liveMs={now - a.lastSetAt} act={cardActions(ei)} open={open} />
+          sel={sel} rests={rests} liveKey={liveKey} liveMs={now - a.lastSetAt} act={cardActions(ei)} open={open} fold={folds} />
       ))}
 
       <div className="flex gap-2">

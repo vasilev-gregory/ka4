@@ -128,7 +128,7 @@ test("warm-up first, then the rest before the first set; swipe an exercise away 
   await expect(page.getByRole("button", { name: "Хватит" })).toBeVisible(); // rest countdown started
   await expect.poll(async () => (await stored(page)).active?.warmup?.doneAt || 0).toBeGreaterThan(0);
 
-  const titles = () => page.locator("button.ml-2.min-w-0 > div.font-semibold");
+  const titles = () => page.getByTestId("exercise-name");
   const first = await titles().first().innerText();
   const cdp = await context.newCDPSession(page);
   const swipeTitle = async (dx) => {
@@ -289,4 +289,18 @@ test("hold ✓ and slide to a RIR: the set is done with it; let go at the centre
   await page.mouse.up();
   await expect(check).toHaveClass(/bg-accent-400/);
   await expect.poll(async () => (await stored(page)).active.exercises[0].sets[0]).toMatchObject({ done: true, rir: 2 });
+});
+
+test("an exercise folds only by a tap: open by default, folded it shows what was done, a tap opens it again", async ({ page }) => {
+  await openApp(page);
+  await startWorkout(page);
+  await page.getByRole("button", { name: "Подход сделан" }).first().click();
+  await expect(page.getByRole("button", { name: "Подход сделан" })).not.toHaveCount(0);
+  const fold = page.getByRole("button", { name: "Свернуть" }).first();
+  await fold.click();
+  await expect(page.getByText(/^сделано 1 из 3: /)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Добавить подход" })).toHaveCount((await page.getByRole("button", { name: "Свернуть" }).count()));
+  await page.getByRole("button", { name: "Развернуть" }).click();
+  await expect(page.getByText(/^сделано 1 из 3: /)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Развернуть" })).toHaveCount(0);
 });

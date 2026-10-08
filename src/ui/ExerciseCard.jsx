@@ -1,6 +1,8 @@
 // The parts of an exercise's card shared by strength exercises and stretches: the title with both names and ✎,
-// the name fields when editing, the picture with the numbers, what it works, and the list of sessions it was in.
-import { Pencil } from "lucide-react";
+// the name fields when editing, the picture with the numbers, what it works, the list of sessions it was in, and an
+// exercise as a block of a session (foldable).
+import { useState } from "react";
+import { ChevronDown, Pencil } from "lucide-react";
 import { fmtDate } from "../core/util.js";
 import { ExImg, Header, useApp } from "./kit.jsx";
 import { BodyMap } from "./BodyMap.jsx";
@@ -57,24 +59,51 @@ export function ExerciseSessions({ sessions, empty }) {
   );
 }
 
-// An exercise in a session's card (a workout's exercise, a run's stretch): picture, name, what was done (text, or children
-// below: the sets as rows), a note; a tap on the header opens the exercise's card. ex may be gone (deleted): then
-// `missing` is shown and nothing opens.
-export function ExerciseRow({ ex, missing, text, note, onClick, children }) {
-  const { nm1 } = useApp();
+// An exercise as a block, the same in the running workout, a session's card and the history: picture, name, lines
+// under it (text, note), what was done below (children: the sets as rows, editable in the workout); a tap on the name
+// opens the exercise's card. ex may be gone (deleted): then `missing` is shown and nothing opens.
+// Folding, only by the person's tap (never by itself; open by default): fold = { folded, toggle, summary } — a chevron
+// in the header, and folded the rows give way to the summary line. lead / right: the workout's handle and controls;
+// headProps: its swipe on the header; compact: rows hidden for a moment (dragging), no summary; lifted: being dragged.
+export function ExerciseRow({ ex, missing, text, note, onClick, children, fold, lead, right, headProps, compact, lifted }) {
+  const { nm1, nm2 } = useApp();
+  const folded = fold && fold.folded;
+  const body = children && !folded && !compact;
   return (
-    <div className="rounded-xl bg-neutral-900">
-      <button onClick={ex ? onClick : undefined} className="flex w-full items-center gap-3 rounded-xl p-3 text-left active:bg-neutral-800">
-        <ExImg ex={ex} />
-        <div className="min-w-0 flex-1">
-          <div className="font-semibold">{nm1(ex, missing)}</div>
-          {text && <div className="text-xs text-neutral-300 tabular-nums">{text}</div>}
-          {note}
-        </div>
-      </button>
-      {children && <div className="px-3 pb-3">{children}</div>}
+    <div className={`rounded-xl ${lifted ? "bg-neutral-800" : "bg-neutral-900"}`}>
+      <div {...headProps} className="flex items-center gap-1 p-3">
+        {lead}
+        <button onClick={ex ? onClick : undefined} className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left active:bg-neutral-800">
+          <ExImg ex={ex} />
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold" data-testid="exercise-name">{nm1(ex, missing)}</div>
+            {right && nm2(ex) && <div className="truncate text-xs text-neutral-500">{nm2(ex)}</div>}
+            {folded ? <div className="text-xs text-neutral-300 tabular-nums">{fold.summary}</div> : !compact && <>
+              {text && <div className="text-xs text-neutral-300 tabular-nums">{text}</div>}
+              {note}
+            </>}
+          </div>
+        </button>
+        {right}
+        {fold && (
+          <button onClick={fold.toggle} aria-label={folded ? "Развернуть" : "Свернуть"} aria-expanded={!folded} className="p-1.5 text-neutral-500">
+            <ChevronDown size={18} className={`transition-transform ${folded ? "" : "rotate-180"}`} />
+          </button>
+        )}
+      </div>
+      {body && <div className="px-3 pb-3">{children}</div>}
     </div>
   );
+}
+
+// which exercise blocks of a session are folded (exercise ids): all open at first; kept while the app is open, so
+// they stay as left when the workout is left for a card and back (key: the session)
+const folds = {};
+export function useFolds(key) {
+  const [folded, setFolded] = useState(() => folds[key] || []);
+  const set = (f) => { folds[key] = f; setFolded(f); };
+  return (id, summary) => ({ folded: folded.includes(id), summary,
+    toggle: () => set(folded.includes(id) ? folded.filter((x) => x !== id) : [...folded, id]) });
 }
 
 // What an exercise works, as a card like the other blocks: the body map at its usual size (parts filled: main ones

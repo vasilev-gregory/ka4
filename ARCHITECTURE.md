@@ -70,6 +70,7 @@
 | Схема тела | `BodyMap` | |
 | Нагрузка по частям тела (схема + список) | `LoadBreakdown` через `strength/MuscleBreakdown` / `stretch/StretchBreakdown` | |
 | Мышцы / группы за период — один блок для истории и карточки сессии (день / неделя / месяц / год) | `PeriodCard` (заголовок, «?», «в среднем за неделю», пусто, свой переключатель — `onZoom`); считают `strength/MusclesPanel`, `stretch/StretchPanel` | второй блок мышц в карточке |
+| Блок упражнения (шапка, строки, сворачивание по нажатию и строка-сводка) — один в тренировке, «Итоге сейчас», карточке, истории | `ExerciseRow` + `useFolds` (`ui/ExerciseCard.jsx`), сводка — `foldSummary` (`model/workout.js`) | ⚙ своё сворачивание / своя шапка упражнения в экране |
 | Упражнения сессии с подходами (карточка и «День» истории) | `WorkoutExercises` (`strength/History.jsx`), `StretchHeld` (`stretch/StretchSession.jsx`) | |
 | Календарь истории | `PeriodNav`, `usePeriod`, `PeriodCard` | |
 | Строка истории, заголовок карточки сессии, плитки чисел, её упражнения только на «Дне» | `HistoryRow`, `SessionHeader`, `StatTiles`, `DayOnly` (`ui/Session.jsx`) | |

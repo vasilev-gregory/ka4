@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { Trophy } from "lucide-react";
 import { fmtDur, fmtKg, fmtNum, plural, uid } from "../core/util.js";
-import { previousOfProgram, restBefore, restStats, stats, workoutSoFar } from "../model/workout.js";
+import { foldSummary, previousOfProgram, restBefore, restStats, stats, workoutSoFar } from "../model/workout.js";
 import { SetTable } from "./SetTable.jsx";
 import { workoutText } from "../model/workoutText.js";
 import { MusclesPanel } from "./MusclesPanel.jsx";
 import { periodOf } from "../model/calendar.js";
 import { DayOnly, SessionHeader, StatTiles } from "../ui/Session.jsx";
-import { ExerciseRow } from "../ui/ExerciseCard.jsx";
+import { ExerciseRow, useFolds } from "../ui/ExerciseCard.jsx";
 import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
 import { Button, Card, DeleteButton, Header, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
@@ -124,13 +124,14 @@ function CopyText({ text }) {
 export function WorkoutExercises({ data, w, exMap, open }) {
   const { bwAt } = useApp();
   const restsOf = restBefore(w); // "ei:si" -> ms before the set, or "drop"
+  const fold = useFolds(`workout:${w.startedAt}`); // the same folds as in the workout itself
   return (
     <div className="space-y-2">
       {w.exercises.map((e, i) => {
         const ex = exMap[e.exerciseId];
         const note = ex && progressNote(data, w, e, ex, bwAt);
         return (
-          <ExerciseRow key={i} ex={ex} missing="Удалённое упражнение"
+          <ExerciseRow key={i} ex={ex} missing="Удалённое упражнение" fold={fold(e.exerciseId, foldSummary(e.sets, ex ? ex.kind : "reps"))}
             onClick={() => open({ type: "exercise", id: e.exerciseId })}
             note={note && (
               <div className={`text-xs ${note.good ? "text-accent-400" : "text-neutral-500"}`}>
