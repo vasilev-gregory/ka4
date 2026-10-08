@@ -16,11 +16,11 @@ export const SEED_EX = [
   ["Barbell bench press", "Жим штанги лёжа", "грудь"],
   ["Incline barbell bench press", "Жим штанги на наклонной скамье", "грудь"],
   ["Dumbbell bench press", "Жим гантелей лёжа", "грудь"],
-  ["Dips", "Отжимания на брусьях", "грудь"],
+  ["Dips", "Брусья на грудь", "грудь"],
   ["Cable crossover", "Сведение рук в кроссовере", "грудь"],
   ["Machine pec fly", "Бабочка (сведение рук в тренажёре)", "грудь"],
   ["Lat pulldown", "Тяга верхнего блока", "спина"],
-  ["Pull up", "Подтягивания", "спина"],
+  ["Pull up", "Подтягивания средним хватом", "спина"],
   ["Bent-over barbell row", "Тяга штанги в наклоне", "спина"],
   ["Seated row", "Тяга нижнего блока сидя", "спина"],
   ["Machine row", "Тяга в рычажном тренажёре", "спина"],
@@ -47,10 +47,9 @@ export const SEED_EX = [
   ["Farmer's walk", "Прогулка фермера", "кор", "time"],
   // from GymKeeper list
   ["Duck press", "Жим «уточка»", "плечи"],
-  ["Rear delt dumbbell raise", "Гантель на заднюю дельту", "плечи"],
   ["Reverse pec deck", "Обратные разведения в тренажёре на заднюю дельту (пекдек)", "плечи"],
   ["Plate overhead press", "Жим блина над головой", "плечи"],
-  ["Dumbbell shoulder press", "Жим гантелей над головой", "плечи"],
+  ["Dumbbell shoulder press", "Жим гантелей над головой стоя", "плечи"],
   ["Cable shoulder press", "Жим над головой в нижнем блоке", "плечи"],
   ["Machine shoulder press", "Жим над головой в тренажёре", "плечи"],
   ["Lying rear delt raise", "Махи лёжа на заднюю дельту", "плечи"],
@@ -124,7 +123,7 @@ export const SEED_EX = [
   // from the history imported from Hevy / GymKeeper (with the one-sided variations that were done)
   ["Front squat", "Фронтальные приседания со штангой", "ноги"],
   ["Dumbbell front squat", "Фронтальные приседания с гантелями", "ноги"],
-  ["Leg press", "Жим ногами", "ноги"],
+  ["Leg press", "Жим ногами под углом (45°)", "ноги"],
   ["Dumbbell lunge", "Выпады с гантелями", "ноги"],
   ["Barbell lunge", "Выпады со штангой", "ноги"],
   ["Single-leg squat", "Приседания на одной ноге (пистолет)", "ноги"],
@@ -139,11 +138,12 @@ export const SEED_EX = [
   ["Machine lat pulldown", "Тяга сверху в рычажном тренажёре", "спина"],
   ["One-arm machine lat pulldown", "Тяга сверху одной рукой в рычажном тренажёре", "спина"],
   ["Wide-grip pull-up", "Подтягивания широким хватом", "спина"],
+  ["Close-grip pull-up", "Подтягивания узким хватом", "спина"],
   ["Hyperextension", "Гиперэкстензия", "спина"],
   ["Barbell shrug", "Шраги со штангой", "спина"],
   ["Dumbbell shrug", "Шраги с гантелями", "спина"],
   ["Seated barbell press", "Жим штанги сидя", "плечи"],
-  ["Seated dumbbell press", "Жим гантелей сидя", "плечи"],
+  ["Seated dumbbell press", "Жим гантелей над головой сидя", "плечи"],
   ["Cable lateral raise", "Махи в сторону на нижнем блоке", "плечи"],
   ["One-arm cable lateral raise", "Мах одной рукой в сторону на нижнем блоке", "плечи"],
   ["Dumbbell front raise", "Подъёмы гантелей перед собой", "плечи"],
@@ -207,7 +207,7 @@ export const EX_KINDS = [["reps", "вес и повторы"], ["time", "вес 
 // For exercises where the body is the main load, working load = share of body weight + added weight.
 // Shares are rough biomechanics figures. "assist" = machine-assisted (gravitron): load = body weight − assistance.
 export const BW_DEFAULTS = {
-  "pull-up": 1, "close-grip-chin-up": 1, "dips": 0.95, "triceps-dips": 0.95,
+  "pull-up": 1, "close-grip-pull-up": 1, "close-grip-chin-up": 1, "dips": 0.95, "triceps-dips": 0.95,
   "bodyweight-squat": 0.85, "push-up": 0.65, "one-arm-push-up": 0.65, "inverted-row": 0.55,
   "wide-grip-pull-up": 1, "decline-push-up": 0.75, "bench-dips": 0.5, "single-leg-squat": 0.85,
 };
@@ -249,7 +249,9 @@ export const ST_FIXES = [
 
 // built-in exercises that turned out to be one and the same: [the dropped id, the kept id]; saved data moves over
 // (migrate in model/state.js)
-export const EX_MERGES = [["barbell-glute-bridge", "hip-thrust"], ["single-leg-glute-bridge", "single-leg-hip-thrust"]];
+export const EX_MERGES = [
+  ["barbell-glute-bridge", "hip-thrust"], ["single-leg-glute-bridge", "single-leg-hip-thrust"], ["rear-delt-dumbbell-raise", "reverse-fly"],
+];
 
 // other names the built-in exercises go by, for the search only (gym slang, other apps, the other language's
 // variants): finding one without knowing how it is written here. The user's own go in an exercise's `aka`.
@@ -263,11 +265,14 @@ export const EX_AKA = {
   "upright-row": "протяжка тяга к подбородку",
   "barbell-bench-press": "жим лёжа жим лежа bench press",
   "dumbbell-bench-press": "жим гантелей лёжа db bench",
-  "dips": "брусья",
+  "dips": "брусья отжимания на брусьях chest dips",
+  "triceps-dips": "брусья отжимания на брусьях",
   "machine-pec-fly": "бабочка пекдек pec deck",
   "cable-crossover": "кроссовер сведения в кроссовере cable fly",
   "lat-pulldown": "вертикальная тяга тяга к груди",
-  "pull-up": "подтягивания chin up подтягивания прямым хватом",
+  "pull-up": "подтягивания прямым хватом стандартным хватом",
+  "close-grip-pull-up": "подтягивания узким прямым хватом",
+  "reverse-fly": "разведения в наклоне махи на заднюю дельту гантели на заднюю дельту rear delt raise",
   "bent-over-barbell-row": "тяга в наклоне барбелл ров barbell row",
   "seated-row": "горизонтальная тяга cable row тяга блока к поясу",
   "triceps-kickback": "лыжник kickback разгибание руки в наклоне",
@@ -282,7 +287,9 @@ export const EX_AKA = {
   "hyperextension": "гиперы гипер back extension",
   "barbell-shrug": "шраги трапеции",
   "dumbbell-shrug": "шраги трапеции",
-  "leg-press": "жим платформы",
+  "leg-press": "жим платформы наклонный тренажёр",
+  "dumbbell-shoulder-press": "жим гантелей стоя",
+  "seated-dumbbell-press": "жим гантелей сидя",
   "front-squat": "фронтальный присед",
   "seated-overhead-barbell-extension": "французский жим french press skull crusher",
   "close-grip-bench-press": "жим узким хватом",
@@ -303,6 +310,12 @@ export const EX_AKA = {
 export const EX_RENAMES = [
   ["reverse-pec-deck", "Пекдек на заднюю дельту", "Обратные разведения в тренажёре на заднюю дельту (пекдек)"],
   ["one-arm-reverse-pec-deck", "Пекдек на заднюю дельту одной рукой", "Обратные разведения в тренажёре одной рукой (пекдек)"],
+  // the name says which one it is: dips for the chest vs the triceps, standing vs seated, the grip, the machine
+  ["dips", "Отжимания на брусьях", "Брусья на грудь"],
+  ["pull-up", "Подтягивания", "Подтягивания средним хватом"],
+  ["dumbbell-shoulder-press", "Жим гантелей над головой", "Жим гантелей над головой стоя"],
+  ["seated-dumbbell-press", "Жим гантелей сидя", "Жим гантелей над головой сидя"],
+  ["leg-press", "Жим ногами", "Жим ногами под углом (45°)"],
 ];
 
 // Thomas et al. 2018 (Int J Sports Med): ≥5 min of static stretching per muscle group per week for ROM gains,
