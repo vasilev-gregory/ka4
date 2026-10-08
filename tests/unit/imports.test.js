@@ -62,11 +62,11 @@ test("import adds workouts in date order with the exercises we have; unknown one
   const exercisesBefore = d.exercises.length;
   const plan = planImport(d, workouts);
   assert.equal(plan.add.length, 2);
-  assert.deepEqual([...plan.missing], [["Plank", 1], ["Zercher Squat", 1]]);
+  assert.deepEqual([...plan.missing], [["Zercher Squat", 1]]);
   applyImport(d, plan, "hevy");
   assert.equal(d.exercises.length, exercisesBefore, "nothing created");
   assert.deepEqual(d.workouts.map((w) => (w.id === "mine" ? "mine" : w.name)), ["Legs", "mine", "Push"]);
-  assert.deepEqual(d.workouts[0].exercises.map((e) => e.exerciseId), ["squat"]); // Plank and Zercher Squat left out
+  assert.deepEqual(d.workouts[0].exercises.map((e) => e.exerciseId), ["squat", "plank"]); // Zercher Squat left out
   assert.equal(d.workouts[0].source, "hevy");
   assert.ok(d.workouts[0].exercises[0].sets.every((s) => s.done));
   assert.equal(planImport(d, workouts).add.length, 0, "the same file twice adds nothing");
@@ -204,4 +204,34 @@ test("«Дневник тренировок»: kilograms on body-weight exercise
   assert.deepEqual([...plan.noKg], ["Подтягивания"]);
   assert.deepEqual(plan.add[0].exercises.map((e) => e.sets[0]), [{ w: "", r: "10" }, { w: "60", r: "8" }]);
   assert.equal(planImport(d, r.workouts).add[0].exercises[0].sets[0].w, "50", "other formats keep them (an added weight)");
+});
+
+test("GymKeeper's Russian export: day-first dates, кг / сек / км, Russian labels and measurements", () => {
+  const text = "\uFEFFDate,Type,Name,№,Val_1,Unit_1,Val_2,Unit_2,Comment\n"
+    + '29.03.2021,📅,,,,,,,"30 мин"\n'
+    + '29.03.2021,🏋️‍♂️,"Жим лежа · штанга",,,,,,""\n'
+    + '29.03.2021,🔹,"Жим лежа · штанга",1,20,кг,12,пвт,"Размин"\n'
+    + '29.03.2021,🔹,"Жим лежа · штанга",2,60,кг,8,пвт,"Тяжел"\n'
+    + '29.03.2021,🔹,"Жим лежа · штанга",3,40,кг,8,пвт,"Дроп"\n'
+    + '29.03.2021,🔹,"Жим лежа · штанга",4,30,кг,6,пвт,"Дроп"\n'
+    + '29.03.2021,🏋️‍♂️🔗,"Планка",,,,,,"3 по 40"\n'
+    + '29.03.2021,🔹,"Планка",1,40,сек,0,кг,""\n'
+    + '29.03.2021,🏋️‍♂️,"Беговая дорожка",,,,,,""\n'
+    + '29.03.2021,🔹,"Беговая дорожка",1,1200,сек,2.5,км,""\n'
+    + '08.10.2023,📏,"Вес",1,68.2,,,,""\n';
+  const r = readImport("diary.csv", text);
+  assert.equal(r.source, "gymkeeper");
+  const [w] = r.workouts;
+  assert.equal(w.startedAt, new Date(2021, 2, 29, 12).getTime()); // 29 March, not a month 29
+  assert.equal(w.finishedAt - w.startedAt, 30 * 60e3);
+  const [bench, plank, run] = w.exercises;
+  assert.equal(bench.name, "Жим лежа (штанга)");
+  assert.equal(bench.sets[0].t, "w");
+  assert.equal(bench.sets[1].rir, 1);
+  assert.ok(bench.sets[2].g && bench.sets[2].g === bench.sets[3].g && bench.sets[1].g === bench.sets[2].g); // the drop set, from the heavier set
+  assert.deepEqual([plank.sets[0].w, plank.sets[0].r], ["", "40"]); // seconds
+  assert.deepEqual([run.sets[0].w, run.sets[0].r], ["2.5", "20"]); // km, minutes
+  assert.deepEqual(r.measurements, [{ date: new Date(2023, 9, 8, 12).getTime(), values: { weight: "68.2" } }]);
+  const plan = planImport(seed(), r.workouts);
+  assert.deepEqual([...plan.matched.values()].map((e) => e.id), ["barbell-bench-press", "plank", "treadmill-run"]);
 });

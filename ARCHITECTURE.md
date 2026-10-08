@@ -19,7 +19,7 @@
 | Изменение данных растяжки: программы, растяжки, сессии | `model/stretchActions.js` | ⚙ `s.programs / s.sessions / s.exercises` менять в экране |
 | Идущая растяжка (фазы, часы, пауза, пропуск, конец, отмена, без программы) | `model/stretchRunActions.js` | хранить ход растяжки в состоянии компонента |
 | Замеры (сохранить, удалить) | `model/measureActions.js` | `d.measurements` менять в экране |
-| Импорт из других приложений | `model/importActions.js` + разбор в `model/imports/` | |
+| Импорт из других приложений | `model/importActions.js` + разбор в `model/imports/` (названия чужих приложений → наши id — `imports/aliases.js`; каждое такое упражнение есть во встроенном каталоге `model/seedExercises.js`) | |
 | Бэкап: файл, напоминание, «отложить» | `model/backup.js` | |
 | Время | параметр `now = Date.now()` у каждой функции модели; экран передаёт `Date.now()` | ⚙ `Date.now()` внутри `model/` (кроме умолчания параметра) |
 
