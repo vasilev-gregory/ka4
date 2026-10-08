@@ -3,9 +3,10 @@
 // stretching pass the parts they use and the fill of each.
 import { BACK, FRONT } from "./bodyMapData.js";
 
-// a part's colour for a share of the target (0..1): the mode's accent mixed into grey, a trace for the first bit and
-// pure at the target. Mixed, not see-through: a see-through yellow on the dark turns brown, a red turns maroon.
-export const muscleFill = (share) => (share > 0 ? `color-mix(in oklch, var(--color-accent-500) ${Math.round(15 + 85 * Math.min(1, share))}%, #525252)` : "transparent");
+// a part's colour for a share of the target (0..1): the mode's accent mixed into its palette's base, a trace for the first
+// bit and pure at the target. The base is grey (a see-through yellow on the dark turns brown, a red maroon), or nothing
+// for the classic palettes that were see-through from the start (ui/palettes).
+export const muscleFill = (share) => (share > 0 ? `color-mix(in oklch, var(--color-accent-500) ${Math.round(15 + 85 * Math.min(1, share))}%, var(--accent-base))` : "transparent");
 
 // the head is tappable too (onSelect("head")), but it is not a muscle and never fills
 export const HEAD = "head";
