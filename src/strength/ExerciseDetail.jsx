@@ -95,7 +95,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
       ]} />
 
       {!isCardio && Object.keys(worked).length > 0 && (
-        <ExerciseBody parts={Object.keys(worked)} fill={worked} color="fill-rose-500">{fmtWorked(worked)}</ExerciseBody>
+        <ExerciseBody parts={Object.keys(worked)} fill={worked} color="fill-accent-400">{fmtWorked(worked)}</ExerciseBody>
       )}
       {maxSeries.length >= 2 && (
         <div className="mb-4 rounded-xl bg-neutral-900 p-2">

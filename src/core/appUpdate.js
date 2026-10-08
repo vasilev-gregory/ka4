@@ -25,6 +25,16 @@ export async function hardRefresh() {
   window.location.reload();
 }
 
+// The update as the person starts it (Settings' button, a long pull down anywhere): asks for the current build; when
+// it's newer (or the check fails, e.g. offline) the app reloads into it after a moment. -> { upToDate, current, latest, failed? }
+export async function updateApp() {
+  let v = null;
+  try { v = await checkForUpdate(); } catch (e) { /* offline: reload from the network anyway */ }
+  if (v && v.upToDate) return v;
+  setTimeout(hardRefresh, 600);
+  return v || { upToDate: false, failed: true, current: __VERSION__ };
+}
+
 // A freshly deployed version takes over with a page reload right away, in a workout too: everything is saved as it
 // changes (model/usePersistentData), so the running workout or stretch goes on in the new version. Plain DOM: it
 // shows over whatever React is drawing.
