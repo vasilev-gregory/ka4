@@ -85,15 +85,18 @@ test("a long pull down from the top checks for an update (the same as Settings' 
   await expect(page.getByText(/^У тебя последняя версия, \d+$/)).toBeVisible();
 });
 
-test("strength is red by default, yellow if picked in the settings; stretching keeps its own colour", async ({ page }) => {
+test("each mode has its colour (strength yellow, stretching teal by default) and can take any palette", async ({ page }) => {
   await openApp(page);
   const accent = () => page.evaluate(() => getComputedStyle(document.querySelector(".min-h-screen")).getPropertyValue("--color-accent-500").trim());
-  await expect.poll(accent).toBe("#f43f5e");
+  await expect.poll(accent).toBe("#f59e0b");
   await tab(page, "Настройки");
-  await page.getByRole("button", { name: "жёлтый" }).click();
-  await expect.poll(accent).toBe("#f59e0b");
+  await page.getByRole("button", { name: "красный" }).click();
+  await expect.poll(accent).toBe("#f43f5e");
   await page.reload();
-  await expect.poll(accent).toBe("#f59e0b");
+  await expect.poll(accent).toBe("#f43f5e");
   await switchMode(page, "Растяжка");
   await expect.poll(accent).toBe("#14b8a6");
+  await tab(page, "Настройки");
+  await page.getByRole("button", { name: "северное сияние" }).click();
+  await expect.poll(accent).toBe("#1fcf86");
 });

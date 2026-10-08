@@ -5,6 +5,7 @@ import { fmtDur, fmtNum, num, numericInput } from "../core/util.js";
 import { ST_DEFAULTS, ST_FIELDS } from "../model/catalog.js";
 import { setCountdown } from "../model/workoutActions.js";
 import { Card, Header, SecStepper, Segmented, Stepper, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
+import { colorOf, PALETTES } from "../ui/palettes.js";
 import { BackupSection } from "./BackupSection.jsx";
 import { ColumnsSettings } from "./ColumnsSettings.jsx";
 import { StorageStatus } from "./StorageStatus.jsx";
@@ -23,6 +24,7 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
         <Segmented options={[["strength", "Сила"], ["stretch", "Растяжка"]]} value={s.mode || "strength"} onChange={setMode} />
         <p className="mt-2 text-xs text-neutral-500">Быстрее: смахни нижнюю панель вкладок влево или вправо.</p>
       </Card>
+      <ModeColor settings={s} mode={stretch ? "stretch" : "strength"} up={up} />
       {stretch && <StretchDefaults defaults={data.stretch.defaults} up={up} />}
       {!stretch && <StrengthSettings data={data} up={up} />}
       <SwitchRow title="Звук таймера" hint={`Щелчки 3-2-1 и сигналы${stretch ? " в плеере растяжки" : " в конце отдыха"}`}
@@ -40,6 +42,26 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
         <p className="-mt-4 text-xs text-neutral-500">Версия {__VERSION__} от {buildDate}</p>
       </details>
     </div>
+  );
+}
+
+// the current mode's colour: any palette for either mode (ui/palettes)
+function ModeColor({ settings, mode, up }) {
+  const cur = colorOf(settings, mode);
+  const key = mode === "stretch" ? "stretchColor" : "strengthColor";
+  return (
+    <Card className="mb-3">
+      <div className="mb-2 font-semibold">Цвет {mode === "stretch" ? "растяжки" : "силовой"}</div>
+      <div className="flex justify-between">
+        {Object.entries(PALETTES).map(([k, p]) => (
+          <button key={k} onClick={() => up((d) => { d.settings[key] = k; })} aria-label={p.name} aria-pressed={k === cur}
+            className="flex w-1/4 flex-col items-center gap-1 text-[11px] text-neutral-400">
+            <span style={{ background: p.c[2] }} className={`h-9 w-9 rounded-full ${k === cur ? "ring-2 ring-white ring-offset-2 ring-offset-neutral-900" : ""}`} />
+            {p.name}
+          </button>
+        ))}
+      </div>
+    </Card>
   );
 }
 
@@ -69,11 +91,6 @@ function StrengthSettings({ data, up }) {
         <div className="mb-2 font-semibold">Названия упражнений</div>
         <Segmented options={[[true, "сначала русские"], [false, "сначала английские"]]} value={s.namesRu !== false}
           onChange={(v) => up((d) => { d.settings.namesRu = v; })} />
-      </Card>
-      <Card className="mb-3">
-        <div className="mb-2 font-semibold">Цвет силовой</div>
-        <Segmented options={[["red", "красный"], ["amber", "жёлтый"]]} value={s.strengthColor === "amber" ? "amber" : "red"}
-          onChange={(v) => up((d) => { d.settings.strengthColor = v; })} />
       </Card>
       <BodyWeight data={data} up={up} />
       <SwitchRow title="Обратный отсчёт после подхода" hint="Отсчёт внизу экрана. Секундомер в кнопке ✓ — колонка «Отдых» ниже"
