@@ -38,7 +38,9 @@ export default defineConfig({
         short_name: "Кач",
         description: "Трекер тренировок",
         lang: "ru",
-        start_url: BASE,
+        id: BASE, // the app's identity stays what start_url was before it named index.html
+        // index.html by name: a bare storage bucket (VK Cloud) has no index document for "/"
+        start_url: `${BASE}index.html`,
         scope: BASE,
         display: "standalone",
         background_color: "#000000",
