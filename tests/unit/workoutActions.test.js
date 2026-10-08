@@ -270,3 +270,14 @@ test("ticks in any order: each set keeps the rest fixed at its tick; unticking s
   assert.equal(d.active.restEndsAt, null);
   assert.equal(liveRestKey(d.active), "0:1");
 });
+
+test("every step of a drop set is to failure: RIR 0 at the tick unless one was given; a lone set is left alone", () => {
+  const d = withWorkout([blank({ w: "60", g: "x" }), blank({ w: "45", g: "x" }), blank({ w: "30", g: "x", rir: 2 }), blank({ w: "40" })]);
+  [0, 1, 2, 3].forEach((si) => A.toggleSet(d, 0, si, T0 + si * 1000));
+  assert.deepEqual(d.active.exercises[0].sets.map((s) => s.rir), [0, 0, 2, undefined]);
+  // ticked first, merged after: the ticked steps get RIR 0 at the merge; ones still to do get it at their tick
+  const e = withWorkout([blank({ w: "60" }), blank({ w: "45" }), blank({ w: "30" })]);
+  A.toggleSet(e, 0, 0, T0); A.toggleSet(e, 0, 1, T0 + 1000);
+  A.mergeSets(e, 0, new Set([0, 1, 2]));
+  assert.deepEqual(e.active.exercises[0].sets.map((x) => x.rir), [0, 0, undefined]);
+});

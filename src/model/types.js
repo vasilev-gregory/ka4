@@ -76,7 +76,7 @@
  * @property {string} p                  partial reps, count as 0.3 of a rep
  * @property {""|"w"} [t]                "w" = warm-up: not counted anywhere
  * @property {number|null} [rir]         reps in reserve 0–4 (4 = "4+"); 0 = to failure
- * @property {string} [g]                group id: consecutive sets with the same g are one drop set / ladder
+ * @property {string} [g]                group id: consecutive sets with the same g are one drop set (each step to failure)
  * @property {number} [at]               when it was confirmed (rest statistics)
  * @property {number|null} [rest]       rest before it, fixed at the tick (ms; null: none — first, or across a pause)
  * @property {boolean} done

@@ -72,8 +72,8 @@ export function toggleWarmup(d, ei, si) {
   else { s.t = "w"; s.rir = null; }
 }
 
-// ✓ on a set. Confirming without typing means "same as last time"; partial reps mean the set went to
-// failure; a confirmed set ends a pause and starts the rest countdown (not in the middle of a drop set).
+// ✓ on a set. Confirming without typing means "same as last time"; partial reps, or a drop set's step with no RIR
+// given (each step goes to failure by definition), mean the set went to failure; a confirmed set ends a pause and starts the rest countdown (not in the middle of a drop set).
 // Its rest is fixed at the tick (since the previous tick, none across a pause): other ticks in any order never
 // move it. Unticking steps the running rest back to the tick before; the countdown goes with its set.
 export function toggleSet(d, ei, si, now = Date.now()) {
@@ -91,7 +91,7 @@ export function toggleSet(d, ei, si, now = Date.now()) {
   if (s.r === "" && num(s.p) > 0) s.r = "0";
   if (s.r === "" && s.hr) s.r = s.hr;
   if (!s.p && s.hp) s.p = s.hp;
-  if (num(s.p) > 0 && s.t !== "w") s.rir = 0;
+  if (s.t !== "w" && (num(s.p) > 0 || (s.g && s.rir == null))) s.rir = 0; // to failure
   const prev = a.lastSetAt;
   if (a.paused) resumeWorkout(d, now);
   if (a.warmup && !a.warmup.doneAt) a.warmup.doneAt = now; // went straight to the sets: warm-up is over
@@ -142,13 +142,13 @@ export function deleteSets(d, ei, indexes) {
   normalizeGroups(ex.sets);
 }
 
-// Drop set / ladder: the picked sets get one group id and move next to each other, at the first one's place.
+// Drop set: the picked sets get one group id and move next to each other, at the first one's place.
 export function mergeSets(d, ei, indexes) {
   const ex = d.active.exercises[ei];
   const idx = [...indexes].sort((x, y) => x - y);
   const g = uid();
   const picked = idx.map((i) => ex.sets[i]);
-  picked.forEach((s) => { s.g = g; });
+  picked.forEach((s) => { s.g = g; if (s.done && s.t !== "w" && s.rir == null) s.rir = 0; }); // ticked steps: to failure
   const rest = ex.sets.filter((_, i) => !indexes.has(i));
   const at = ex.sets.slice(0, idx[0]).filter((_, i) => !indexes.has(i)).length;
   rest.splice(at, 0, ...picked);

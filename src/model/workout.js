@@ -203,7 +203,7 @@ export function stats(w, exMap, bwAt) {
       if (!s.done || s.t === "w") return; // warm-ups don't count
       if (kind === "cardio") { cardioMin += num(s.r); cardioKm += num(s.w); return; } // cardio: r = minutes, w = km
       const cont = s.g && i > 0 && e.sets[i - 1].g === s.g && e.sets[i - 1].done;
-      if (!cont) sets++; // a drop set / ladder is one set
+      if (!cont) sets++; // a drop set is one set
       // partial reps count as 30% of a full rep
       if (kind !== "time") vol += setLoad(exd, s, bw) * (num(s.r) + PARTIAL_WEIGHT * num(s.p));
     });
@@ -224,8 +224,8 @@ export const setColumns = (settings) => columnConfig(settings).filter((c) => c.k
 
 export const restShown = (settings) => columnConfig(settings).some((c) => c.key === "rest" && c.on);
 
-// Sets merged into one (drop set, ladder) share a group id `g` and sit next to each other.
-// numbers of the working sets: 1, 2, 3 (a drop set / ladder: 2a, 2b); warm-ups aren't counted
+// Sets merged into one (a drop set) share a group id `g` and sit next to each other.
+// numbers of the working sets: 1, 2, 3 (a drop set: 2a, 2b); warm-ups aren't counted
 export function setLabels(sets) {
   let n = 0, sub = 0;
   return sets.map((s, i) => {
