@@ -87,3 +87,13 @@ test("merged built-ins: a duplicate goes, its history and plans move to the kept
   assert.equal(m.active.exercises[0].exerciseId, "hip-thrust");
   assert.equal(seed().exercises.some((e) => e.id === "single-leg-glute-bridge"), false);
 });
+
+test("v6: an exercise's own muscles with the trapezius get the middle of the back too, once", () => {
+  const d = seed();
+  d.version = 5;
+  d.exercises.push({ id: "mine", name: "Моя тяга", group: "спина", kind: "reps", muscles: { lats: 1, traps: 1 } });
+  const m = migrate(d);
+  assert.deepEqual(m.exercises.find((e) => e.id === "mine").muscles, { lats: 1, traps: 1, midback: 1 });
+  delete m.exercises.find((e) => e.id === "mine").muscles.midback; // the user takes it off: it stays off
+  assert.equal(migrate(m).exercises.find((e) => e.id === "mine").muscles.midback, undefined);
+});

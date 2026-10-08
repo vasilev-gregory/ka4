@@ -4,7 +4,7 @@ import { ASSIST_DEFAULTS, BW_DEFAULTS, EX_MERGES, EX_RENAMES, SEED_EX, ST_AREA_D
 
 export const KEY = "gymapp-state-v1";
 // bumped whenever migrate() learns a new upgrade step
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export function seed() {
   const exercises = SEED_EX.map(([name, ru, group, kind]) => ({ id: slug(name), name, ru, group, kind: kind || "reps" }));
@@ -95,6 +95,9 @@ export function migrate(d) {
   if ((d.version || 0) < 4 && d.settings && Array.isArray(d.settings.columns)) {
     d.settings.columns.forEach((c) => { if (c.key === "rest") c.on = true; });
   }
+  // v6: «трапеции и ромбы» split into the upper trapezius (traps) and the middle of the back (midback): an exercise's own
+  // muscles that had the trapezius get the middle of the back too, once
+  if ((d.version || 0) < 6) d.exercises.forEach((e) => { if (e.muscles && e.muscles.traps && !e.muscles.midback) e.muscles.midback = e.muscles.traps; });
   d.version = SCHEMA_VERSION;
   return d;
 }
