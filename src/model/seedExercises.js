@@ -231,4 +231,11 @@ export const SEED_EX = [
   ["Captain's chair leg raise", "Подъём ног в упоре на локтях", "кор"],
   ["Cable woodchop", "Повороты корпуса на блоке", "кор"],
   ["Mountain climber", "Скалолаз", "кор"],
+  // stabilizers: holding the torso still against a pull to one side
+  ["Pallof press", "Паллоф-пресс (блок или резинка тянет вбок, руки вперёд)", "кор"],
+  ["Side plank", "Боковая планка", "кор", "time"],
+  ["Dead bug", "Мёртвый жук", "кор"],
+  ["Russian twist", "Русские скручивания", "кор"],
+  ["Waiter's walk", "Прогулка с гирей над головой", "кор", "time"],
+  ["Turkish get-up", "Турецкий подъём с гирей", "кор"],
 ];
