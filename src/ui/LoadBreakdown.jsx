@@ -14,7 +14,7 @@ const HEAD_JOKES = [
 ];
 
 // items: [{ id, name, parts: body map ids }] in list order; load: { id: { value, text, status?: [key, label], nick?: a joke on the chip } };
-// scale: { target: value filled completely, barMax, mark: value of the tick on the bar, legend: [[value, label]],
+// scale: { target: value filled completely, barMax, marks: values of the ticks on the bar, legend: [[value, label]],
 //   fill: fill-* class, bar: bg-* class, chip: { statusKey: classes }, empty: caption of a part with no load };
 // map: draw the body; only: list just these ids; note(id): a line under a row; expand(id): what opens under a picked row;
 // find: { label, go(id) } — only in a program's editor (exercises go into a program): a picked part, or one left with no
@@ -75,7 +75,7 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
                 </div>
                 <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-700/60">
                   <div className={`absolute inset-y-0 left-0 rounded-full ${scale.bar}`} style={{ width: `${Math.min(100, (l.value / scale.barMax) * 100)}%` }} />
-                  <div className="absolute inset-y-0 w-px bg-neutral-500" style={{ left: `${(scale.mark / scale.barMax) * 100}%` }} />
+                  {scale.marks.map((m) => <div key={m} className="absolute inset-y-0 w-px bg-neutral-500" style={{ left: `${(m / scale.barMax) * 100}%` }} />)}
                 </div>
                 {note && <div className="mt-0.5 text-[11px] text-neutral-500">{note(r.id)}</div>}
               </button>
