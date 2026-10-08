@@ -25,8 +25,8 @@
  * @property {boolean} [countdown]        rest countdown on (default) / off
  * @property {boolean} [sound]            timer sounds on (default) / off
  * @property {"strength"|"stretch"} [mode]
- * @property {"amber"|"red"|"teal"|"aurora"} [strengthColor]  strength mode's accent (ui/palettes.js; default amber)
- * @property {"amber"|"red"|"teal"|"aurora"} [stretchColor]   stretching mode's accent (default teal)
+ * @property {"amber"|"red"|"pink"|"violet"|"teal"|"aurora"} [strengthColor]  strength mode's accent (ui/palettes.js; default amber)
+ * @property {"amber"|"red"|"pink"|"violet"|"teal"|"aurora"} [stretchColor]   stretching mode's accent (default teal)
  * @property {boolean} [namesRu]          Russian exercise names first (default); false = English first
  * @property {boolean} [gestureHintSeen]  the gestures hint on the first workout was dismissed
  * @property {string} [bodyWeight]        manual body weight, used when there are no measurements

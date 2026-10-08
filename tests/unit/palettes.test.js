@@ -6,7 +6,7 @@ import { colorOf } from "../../src/ui/palettes.js";
 test("palettes: strength yellow and stretching teal by default, unknown values fall back", () => {
   assert.equal(colorOf({}, "strength"), "amber");
   assert.equal(colorOf({}, "stretch"), "teal");
-  assert.equal(colorOf({ strengthColor: "pink", stretchColor: "red" }, "strength"), "amber");
+  assert.equal(colorOf({ strengthColor: "lime", stretchColor: "red" }, "strength"), "amber");
   assert.equal(colorOf({ strengthColor: "aurora", stretchColor: "red" }, "stretch"), "red");
 });
 
@@ -16,4 +16,9 @@ test("palettes: the modes never share a colour — strength keeps it, stretching
   assert.equal(colorOf({ strengthColor: "red", stretchColor: "red" }, "strength"), "red");
   assert.equal(colorOf({ strengthColor: "teal" }, "stretch"), "amber");
   assert.equal(colorOf({ strengthColor: "teal", stretchColor: "teal" }, "stretch"), "amber");
+});
+
+test("palettes: pink and violet are there for either mode", () => {
+  assert.equal(colorOf({ strengthColor: "pink" }, "strength"), "pink");
+  assert.equal(colorOf({ stretchColor: "violet" }, "stretch"), "violet");
 });

@@ -5,6 +5,8 @@ export const PALETTES = {
   amber: { name: "жёлтый", c: ["#fde68a", "#fcd34d", "#fbbf24", "#f59e0b", "#b45309", "#78350f", "#451a03"] },
   red: { name: "красный", c: ["#fecdd3", "#fda4af", "#fb7185", "#f43f5e", "#be123c", "#881337", "#4c0519"] },
   teal: { name: "бирюзовый", c: ["#99f6e4", "#5eead4", "#2dd4bf", "#14b8a6", "#0f766e", "#134e4a", "#042f2e"] },
+  pink: { name: "розовый", c: ["#fbcfe8", "#f9a8d4", "#f472b6", "#ec4899", "#be185d", "#831843", "#500724"] },
+  violet: { name: "фиолетовый", c: ["#ddd6fe", "#c4b5fd", "#a78bfa", "#8b5cf6", "#6d28d9", "#4c1d95", "#2e1065"] },
   aurora: { name: "северное сияние", c: ["#b5f8d8", "#7ef0bd", "#3ee8a0", "#1fcf86", "#0f8a5a", "#0b4a33", "#052a1d"] },
 };
 // each mode's colour when none is picked
