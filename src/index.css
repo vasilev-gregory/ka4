@@ -9,18 +9,28 @@ input { font-size: 16px; } /* no auto-zoom on iOS */
 /* solid strip under the iOS status bar so scrolled content doesn't show through */
 body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: #000; z-index: 60; }
 
-/* Accent colour: amber in strength mode, teal in stretching mode. Use bg-accent-400 etc., never amber/teal directly. */
+/* Accent colour: strength's own (rose by default, amber if picked in the settings: <html class="strength-amber">), teal in
+   stretching mode. Use bg-accent-400 etc., never the palette names directly. */
 @theme {
-  --color-accent-200: #fde68a;
-  --color-accent-300: #fcd34d;
-  --color-accent-400: #fbbf24;
-  --color-accent-500: #f59e0b;
-  --color-accent-700: #b45309;
-  --color-accent-900: #78350f;
-  --color-accent-950: #451a03;
+  --color-accent-200: #fecdd3;
+  --color-accent-300: #fda4af;
+  --color-accent-400: #fb7185;
+  --color-accent-500: #f43f5e;
+  --color-accent-700: #be123c;
+  --color-accent-900: #881337;
+  --color-accent-950: #4c0519;
 }
 /* a strength element inside the stretching mode (the pill of a workout going on) keeps the strength colours */
 .mode-strength {
+  --color-accent-200: #fecdd3;
+  --color-accent-300: #fda4af;
+  --color-accent-400: #fb7185;
+  --color-accent-500: #f43f5e;
+  --color-accent-700: #be123c;
+  --color-accent-900: #881337;
+  --color-accent-950: #4c0519;
+}
+.strength-amber, .strength-amber .mode-strength {
   --color-accent-200: #fde68a;
   --color-accent-300: #fcd34d;
   --color-accent-400: #fbbf24;

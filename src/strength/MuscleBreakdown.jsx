@@ -9,10 +9,10 @@ import { useApp } from "../ui/kit.jsx";
 const TARGET = 10; // hard sets a week at which a muscle is filled completely («оптимум»)
 const ITEMS = MUSCLES.map(([id, name]) => ({ id, name, parts: [id] }));
 const SCALE = {
-  target: TARGET, barMax: 30, mark: TARGET, fill: "fill-accent-400", bar: "bg-accent-400", empty: "тяжёлых подходов не было",
+  target: TARGET, barMax: 30, mark: TARGET, fill: "fill-accent-500", bar: "bg-accent-500", empty: "тяжёлых подходов не было",
   legend: [[0, "0"], [4, "4 — рост"], [TARGET, "10+ — оптимум"]],
-  // statuses in the mode's accent, as stretching's: the fuller, the closer to the weekly target
-  chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-accent-900 text-accent-200", optimal: "bg-accent-400 text-black", high: "bg-accent-200 text-accent-950" },
+  // statuses in the mode's accent, as stretching's, one hue getting stronger: a pale tint (рост) → solid (оптимум) → deep (past it)
+  chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-accent-500/25 text-accent-200", optimal: "bg-accent-500 text-black", high: "bg-accent-700 text-white" },
 };
 // one workout or program: its own scale, full at «оптимум» (6)
 const SINGLE = { ...SCALE, target: SESSION_GOOD, barMax: SESSION_CAP + 1, mark: SESSION_GOOD,

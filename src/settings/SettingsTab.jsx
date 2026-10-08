@@ -70,6 +70,11 @@ function StrengthSettings({ data, up }) {
         <Segmented options={[[true, "сначала русские"], [false, "сначала английские"]]} value={s.namesRu !== false}
           onChange={(v) => up((d) => { d.settings.namesRu = v; })} />
       </Card>
+      <Card className="mb-3">
+        <div className="mb-2 font-semibold">Цвет силовой</div>
+        <Segmented options={[["red", "красный"], ["amber", "жёлтый"]]} value={s.strengthColor === "amber" ? "amber" : "red"}
+          onChange={(v) => up((d) => { d.settings.strengthColor = v; })} />
+      </Card>
       <BodyWeight data={data} up={up} />
       <SwitchRow title="Обратный отсчёт после подхода" hint="Отсчёт внизу экрана. Секундомер в кнопке ✓ — колонка «Отдых» ниже"
         on={countdown} className="mb-3"

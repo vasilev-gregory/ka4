@@ -38,7 +38,7 @@ export function StretchDetail({ stretch, upStretch, id, back, open }) {
         [runs.length, plural(runs.length, "растяжка", "растяжки", "растяжек")],
         [fmtDur(total * 1000), "удержание всего, на сторону", true],
       ]} />
-      <ExerciseBody title="Что тянется" parts={parts} fill={Object.fromEntries(parts.map((m) => [m, 1]))} color="fill-accent-400">
+      <ExerciseBody title="Что тянется" parts={parts} fill={Object.fromEntries(parts.map((m) => [m, 1]))} color="fill-accent-500">
         {ex.area ? ex.area : "Группа мышц не указана"}{ex.sides ? " · на обе стороны" : " · одна сторона"}
       </ExerciseBody>
       {series.length >= 2 && (

@@ -55,6 +55,10 @@ function Shell({ data, up, replace, saved }) {
   // stretching screens only get the stretching part of the data
   const upStretch = (fn) => up((d) => { fn(d.stretch); });
 
+  // strength's accent picked in the settings: a class on <html>, so portals (dial, sheets) get it too (index.css)
+  const amber = data.settings.strengthColor === "amber";
+  useEffect(() => { document.documentElement.classList.toggle("strength-amber", amber); }, [amber]);
+
   const { measurements, exercises } = data;
   const { bodyWeight, namesRu } = data.settings;
   const appCtx = useMemo(() => ({ bwAt: makeBodyWeightAt(measurements || [], bodyWeight || 0), ...makeNames(namesRu !== false) }), [measurements, bodyWeight, namesRu]);
