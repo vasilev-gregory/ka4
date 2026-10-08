@@ -68,6 +68,12 @@ test("history: month by default, paging, year overview drills down to a month an
   await expect(page.getByRole("img", { name: "Сзади" }).locator('[data-muscle="sidedelt"]')).toHaveCount(2);
   await front.locator('[data-muscle="head"]').click();
   await expect(page.getByText(/^Голова: /)).toBeVisible();
+  // a double tap on it goes to brain games (stubbed: no network in tests)
+  await page.context().route("https://braingames.ru/**", (r) => r.fulfill({ body: "brain games" }));
+  await page.locator('[data-muscle="chest"]').first().click(); // another shape in between: no double tap with the tap above
+  const popup = page.waitForEvent("popup");
+  await front.locator('[data-muscle="head"]').dblclick();
+  expect((await popup).url()).toBe("https://braingames.ru/");
 
   // a month counts the exercises' sets over the whole month, and an exercise opens its card
   await page.getByRole("button", { name: "Месяц" }).click();

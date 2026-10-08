@@ -29,13 +29,17 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
     if (id === HEAD) setJoke((j) => (j + 1) % HEAD_JOKES.length);
     setSel(sel === id && id !== HEAD ? null : id);
   };
-  // a tapped shape picks the row it belongs to, one with a load first; with find, a second tap on it soon after goes to find
+  // a tapped shape picks the row it belongs to, one with a load first; a second tap on it soon after goes to find (with
+  // find), or, on the head, to brain games — a joke
   const lastTap = useRef({});
   const pickPart = (m) => {
     const id = m === HEAD ? HEAD : (rows.find((r) => r.parts.includes(m)) || items.find((it) => it.parts.includes(m)))?.id;
-    const now = Date.now(), twice = find && id !== HEAD && lastTap.current.id === id && now - lastTap.current.at < DOUBLE_TAP_MS;
+    const now = Date.now(), again = lastTap.current.id === id && now - lastTap.current.at < DOUBLE_TAP_MS;
+    const twice = again && (id === HEAD || find);
     lastTap.current = twice ? {} : { id, at: now };
-    if (twice) find.go(id); else pick(id);
+    if (!twice) pick(id);
+    else if (id === HEAD) window.open(BRAIN_GAMES, "_blank", "noopener");
+    else find.go(id);
   };
   const picked = items.find((it) => it.id === sel);
   const statusText = (id) => (load[id].status ? ` — ${load[id].status[1]}` : "") + (load[id].nick ? ` (${load[id].nick})` : "");
@@ -125,6 +129,7 @@ export function WhyButton({ on, toggle }) {
 }
 
 const DOUBLE_TAP_MS = 400;
+const BRAIN_GAMES = "https://braingames.ru/";
 const FindButton = ({ find, item, className = "" }) => (
   <button onClick={() => find.go(item.id)} className={`${className} rounded-lg bg-neutral-700 px-3 py-1.5 text-xs text-neutral-100 active:bg-neutral-600`}>
     {find.label} на «{item.name}»
