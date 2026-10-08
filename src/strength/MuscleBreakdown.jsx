@@ -9,14 +9,14 @@ import { useApp } from "../ui/kit.jsx";
 const TARGET = 10; // hard sets a week at which a muscle is filled completely («оптимум»)
 const ITEMS = MUSCLES.map(([id, name]) => ({ id, name, parts: [id] }));
 const SCALE = {
-  target: TARGET, barMax: 30, marks: [WEEK_GROW, TARGET], // ticks: growth starts, «оптимум»
+  target: TARGET, barMax: WEEK_CAP * 1.1, marks: [WEEK_GROW, TARGET, WEEK_CAP], // ticks: growth starts, «оптимум», the ceiling
   fill: "fill-accent-500", bar: "bg-accent-500", empty: "тяжёлых подходов не было",
   legend: [[0, "0"], [4, "4 — рост"], [TARGET, "10+ — оптимум"]],
   // statuses in the mode's accent, as stretching's, one hue getting stronger: a pale tint (рост) → solid (оптимум) → deep (past it)
   chip: { low: "bg-neutral-700/60 text-neutral-300", grow: "bg-accent-500/25 text-accent-200", optimal: "bg-accent-500 text-black", high: "bg-accent-700 text-white" },
 };
 // one workout or program: its own scale, full at «оптимум» (6)
-const SINGLE = { ...SCALE, target: SESSION_GOOD, barMax: SESSION_CAP + 1, marks: [SESSION_GROW, SESSION_GOOD],
+const SINGLE = { ...SCALE, target: SESSION_GOOD, barMax: SESSION_CAP + 1, marks: [SESSION_GROW, SESSION_GOOD, SESSION_CAP],
   legend: [[0, "0"], [SESSION_GROW, "3 — рост"], [SESSION_GOOD, "6+ — оптимальный"]] };
 
 // "7,5 подх. · 2 раза"; averages over weeks are fractional
@@ -49,7 +49,7 @@ export const MusclesWhy = () => (
   <p className="mb-2 text-[11px] leading-snug text-neutral-500">
     Считаются тяжёлые подходы (RIR 0–3, без разминок), дроп-сет — один подход. Мышца, которая в упражнении основная, получает подход,
     вспомогательная — половину (присед: квадрицепс — подход, ягодицы — половина); тренировка засчитывается мышце, если она была основной.
-    Ориентир по исследованиям (Pelland и др., 2024–25): рост — от 4 подходов в неделю, хорошо — от 10 (две черты на шкале — начало роста и оптимум), отлично — 20,
+    Ориентир по исследованиям (Pelland и др., 2024–25): рост — от 4 подходов в неделю, хорошо — от 10 (черты на шкале — начало роста, оптимум и потолок), отлично — 20,
     после ~30 прироста почти нет; сколько раз в неделю — почти не важно, важен объём. На схеме мышца заливается по мере подходов,
     полностью — к 10 в неделю. Одна тренировка — своя шкала: 3 подхода — уже рост, 6–11 — оптимальный рост, больше 11 за раз прироста не видно
     (силы лучше отдать другой группе); рядом — сколько у мышцы за неделю.
