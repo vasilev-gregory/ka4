@@ -8,7 +8,7 @@ import { AREA_PARTS, NO_AREA, stretchHint, stretchVerdict } from "../model/stret
 import { ByList, LoadBreakdown } from "../ui/LoadBreakdown.jsx";
 
 const SCALE = {
-  target: ST_WEEK_MAX, barMax: ST_WEEK_MAX, marks: [ST_WEEK_MIN], fill: "fill-accent-500", bar: "bg-accent-500", empty: "растяжки не было",
+  target: ST_WEEK_MAX, barMax: ST_WEEK_MAX * 1.2, marks: [ST_WEEK_MIN, ST_WEEK_MAX], fill: "fill-accent-500", bar: "bg-accent-500", empty: "растяжки не было",
   legend: [[0, "0"], [ST_WEEK_MIN, "5 мин — эффект"], [ST_WEEK_MAX, "10+ — максимум"]],
   chip: { low: "bg-neutral-700/60 text-neutral-300", effect: "bg-accent-500/25 text-accent-200", max: "bg-accent-500 text-black" },
 };
