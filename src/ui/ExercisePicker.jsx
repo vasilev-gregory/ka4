@@ -2,14 +2,14 @@
 // rows with the picture and both names, "уже в программе", one tap (single) or several then «Добавить (N)», and
 // creating a new one (the section supplies its own form). The list itself comes from model/picker.js.
 import { useState } from "react";
-import { X, Check, Search } from "lucide-react";
+import { X, Check, ChevronDown, Search } from "lucide-react";
 import { CLOSEST, exactName, pickerSections } from "../model/picker.js";
 import { Button, Chip, ExImg, Header, useApp } from "./kit.jsx";
 import { useBackCloses, useRestorable } from "./navigation.js";
 
 // items: exercises / stretches; groups, groupOf(e): the sections (and the chips, unless filters are given);
-// filters: rows of chips [{ id, chips: [[value, label]], fits(e, value) }], the first with «все», the others tapped
-// again to clear; start: { [filter id]: the chip chosen at the start }; usage: model/picker usageOf;
+// filters: [{ id, label, chips: [[value, label]], fits(e, value) }] — one button each («Мышца: все ▾»), opening its
+// chips wrapped in lines; a chip tapped again (or «все») clears it; start: { [filter id]: the chip chosen at the start }; usage: model/picker usageOf;
 // already: ids in the program; tags(e, inMine): small words on the right; onPick(e) for one, onPickMany(list) for
 // several (the picker stays open); action: the button's word; newLabel: «+ Новое упражнение»;
 // createForm({ name, cancel, done(ex) }): the section's form for a new one
@@ -20,10 +20,11 @@ export function ExercisePicker({ title, items, groups, groupOf, filters: rows, s
   const multi = !!onPickMany;
   const [q, setQ] = useRestorable("picker-query", "");
   const allGroups = [...groups, ...new Set(items.map(groupOf).filter((g) => !groups.includes(g)))];
-  const filters = rows || [{ id: "group", chips: allGroups.map((g) => [g, g]), fits: (e, g) => groupOf(e) === g }];
+  const filters = rows || [{ id: "group", label: "Группа", chips: allGroups.map((g) => [g, g]), fits: (e, g) => groupOf(e) === g }];
   const [chips, setChips] = useRestorable("picker-filters", start); // { [filter id]: value }
   const keep = (e) => filters.every((f) => !chips[f.id] || f.fits(e, chips[f.id]));
-  const pickChip = (id, v) => setChips((c) => ({ ...c, [id]: c[id] === v ? "" : v }));
+  const [openFilter, setOpenFilter] = useState(null); // the filter whose chips are shown
+  const pickChip = (id, v) => { setChips((c) => ({ ...c, [id]: c[id] === v ? "" : v })); setOpenFilter(null); };
   const [creating, setCreating] = useState(null); // the name a new one starts with
   const [chosenIds, setChosenIds] = useRestorable("picker-chosen", []); // ids: kept if the app is closed meanwhile
   const chosen = chosenIds.map((id) => items.find((e) => e.id === id)).filter(Boolean);
@@ -48,10 +49,22 @@ export function ExercisePicker({ title, items, groups, groupOf, filters: rows, s
         {creating != null ? createForm({ name: creating, cancel: () => setCreating(null), done: created })
           : <Button variant="dashed" block size="sm" onClick={startCreate} className="mt-2">{newLabel}</Button>}
 
-        {filters.map((f, i) => (
-          <div key={f.id} className="-mx-4 mt-2 flex gap-1.5 overflow-x-auto px-4 pb-1" data-testid={`filter-${f.id}`}>
-            {i === 0 && <Chip on={!chips[f.id]} onClick={() => setChips((c) => ({ ...c, [f.id]: "" }))}>все</Chip>}
-            {f.chips.map(([v, l]) => <Chip key={v} secondary={i > 0} on={chips[f.id] === v} onClick={() => pickChip(f.id, v)}>{l}</Chip>)}
+        <div className="mt-2 flex gap-1.5">
+          {filters.map((f) => {
+            const on = f.chips.find(([v]) => v === chips[f.id]);
+            return (
+              <button key={f.id} onClick={() => setOpenFilter(openFilter === f.id ? null : f.id)} aria-expanded={openFilter === f.id}
+                className={`flex min-w-0 items-center gap-1 rounded-full px-3 py-1.5 text-sm ${on ? "bg-accent-500 text-black" : "bg-neutral-800 text-neutral-200"}`}>
+                <span className="truncate">{f.label}: {on ? on[1] : "все"}</span>
+                <ChevronDown size={14} className={`shrink-0 transition-transform ${openFilter === f.id ? "rotate-180" : ""}`} />
+              </button>
+            );
+          })}
+        </div>
+        {filters.filter((f) => f.id === openFilter).map((f) => (
+          <div key={f.id} className="mt-2 flex flex-wrap gap-1.5 rounded-xl bg-neutral-900 p-2" data-testid={`filter-${f.id}`}>
+            <Chip on={!chips[f.id]} onClick={() => pickChip(f.id, "")}>все</Chip>
+            {f.chips.map(([v, l]) => <Chip key={v} on={chips[f.id] === v} onClick={() => pickChip(f.id, v)}>{l}</Chip>)}
           </div>
         ))}
 

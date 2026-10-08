@@ -1,7 +1,7 @@
 // Load per body part, the same for strength (hard sets per muscle) and stretching (minutes per area): the body map
 // with a legend, a caption for the picked part, and the list with a bar and a status; a picked row opens up to
 // show what made up its load. What is counted and how it is judged comes in as data and a scale.
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BodyMap, fillOpacity, HEAD } from "./BodyMap.jsx";
 
 // a tap on the head: not a muscle, so a joke instead of numbers; each tap the next one
@@ -17,8 +17,8 @@ const HEAD_JOKES = [
 // scale: { target: value filled completely, barMax, marks: values of the ticks on the bar, legend: [[value, label]],
 //   fill: fill-* class, bar: bg-* class, chip: { statusKey: classes }, empty: caption of a part with no load };
 // map: draw the body; only: list just these ids; note(id): a line under a row; expand(id): what opens under a picked row;
-// find: { label, go(id) } — only in a program's editor (exercises go into a program): a picked part, or one left with no
-// load, leads to the exercises for it («Подобрать упражнение»); elsewhere a tap only shows
+// find: { label, go(id) } — only in a program's editor (exercises go into a program): a picked part (loaded or not) gets
+// «Подобрать упражнение», a double tap on the map goes there at once; elsewhere a tap only shows
 export function LoadBreakdown({ items, load, scale, map = true, only, note, expand, find }) {
   const [sel, setSel] = useState(null);
   const [joke, setJoke] = useState(-1);
@@ -29,10 +29,19 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
     if (id === HEAD) setJoke((j) => (j + 1) % HEAD_JOKES.length);
     setSel(sel === id && id !== HEAD ? null : id);
   };
-  // a tapped shape picks the row it belongs to, one with a load first
-  const pickPart = (m) => pick(m === HEAD ? HEAD : (rows.find((r) => r.parts.includes(m)) || items.find((it) => it.parts.includes(m)))?.id);
+  // a tapped shape picks the row it belongs to, one with a load first; a second tap on it soon after goes to find (with
+  // find), or, on the head, to brain games — a joke
+  const lastTap = useRef({});
+  const pickPart = (m) => {
+    const id = m === HEAD ? HEAD : (rows.find((r) => r.parts.includes(m)) || items.find((it) => it.parts.includes(m)))?.id;
+    const now = Date.now(), again = lastTap.current.id === id && now - lastTap.current.at < DOUBLE_TAP_MS;
+    const twice = again && (id === HEAD || find);
+    lastTap.current = twice ? {} : { id, at: now };
+    if (!twice) pick(id);
+    else if (id === HEAD) window.open(BRAIN_GAMES, "_blank", "noopener");
+    else find.go(id);
+  };
   const picked = items.find((it) => it.id === sel);
-  const idle = find ? items.filter((it) => it.parts.length && !(load[it.id]?.value > 0) && (!only || only.includes(it.id))) : [];
   const statusText = (id) => (load[id].status ? ` — ${load[id].status[1]}` : "") + (load[id].nick ? ` (${load[id].nick})` : "");
   return (
     <div>
@@ -53,10 +62,13 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
         </div>
         <p className="mt-2 min-h-5 text-center text-xs text-neutral-300">
           {sel === HEAD ? HEAD_JOKES[joke]
-            : !picked ? <span className="text-neutral-500">Тап по мышце — подробности</span>
+            : !picked ? <span className="text-neutral-500">Тап по мышце — подробности{find && `, двойной тап — ${find.label.toLowerCase()}`}</span>
             : load[sel]?.value > 0 ? `${picked.name}: ${load[sel].text}${statusText(sel)}`
             : `${picked.name}: ${scale.empty}`}
         </p>
+        {find && picked && !(load[sel]?.value > 0) && (
+          <div className="mt-1 text-center"><FindButton find={find} item={picked} /></div>
+        )}
       </>}
       <div className="mt-3 space-y-2">
         {rows.map((r) => {
@@ -80,27 +92,11 @@ export function LoadBreakdown({ items, load, scale, map = true, only, note, expa
                 {note && <div className="mt-0.5 text-[11px] text-neutral-500">{note(r.id)}</div>}
               </button>
               {sel === r.id && expand && expand(r.id)}
-              {sel === r.id && find && (
-                <button onClick={() => find.go(r.id)} className="mx-1.5 mb-2 rounded-lg bg-neutral-700 px-3 py-1.5 text-xs text-neutral-100 active:bg-neutral-600">
-                  {find.label} на «{r.name}»
-                </button>
-              )}
+              {sel === r.id && find && <FindButton find={find} item={r} className="mx-1.5 mb-2" />}
             </div>
           );
         })}
       </div>
-      {idle.length > 0 && (
-        <div className="mt-3 px-1.5" data-testid="no-load">
-          <div className="mb-1 text-[11px] text-neutral-500">Без нагрузки — тап, чтобы подобрать:</div>
-          <div className="flex flex-wrap gap-1.5">
-            {idle.map((it) => (
-              <button key={it.id} onClick={() => find.go(it.id)} className="rounded-md bg-neutral-800 px-2 py-1 text-xs text-neutral-300 active:bg-neutral-700">
-                {it.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -131,3 +127,11 @@ export function WhyButton({ on, toggle }) {
       className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${on ? "bg-neutral-600 text-white" : "bg-neutral-800"}`}>?</button>
   );
 }
+
+const DOUBLE_TAP_MS = 400;
+const BRAIN_GAMES = "https://braingames.ru/";
+const FindButton = ({ find, item, className = "" }) => (
+  <button onClick={() => find.go(item.id)} className={`${className} rounded-lg bg-neutral-700 px-3 py-1.5 text-xs text-neutral-100 active:bg-neutral-600`}>
+    {find.label} на «{item.name}»
+  </button>
+);

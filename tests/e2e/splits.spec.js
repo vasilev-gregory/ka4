@@ -44,21 +44,24 @@ test("a new split: programs added (one twice), made active, its week's muscles; 
 
 test("from a program's muscle to exercises for it; a split only shows its muscles", async ({ page }) => {
   await openApp(page);
-  // a program: «I. Ноги и плечи» has no chest — its chip leads to the picker filtered on chest
+  // a program: «I. Ноги и плечи» has no chest — a double tap on it on the map leads to the picker filtered on chest
   await page.getByRole("button", { name: /^I\. Ноги и плечи/ }).click();
   // the program is in the active split: each muscle shows the split's whole planned week beside it
   await expect(page.getByText("«За неделю» — весь сплит «Неделя I–IV» по плану")).toBeVisible();
   await expect(page.getByText(/квадрицепс/).first()).toBeVisible();
   await expect(page.getByText(/· за неделю 15 из 10/).first()).toBeVisible();
-  const idle = page.getByTestId("no-load");
-  await idle.getByRole("button", { name: "грудь", exact: true }).click();
+  const chest = page.locator('[data-muscle="chest"]').first();
+  await chest.click(); // one tap: picked, with the way to exercises for it
+  await expect(page.getByRole("button", { name: "Подобрать упражнение на «грудь»" })).toBeVisible();
+  await page.locator('[data-muscle="quads"]').first().click(); // another muscle in between: no double tap from it
+  await chest.dblclick();
   const picker = page.getByTestId("picker");
   await expect(picker.getByRole("button", { name: /^Жим штанги лёжа/ })).toBeVisible();
   await expect(picker.getByRole("button", { name: /^Приседания со штангой/ })).toHaveCount(0); // filtered on chest
   await picker.getByRole("button", { name: /^Жим штанги лёжа/ }).click();
   await page.getByRole("button", { name: "Добавить (1)" }).click();
   await expect(page.getByText("Жим штанги лёжа").first()).toBeVisible();
-  await expect(idle.getByRole("button", { name: "грудь", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^грудь \d/ })).toBeVisible(); // now loaded: a row
   // the closed picker drops its history entry right after; going back before that would only drop it
   await expect.poll(() => page.evaluate(() => history.state && history.state.overlay)).toBeFalsy();
   await page.goBack();
@@ -68,7 +71,8 @@ test("from a program's muscle to exercises for it; a split only shows its muscle
   await page.getByRole("button", { name: /^бицепс \d/ }).click();
   await expect(page.getByTestId("muscle-exercises")).toBeVisible();
   await expect(page.getByText(/^Подобрать упражнение/)).toHaveCount(0);
-  await expect(page.getByTestId("no-load")).toHaveCount(0);
+  await page.locator('[data-muscle="chest"]').first().dblclick(); // no double tap to exercises
+  await expect(page.getByTestId("picker")).toHaveCount(0);
 });
 
 test("in a workout's card a muscle only shows its numbers: nothing to pick from there", async ({ page }) => {
@@ -81,7 +85,8 @@ test("in a workout's card a muscle only shows its numbers: nothing to pick from 
   await page.getByRole("button", { name: /^квадрицепс/ }).click();
   await expect(page.getByTestId("muscle-exercises")).toBeVisible();
   await expect(page.getByText(/^Подобрать упражнение/)).toHaveCount(0);
-  await expect(page.getByTestId("no-load")).toHaveCount(0);
+  await page.locator('[data-muscle="chest"]').first().dblclick(); // no double tap to exercises
+  await expect(page.getByTestId("picker")).toHaveCount(0);
 });
 
 test("hold programs to pick them: a new split of them, or into an existing one", async ({ page }) => {
