@@ -1,23 +1,34 @@
-// GymKeeper CSV export (Export → workouts). Columns: Date (M/D/YY), Type, Name, №, Val_1, Unit_1, Val_2,
-// Unit_2, Comment. Type: 📅 a day (Comment "57 min"), 🏋️‍♂️ an exercise, 🔹 a set (weight kg / lb,
-// reps; Comment = WarmUp / Easy / Normal / Hard / Drop + an optional "(note)"), 📏 a measurement.
+// GymKeeper CSV export (Export → workouts), in English or Russian. Columns: Date (M/D/YY, or DD.MM.YYYY in Russian),
+// Type, Name, №, Val_1, Unit_1, Val_2, Unit_2, Comment. Type: 📅 a day (Comment "57 min" / "57 мин"), 🏋️‍♂️ an
+// exercise (🏋️‍♂️🔗 in a superset), 🔹 a set: weight kg / lb (кг) and reps; seconds (сек) and kg for a timed one
+// (plank); seconds and km for cardio. Comment = WarmUp / Easy / Normal / Hard / Drop (Размин / Легк / Норм / Тяжел /
+// Дроп) + an optional "(note)". 📏 a measurement (Weight / Вес, …).
 // There is no start time: a workout is put at noon of its day. A note like "(1рук)", "(1h)", "(single)" or
 // "(1 нога)" marks a one-arm / one-leg set: such sets become "<exercise> одной рукой / ногой".
+import { MEASURES } from "../catalog.js";
 import { parseCsv } from "./csv.js";
 
 const HEADERS = ["Date", "Type", "Name", "Val_1", "Unit_1", "Val_2", "Unit_2", "Comment"];
 // GymKeeper measurement names → ours (MEASURES)
-const MEASURE = { weight: "weight", waist: "waist", hips: "glutes", chest: "chest", thigh: "thigh", biceps: "biceps", arm: "biceps", calf: "calf", neck: "neck", "body fat": "fat", fat: "fat" };
-const LB = 0.45359237;
+const MEASURE = { weight: "weight", waist: "waist", hips: "glutes", chest: "chest", thigh: "thigh", biceps: "biceps", arm: "biceps", calf: "calf", neck: "neck", "body fat": "fat", fat: "fat",
+  ...Object.fromEntries(MEASURES.map(([id, name]) => [name.toLowerCase(), id])) };
+// a set's label in either language (the Russian export cuts the words: «Тяжел», «Размин»)
+const LABELS = [["warmup", "warmup"], ["размин", "warmup"], ["easy", "easy"], ["легк", "easy"], ["normal", "normal"], ["норм", "normal"],
+  ["hard", "hard"], ["тяжел", "hard"], ["drop", "drop"], ["дроп", "drop"]];
+const labelOf = (s) => (LABELS.find(([p]) => s.startsWith(p)) || [null, s])[1];
+const KG = { kg: 1, "кг": 1, lb: 0.45359237, "фунт": 0.45359237 };
+const SEC = ["sec", "s", "сек"], KM = ["km", "км"];
 const SIDE = { arm: "одной рукой", leg: "одной ногой" };
 
 export const isGymKeeper = (headers) => HEADERS.every((h) => headers.includes(h));
 
+// "3/29/21" (month first) or "29.03.2021" (day first)
 const day = (s) => {
-  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(s || "");
+  const us = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/.exec(s || ""), ru = /^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/.exec(s || "");
+  const m = us || ru;
   if (!m) return null;
   const y = +m[3] < 100 ? 2000 + +m[3] : +m[3];
-  return new Date(y, +m[1] - 1, +m[2], 12).getTime();
+  return us ? new Date(y, +m[1] - 1, +m[2], 12).getTime() : new Date(y, +m[2] - 1, +m[1], 12).getTime();
 };
 const n = (v) => { const x = parseFloat(String(v || "").replace(",", ".")); return Number.isFinite(x) ? x : null; };
 const str = (x) => (x == null ? "" : String(Math.round(x * 100) / 100));
@@ -77,10 +88,12 @@ export function parseGymKeeper(text) {
       closeExercise();
       if (w) ex = { name: exName(r.Name), sets: [] };
     } else if (r.Type.startsWith("🔹") && ex) {
-      const label = (r.Comment || "").replace(/\s*\(.*\)\s*$/, "").trim().toLowerCase();
-      // weight in kg / lb; a time in the weight column (Bird Dog, Burpee) isn't a weight
-      const kg = r.Unit_1 === "kg" ? n(r.Val_1) : r.Unit_1 === "lb" ? (n(r.Val_1) ?? 0) * LB : null;
-      const set = { w: kg ? str(kg) : "", r: str(n(r.Val_2)) };
+      const label = labelOf((r.Comment || "").replace(/\s*\(.*\)\s*$/, "").trim().toLowerCase());
+      const u1 = (r.Unit_1 || "").toLowerCase(), u2 = (r.Unit_2 || "").toLowerCase();
+      let set;
+      if (SEC.includes(u1) && KM.includes(u2)) set = { w: n(r.Val_2) ? str(n(r.Val_2)) : "", r: str(n(r.Val_1) / 60) }; // cardio: minutes, km
+      else if (SEC.includes(u1)) set = { w: KG[u2] && n(r.Val_2) ? str(n(r.Val_2) * KG[u2]) : "", r: str(n(r.Val_1)) }; // timed: seconds, kg
+      else set = { w: KG[u1] && n(r.Val_1) ? str(n(r.Val_1) * KG[u1]) : "", r: str(n(r.Val_2)) }; // kg, reps; a time in the weight column isn't one
       if (label === "warmup") set.t = "w";
       if (label === "easy") set.rir = 4;
       if (label === "hard") set.rir = 1;
