@@ -24,7 +24,7 @@ const RULES = [
   ["ноги", /leg-extension|разгибан/, { quads: 1 }],
   ["ноги", /leg-curl|сгибан/, { hams: 1 }],
   ["ноги", /sumo-deadlift|тяг.*сумо|сумо.*тяг/, { glutes: 1, hams: 1, quads: 0.5, lowback: 0.5 }],
-  ["ноги", /romanian-deadlift|good-morning|kettlebell|румын|мертв|гир/, { hams: 1, glutes: 1, lowback: 0.5 }],
+  ["ноги", /romanian-deadlift|good-morning|swing|румын|мертв|мах.*гир/, { hams: 1, glutes: 1, lowback: 0.5 }], // a kettlebell lift is a squat (default)
   ["ноги", /hip-thrust|glute-bridge|ягодичн|мост/, { glutes: 1, hams: 0.5 }],
   ["ноги", /abduction|kickback|side-leg-raise|отведен|мах/, { glutes: 1 }],
   ["ноги", /adduction|сведени/, { hams: 1 }], // the adductors aren't on the map: the big one (magnus) is the "fourth hamstring"
