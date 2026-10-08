@@ -128,3 +128,7 @@ test("the back: rows work the middle of the back between the shoulder blades, sh
   assert.deepEqual(musclesOf(ex("barbell-shrug")), { traps: 1 });
   assert.equal(musclesOf(ex("face-pull")).midback, 0.5);
 });
+
+test("a kettlebell lift is a squat: the quads, not a hinge", () => {
+  assert.deepEqual(musclesOf(ex("kettlebell-lift")), { quads: 1, glutes: 0.5 });
+});
