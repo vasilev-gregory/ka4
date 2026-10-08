@@ -19,7 +19,7 @@ test("every built-in strength exercise works a main muscle we know; cardio works
 
 test("rules: the right heads and parts of the legs", () => {
   assert.deepEqual(musclesOf(ex("lateral-raise")), { sidedelt: 1 });
-  assert.deepEqual(musclesOf(ex("reverse-pec-deck")), { reardelt: 1, traps: 0.5 });
+  assert.deepEqual(musclesOf(ex("reverse-pec-deck")), { reardelt: 1, midback: 0.5 });
   assert.deepEqual(musclesOf(ex("overhead-press")), { frontdelt: 1, sidedelt: 0.5, triceps: 0.5 });
   assert.deepEqual(musclesOf(ex("leg-extension")), { quads: 1 });
   assert.deepEqual(musclesOf(ex("lying-leg-curl")), { hams: 1 });
@@ -34,7 +34,7 @@ test("rules: the right heads and parts of the legs", () => {
   assert.deepEqual(own("Махи гантелями в стороны", "плечи"), { sidedelt: 1 });
   assert.deepEqual(own("Разведения в стороны сидя", "плечи"), { sidedelt: 1 });
   assert.deepEqual(own("Протяжка", "плечи"), { sidedelt: 1, traps: 0.5 });
-  assert.deepEqual(own("Махи в наклоне", "плечи"), { reardelt: 1, traps: 0.5 });
+  assert.deepEqual(own("Махи в наклоне", "плечи"), { reardelt: 1, midback: 0.5 });
   assert.deepEqual(own("Махи перед собой", "плечи"), { frontdelt: 1 });
   assert.deepEqual(own("Жим Арнольда", "плечи"), { frontdelt: 1, sidedelt: 0.5, triceps: 0.5 });
   assert.deepEqual(own("Пуловер на блоке", "спина"), { lats: 1 });
@@ -120,4 +120,11 @@ test("a week's nick: the same 17 plates over its 0–30 scale, past 30 «кто 
   const { muscleNick, WEEK_CAP, SESSION_NICKS } = await import("../../src/model/muscles.js");
   assert.deepEqual([0, 1, 1.5, 10, 30, 31].map((n) => muscleNick(n, WEEK_CAP)), ["амёба", "амёба", "амёба", "мужик", "мутант", "кто ты, тварь?"]);
   assert.equal(new Set(Array.from({ length: 31 }, (_, i) => muscleNick(i, WEEK_CAP))).size, SESSION_NICKS.length);
+});
+
+test("the back: rows work the middle of the back between the shoulder blades, shrugs the upper trapezius", () => {
+  assert.deepEqual(musclesOf(ex("seated-row")), { lats: 1, midback: 1, reardelt: 0.5, biceps: 0.5 });
+  assert.deepEqual(musclesOf(ex("bent-over-barbell-row")), { lats: 1, midback: 1, reardelt: 0.5, biceps: 0.5 });
+  assert.deepEqual(musclesOf(ex("barbell-shrug")), { traps: 1 });
+  assert.equal(musclesOf(ex("face-pull")).midback, 0.5);
 });

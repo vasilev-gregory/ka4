@@ -3,11 +3,14 @@
 import { fmtNum, slug } from "../core/util.js";
 import { periodOf, weekEnd } from "./calendar.js";
 
-// [id, name, coarse group (catalog GROUPS)]; this order is the order of lists
+// [id, name, coarse group (catalog GROUPS)]; this order is the order of lists. The trapezius is two: its upper part (the
+// slope from the neck: shrugs, carries) and, with the rhomboids under it, the middle of the back between the shoulder
+// blades (rows, face pulls) — «ромбовидные»
 export const MUSCLES = [
   ["chest", "грудь", "грудь"],
   ["frontdelt", "передняя дельта", "плечи"], ["sidedelt", "средняя дельта", "плечи"], ["reardelt", "задняя дельта", "плечи"],
-  ["lats", "широчайшие", "спина"], ["traps", "трапеции и ромбы", "спина"], ["lowback", "поясница", "спина"],
+  ["lats", "широчайшие", "спина"], ["traps", "верх трапеций", "спина"], ["midback", "ромбовидные", "спина"],
+  ["lowback", "поясница", "спина"],
   ["biceps", "бицепс", "бицепс"], ["triceps", "трицепс", "трицепс"], ["forearms", "предплечья", "предплечья"],
   ["quads", "квадрицепс", "ноги"], ["glutes", "ягодицы", "ноги"], ["hams", "бицепс бедра", "ноги"], ["calves", "икры", "икры"],
   ["abs", "пресс", "кор"],
@@ -28,7 +31,7 @@ const RULES = [
   ["ноги", /lunge|split-squat|step-up|single-leg-squat|выпад|болгар|сплит|пистолет|зашагив/, { quads: 1, glutes: 1 }],
   ["ноги", null, { quads: 1, glutes: 0.5 }],
   // rear and front before lateral: "махи в наклоне", "махи перед собой" are not lateral raises
-  ["плечи", /reverse|rear-delt|face-pull|задн|обратн|в наклоне|наклонившись/, { reardelt: 1, traps: 0.5 }],
+  ["плечи", /reverse|rear-delt|face-pull|задн|обратн|в наклоне|наклонившись/, { reardelt: 1, midback: 0.5 }],
   ["плечи", /front-raise|перед собой|вперед/, { frontdelt: 1 }],
   ["плечи", /upright-row|подбород|протяжк/, { sidedelt: 1, traps: 0.5 }],
   ["плечи", /lateral-raise|мах|развед|в сторон/, { sidedelt: 1 }],
@@ -44,8 +47,8 @@ const RULES = [
   ["спина", /shrug|шраг/, { traps: 1 }],
   ["спина", /hyperextension|superman|гиперэкст|супермен/, { lowback: 1, glutes: 0.5, hams: 0.5 }],
   ["спина", /chin-up|подтяг.*обратн|обратн.*подтяг/, { lats: 1, biceps: 1 }],
-  ["спина", /pulldown|pull-up|подтяг|верхн/, { lats: 1, biceps: 0.5, traps: 0.5 }],
-  ["спина", null, { lats: 1, traps: 1, reardelt: 0.5, biceps: 0.5 }], // rows
+  ["спина", /pulldown|pull-up|подтяг|верхн/, { lats: 1, biceps: 0.5, midback: 0.5 }],
+  ["спина", null, { lats: 1, midback: 1, reardelt: 0.5, biceps: 0.5 }], // rows: the shoulder blades squeezed together
   ["бицепс", null, { biceps: 1 }],
   ["трицепс", /dips|брус/, { triceps: 1, chest: 0.5, frontdelt: 0.5 }],
   ["трицепс", /bench-press|close-grip|узк/, { triceps: 1, chest: 0.5 }],
