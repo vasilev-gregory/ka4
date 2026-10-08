@@ -1,7 +1,9 @@
 // How the exercise picker lists things, the same for strength exercises and stretches: every typed word must be
-// in one of the names (endings, «ё» and small words like «на», «в» don't matter); nothing like that — the closest
+// in one of the names or the other names it goes by (endings, «ё» and small words like «на», «в» don't matter); nothing like that — the closest
 // ones (most words found); "твои" (done or in a program, most used first) on top; the rest by group; each list by
 // the name the user sees.
+import { EX_AKA } from "./catalog.js";
+
 const norm = (s) => s.toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/g, " ");
 const SMALL = new Set(["на", "в", "во", "с", "со", "к", "ко", "и", "по", "для", "из", "от", "до", "за", "a", "the", "with", "on", "of"]);
 // a long word without its ending: «тренажере» finds «тренажёр», «разведения» — «разведение»
@@ -11,7 +13,8 @@ function words(q) {
   const meaningful = all.filter((w) => !SMALL.has(w));
   return (meaningful.length ? meaningful : all).map(stem);
 }
-const found = (e, ws) => { const hay = norm(`${e.name} ${e.ru || ""}`); return ws.filter((w) => hay.includes(w)).length; };
+// its names and the other names it goes by (built-in EX_AKA, the user's own aka)
+const found = (e, ws) => { const hay = norm(`${e.name} ${e.ru || ""} ${e.aka || ""} ${EX_AKA[e.id] || ""}`); return ws.filter((w) => hay.includes(w)).length; };
 export const matchesQuery = (e, q) => { const ws = words(q); return found(e, ws) === ws.length; };
 
 // a name typed exactly as an existing one (then "create «…»" isn't offered)

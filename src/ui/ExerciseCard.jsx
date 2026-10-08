@@ -18,13 +18,15 @@ export function ExerciseTitle({ ex, back, editing, toggleEdit }) {
   );
 }
 
-// the two names; onChange(patch)
+// the two names and the other names it goes by (found by the search too); onChange(patch)
 export function ExerciseNameFields({ ex, onChange }) {
   const field = "mb-2 w-full rounded-lg bg-black px-3 py-2.5 outline-hidden focus:ring-2 focus:ring-accent-400";
   return (
     <>
       <input value={ex.name} placeholder="Название" onChange={(e) => onChange({ name: e.target.value })} className={field} />
-      <input value={ex.ru || ""} placeholder="Второе название" onChange={(e) => onChange({ ru: e.target.value })} className={`${field} mb-3`} />
+      <input value={ex.ru || ""} placeholder="Второе название" onChange={(e) => onChange({ ru: e.target.value })} className={field} />
+      <input value={ex.aka || ""} placeholder="Другие названия — для поиска" aria-label="Другие названия" onChange={(e) => onChange({ aka: e.target.value })}
+        className={`${field} mb-3`} />
     </>
   );
 }

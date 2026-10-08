@@ -1,10 +1,10 @@
 // Persistent state shape: seed for a fresh install and migrate() that upgrades any older saved data.
 import { slug, uid } from "../core/util.js";
-import { ASSIST_DEFAULTS, BW_DEFAULTS, EX_RENAMES, SEED_EX, ST_AREA_DEFAULTS, ST_DEFAULTS, ST_FIXES, ST_OLD_NAMES, ST_SEED } from "./catalog.js";
+import { ASSIST_DEFAULTS, BW_DEFAULTS, EX_MERGES, EX_RENAMES, SEED_EX, ST_AREA_DEFAULTS, ST_DEFAULTS, ST_FIXES, ST_OLD_NAMES, ST_SEED } from "./catalog.js";
 
 export const KEY = "gymapp-state-v1";
 // bumped whenever migrate() learns a new upgrade step
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export function seed() {
   const exercises = SEED_EX.map(([name, ru, group, kind]) => ({ id: slug(name), name, ru, group, kind: kind || "reps" }));
@@ -30,8 +30,21 @@ export function seed() {
   };
 }
 
+// a built-in exercise merged into another (EX_MERGES): everything done or planned with it moves over, it goes away
+// (the kept one is added back from the catalog below if it was missing)
+function mergeExercise(d, from, to) {
+  if (!d.exercises.some((e) => e.id === from)) return;
+  d.exercises = d.exercises.filter((e) => e.id !== from);
+  const move = (x) => { if (x.exerciseId === from) x.exerciseId = to; };
+  d.programs.forEach((p) => p.items.forEach(move));
+  d.workouts.forEach((w) => w.exercises.forEach(move));
+  if (d.active) d.active.exercises.forEach(move);
+  if (d.pendingProgramUpdate) d.pendingProgramUpdate.items.forEach(move);
+}
+
 // adds new built-in exercises and Russian names to data saved by older versions
 export function migrate(d) {
+  EX_MERGES.forEach(([from, to]) => mergeExercise(d, from, to));
   const base = seed();
   const byId = Object.fromEntries(d.exercises.map((e) => [e.id, e]));
   base.exercises.forEach((se) => {

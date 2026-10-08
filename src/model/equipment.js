@@ -21,7 +21,7 @@ const BUILT_IN = {
   "wrist-curl": ["barbell", "dumbbell"], "calf-raise": ["machine"], "farmer-s-walk": ["dumbbell"], "duck-press": ["dumbbell"],
   "plate-overhead-press": ["barbell"], "lying-rear-delt-raise": ["dumbbell"], "rear-delt-row": ["dumbbell"],
   "side-leg-raise": ["body"], "inverted-row": ["body"], "svend-press": ["barbell"], "one-arm-rear-delt-row": ["dumbbell"],
-  "single-leg-glute-bridge": ["body"], "single-leg-hip-thrust": ["body"], "single-leg-romanian-deadlift": ["dumbbell"],
+  "single-leg-hip-thrust": ["body"], "single-leg-romanian-deadlift": ["dumbbell"],
   "single-leg-calf-raise": ["body"], "one-arm-lateral-raise": ["dumbbell"], "one-arm-upright-row": ["dumbbell", "cable"],
   "one-arm-reverse-fly": ["dumbbell"], "one-arm-triceps-kickback": ["dumbbell"], "one-arm-wrist-curl": ["dumbbell"],
   "suitcase-carry": ["dumbbell"], "bench-dips": ["body"], "barbell-hack-squat": ["barbell"],
