@@ -78,6 +78,7 @@
  * @property {number|null} [rir]         reps in reserve 0–4 (4 = "4+"); 0 = to failure
  * @property {string} [g]                group id: consecutive sets with the same g are one drop set / ladder
  * @property {number} [at]               when it was confirmed (rest statistics)
+ * @property {number|null} [rest]       rest before it, fixed at the tick (ms; null: none — first, or across a pause)
  * @property {boolean} done
  * @property {string} [hw]               hints from last time, shown grey (running workout only)
  * @property {string} [hr]

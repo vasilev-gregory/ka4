@@ -89,7 +89,8 @@ export function workoutSoFar(a, now = Date.now()) {
 
 // Gaps between consecutive confirmed sets. Steps of a drop set don't count, nor gaps across a pause
 // or longer than 15 min (that's not rest, that's a break).
-// rest before each confirmed set: time since the previous confirmed set anywhere in the workout
+// rest before each confirmed set: as fixed at its tick (set.rest); sets ticked before that existed: time since the
+// previous confirmed set anywhere in the workout. "drop" for a step of a drop set.
 export function restBefore(w) {
   const evs = [];
   if (w.warmup && w.warmup.doneAt) evs.push({ at: w.warmup.doneAt, ei: -1, si: -1 }); // rest before the first set counts from the warm-up
@@ -102,23 +103,37 @@ export function restBefore(w) {
     if (pauses.some((t) => t > a.at && t < b.at)) continue;
     out[`${b.ei}:${b.si}`] = a.ei === b.ei && a.g && a.g === b.g ? "drop" : b.at - a.at;
   }
+  w.exercises.forEach((e, ei) => e.sets.forEach((s, si) => {
+    if (!s.done || !("rest" in s) || out[`${ei}:${si}`] === "drop") return;
+    const before = e.sets[si - 1];
+    if (s.g && before && before.g === s.g && before.done) out[`${ei}:${si}`] = "drop";
+    else if (s.rest != null) out[`${ei}:${si}`] = s.rest;
+    else delete out[`${ei}:${si}`];
+  }));
   return out;
 }
 
-// The set where the running "rest so far" stopwatch is shown: the first unconfirmed set after the
-// last confirmed one (in this exercise, else in the next ones), or after the warm-up the first set of
+// The set where the running "rest so far" stopwatch is shown: the first unconfirmed set of the exercise of the
+// last confirmed one (a skipped one above included), else of the next ones; after the warm-up the first set of
 // the workout. Null when paused or nothing is running.
 export function liveRestKey(w) {
   if (!w || w.paused || !w.lastSetAt) return null;
-  let li = -1, ls = -1;
-  w.exercises.forEach((e, ei) => e.sets.forEach((s, si) => { if (s.done && s.at === w.lastSetAt) { li = ei; ls = si; } }));
-  if (li < 0 && w.warmup && w.warmup.doneAt === w.lastSetAt) li = 0; // ls = -1: from the very first set
+  let li = -1;
+  w.exercises.forEach((e, ei) => e.sets.forEach((s) => { if (s.done && s.at === w.lastSetAt) li = ei; }));
+  if (li < 0 && w.warmup && w.warmup.doneAt === w.lastSetAt) li = 0; // from the very first set
   if (li < 0) return null;
   for (let ei = li; ei < w.exercises.length; ei++) {
     const ss = w.exercises[ei].sets;
-    for (let si = ei === li ? ls + 1 : 0; si < ss.length; si++) if (!ss[si].done) return `${ei}:${si}`;
+    for (let si = 0; si < ss.length; si++) if (!ss[si].done) return `${ei}:${si}`;
   }
   return null;
+}
+
+// the latest tick of a workout (a confirmed set, or the end of the warm-up): where the running rest counts from
+export function lastTick(w) {
+  const ticks = w.exercises.flatMap((e) => e.sets.filter((s) => s.done && s.at).map((s) => s.at));
+  if (w.warmup && w.warmup.doneAt) ticks.push(w.warmup.doneAt);
+  return ticks.length ? Math.max(...ticks) : undefined;
 }
 
 export function restStats(w) {
