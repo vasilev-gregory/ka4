@@ -219,8 +219,12 @@ export function columnConfig(settings) {
   return known;
 }
 
-// rest isn't a real column any more: it's shown inside the ✓ button, so it's excluded here
-export const setColumns = (settings) => columnConfig(settings).filter((c) => c.key !== "rest" && (c.on || c.key === "w" || c.key === "r")).map((c) => c.key);
+// rest and RIR aren't real columns any more: both live in the ✓ button (rest time inside, RIR on hold — the dial — and
+// shown in it once done), so they're excluded here
+const IN_CHECK = new Set(["rest", "rir"]);
+export const setColumns = (settings) => columnConfig(settings).filter((c) => !IN_CHECK.has(c.key) && (c.on || c.key === "w" || c.key === "r")).map((c) => c.key);
+
+export const rirShown = (settings) => columnConfig(settings).some((c) => c.key === "rir" && c.on);
 
 export const restShown = (settings) => columnConfig(settings).some((c) => c.key === "rest" && c.on);
 

@@ -1,5 +1,5 @@
-// One set: number (tap = warm-up, hold = select), the enabled columns, and ✓ with the rest time inside (hold ✓ and
-// slide: done with a RIR, RirDial).
+// One set: number (tap = warm-up, hold = select), the enabled columns, and ✓ with the rest time inside; with RIR on, hold
+// ✓ and slide: done with a RIR (RirDial), and a done ✓ shows it — RIR has no column of its own.
 // The row swipes: right = done / undone, left = delete.
 import { useEffect, useRef } from "react";
 import { Check, Trophy } from "lucide-react";
@@ -7,13 +7,6 @@ import { fmtDur, numericInput } from "../../core/util.js";
 import { useRirDial } from "./RirDial.jsx";
 
 const BOX = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-hidden placeholder:text-neutral-600 focus:ring-2 focus:ring-accent-400";
-
-// RIR is a single digit 0-4 ("4+"); typing replaces it, deleting clears it
-function rirFromInput(raw, shown) {
-  if (raw.length < shown.length) return null;
-  const digit = raw.replace(/\D/g, "").slice(-1);
-  return digit === "" ? null : Math.min(4, parseInt(digit, 10));
-}
 
 // on focus the value is selected, so typing replaces it; an empty field with last time's value takes it first
 const takeHint = (value, hint, key, edit) => (e) => {
@@ -33,22 +26,17 @@ function Cell({ col, s, ex, edit }) {
     <input value={s.r} placeholder={s.hr || ""} inputMode={ex.kind === "cardio" ? "decimal" : "numeric"} onFocus={takeHint(s.r, s.hr, "r", edit)}
       onChange={(e) => edit({ r: numericInput(e.target.value, ex.kind === "cardio") })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
   );
-  if (col === "p") return ex.kind === "time" ? <span className="w-9" /> : (
+  return ex.kind === "time" ? <span className="w-9" /> : (
     <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы" onFocus={takeHint(s.p || "", "", "p", edit)}
       onChange={(e) => edit({ p: numericInput(e.target.value, false) })} className={`w-9 ${BOX} ${doneText || "text-neutral-300"}`} />
-  );
-  const shown = s.rir == null ? "" : s.rir === 4 ? "4+" : String(s.rir);
-  return (
-    <input value={shown} inputMode="numeric" placeholder="–" aria-label="RIR, повторов в запасе" disabled={s.t === "w"}
-      onChange={(e) => edit({ rir: rirFromInput(e.target.value, shown) })}
-      className={`w-9 ${BOX} disabled:opacity-30 ${s.rir === 0 ? "text-red-400" : doneText || "text-neutral-300"}`} />
   );
 }
 
 // label: "1", "2a", …; rest: ms before this set or "drop"; live: the running stopwatch is here (ms so far);
 // record: this set beat the exercise's best estimated 1RM; rir(n): done with RIR n (the dial on ✓)
-export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, record, swipe, swipeProps, numberProps, edit, toggle, rir }) {
-  const dial = useRirDial({ onTap: toggle, onPick: rir, enabled: cols.includes("rir") && s.t !== "w" });
+export function SetRow({ s, ex, cols, rirOn, label, grouped, selected, rest, live, record, swipe, swipeProps, numberProps, edit, toggle, rir }) {
+  const dial = useRirDial({ onTap: toggle, onPick: rir, enabled: rirOn && s.t !== "w" });
+  const rirLabel = rirOn && s.done && s.rir != null ? (s.rir === 4 ? "4+" : String(s.rir)) : null;
   const shownRest = rest === "drop" || rest >= 1000 ? rest : null; // under a second (warm-up closed by this tick): nothing to show
   // a short flash when the set gets confirmed (phones without vibration still notice)
   const rowRef = useRef(null);
@@ -82,7 +70,7 @@ export function SetRow({ s, ex, cols, label, grouped, selected, rest, live, reco
             <span className="text-xs font-semibold tabular-nums">{fmtDur(live)}</span>
           ) : (
             <>
-              <Check size={s.done && shownRest ? 16 : 20} />
+              {rirLabel ? <span className="text-sm font-bold" aria-label={`RIR ${rirLabel}`}>{rirLabel}</span> : <Check size={s.done && shownRest ? 16 : 20} />}
               {s.done && shownRest && <span className="mt-0.5 text-[9px] font-semibold tabular-nums">{rest === "drop" ? "↳" : fmtDur(rest)}</span>}
             </>
           )}

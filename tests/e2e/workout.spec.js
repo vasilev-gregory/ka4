@@ -289,6 +289,8 @@ test("hold ✓ and slide to a RIR: the set is done with it; let go at the centre
   await page.mouse.up();
   await expect(check).toHaveClass(/bg-accent-400/);
   await expect.poll(async () => (await stored(page)).active.exercises[0].sets[0]).toMatchObject({ done: true, rir: 2 });
+  await expect(check.getByLabel("RIR 2")).toBeVisible(); // the done ✓ shows it; RIR has no column of its own
+  await expect(page.getByLabel("RIR, повторов в запасе")).toHaveCount(0);
 });
 
 test("an exercise folds only by a tap: open by default, folded it shows what was done, a tap opens it again", async ({ page }) => {

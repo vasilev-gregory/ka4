@@ -5,7 +5,7 @@ import { ClipboardList, Play, Timer } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, plural, progTitle } from "../../core/util.js";
 import {
-  durations, fmtTotals, lastSession, liveRestKey, programDiff, restBefore, restShown, segmentsOf, setColumns, stats,
+  durations, fmtTotals, lastSession, liveRestKey, programDiff, restBefore, restShown, rirShown, segmentsOf, setColumns, stats,
 } from "../../model/workout.js";
 import { bestE1rm, recordSets } from "../../model/records.js";
 import * as A from "../../model/workoutActions.js";
@@ -42,6 +42,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
 
   const cols = setColumns(data.settings);
   const restOn = restShown(data.settings);
+  const rirOn = rirShown(data.settings);
   const rests = restOn ? restBefore(a) : {};
   const liveKey = restOn ? liveRestKey(a) : null;
   const st = stats(a, exMap, bwAt);
@@ -160,7 +161,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
         <ExerciseCard key={ei + e.exerciseId} e={e} ei={ei} ex={exMap[e.exerciseId] || UNKNOWN_EXERCISE} exData={exMap[e.exerciseId]}
           last={lastSession(data.workouts, e.exerciseId)} step={nextStep(data.workouts, exMap[e.exerciseId])}
           records={recordSets(e.sets, exMap[e.exerciseId], bwAt(a.startedAt), bestE1rm(data.workouts, e.exerciseId, exMap[e.exerciseId], bwAt))}
-          cols={cols} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
+          cols={cols} rirOn={rirOn} compact={sort.dragging} sort={sort} sortCount={a.exercises.length}
           g={{ swipe, swipeBind, exSwipe, exSwipeBind, headerProps, colDrag, numberProps: numberProps(ei) }}
           sel={sel} rests={rests} liveKey={liveKey} liveMs={now - a.lastSetAt} act={cardActions(ei)} open={open} fold={folds} />
       ))}
@@ -209,7 +210,7 @@ export function ActiveWorkout({ data, up, exMap, open }) {
       )}
       {/* shown by itself on the first workout, later from «?» */}
       {(help || !data.settings.gestureHintSeen) && (
-        <WorkoutHelp rirOn={cols.includes("rir")}
+        <WorkoutHelp rirOn={rirOn}
           onClose={() => { setHelp(false); if (!data.settings.gestureHintSeen) up((d) => { d.settings.gestureHintSeen = true; }); }} />
       )}
 
