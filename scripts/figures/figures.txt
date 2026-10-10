@@ -1,4 +1,4 @@
-# exercise id → Open Exercise Figures figure id (figures/<figure id>.json); read by build.py
+# exercise id → Open Exercise Figures figure id (figures/<figure id>.json) [pose: key pose index, or a fraction of the way first → last]; read by build.py
 squat 0043
 belt-squat 0413
 hack-squat 0743
@@ -136,8 +136,8 @@ one-arm-pure-plate-rotary-pulldown 1347
 wide-grip-pull-up 1429
 close-grip-pull-up 0652
 hyperextension 0489
-barbell-shrug 0095
-dumbbell-shrug 0406
+barbell-shrug 0095 0.5
+dumbbell-shrug 0406 0.5
 seated-barbell-press 0091
 seated-dumbbell-press 0405
 cable-lateral-raise 0178
@@ -214,7 +214,7 @@ wall-sit 0624
 sled-push 3638
 leg-press-calf-raise 1391
 dumbbell-calf-raise 0417
-smith-machine-shrug 0767
+smith-machine-shrug 0767 0.5
 superman 1343
 plank pulse-0003
 reverse-crunch 0872
@@ -227,7 +227,7 @@ mountain-climber 0630
 pallof-press 0979
 side-plank 0705
 dead-bug 0276
-russian-twist 0687
+russian-twist 0687 1
 waiter-s-walk 4244
 turkish-get-up 0551
 st-hip-flexor-forward 1585

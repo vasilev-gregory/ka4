@@ -3,9 +3,9 @@
 #     python3 scripts/figures/build.py            (plain Python 3, no packages)
 #
 # figures.txt names the Open Exercise Figures pose for each exercise (figures/*.json, CC0); pose.py (MIT-0) solves the
-# joints of its last key pose (the worked position: the squat at the bottom, the curl at the top), and the body is drawn
-# from parts.py. The SVG has no colours of its own, only classes the app styles (src/index.css): the body `bl` (its outline) under `b` (its fill), a
-# muscle `m m-<id>`, the far limbs `far`, equipment `iron steel pad frame band ball`, the floor `floor`.
+# joints of its last key pose (the worked position: the squat at the bottom, the curl at the top; figures.txt may name
+# another), and the body is drawn from parts.py. The SVG has no colours of its own, only classes the app styles
+# (src/index.css): the body `bl` (its outline) under `b` (its fill), a muscle `m m-<id>`, the far limbs `far`, equipment `iron steel pad frame band ball`, the floor `floor`.
 import math
 import sys
 from pathlib import Path
@@ -75,15 +75,25 @@ class Group:
         c.out.append(f"<g{attr}>" + "".join(self.lines + self.fills + self.muscles) + "</g>")
 
 
-def part(c, g, name, at, ang, muscles=True, view="side", far=False):
+def stretch(name, a, b, view):
+    """How much longer or shorter than drawn the segment a→b is: a pose shortens a limb pointing at the viewer (a seated
+    figure's thighs, seen from the front) and lengthens the torso to lift the shoulders (a shrug)."""
+    if b is None or name == "head":
+        return 1
+    drawn = P.LEN[name] * (0.45 if view == "front" and name == "foot" else 1)
+    return max(.25, math.dist(a, b) / drawn)
+
+
+def part(c, g, name, at, ang, muscles=True, view="side", far=False, to=None):
     x, y = c.pt(at)
+    sy = stretch(name, at, to, view)
     if view == "front":
         p = FRONT[name]
         flip = " scale(-1,1)" if far else ""  # x is outward: the far side (the viewer's left) mirrors it
     else:
         p = PARTS[name]
         flip = " scale(-1,1)" if name in ("torso", "neck", "head") else ""  # these point up: their front is the other way
-    t = f'transform="translate({x:.1f},{y:.1f}) rotate({ang + 180:.1f}) scale({c.k / 100:.4f}){flip}"'
+    t = f'transform="translate({x:.1f},{y:.1f}) rotate({ang + 180:.1f}) scale({c.k / 100:.4f},{c.k / 100 * sy:.4f}){flip}"'
     d = smooth(p["o"])
     g.lines.append(f'<path class="bl" {t} d="{d}"/>')
     g.fills.append(f'<path class="b" {t} d="{d}"/>')
@@ -98,7 +108,7 @@ def limbs(c, g, j, side, which, view):
             "arm": [("upperArm", "Shoulder", "Elbow"), ("forearm", "Elbow", "Wrist"), ("hand", "Wrist", "Hand")]}[which]
     front = view == "front"
     for name, a, b in reversed(segs) if which == "leg" else segs:
-        part(c, g, name, j[side + a], angle(j[side + a], j[side + b]), front or side == "near", view, side == "far")
+        part(c, g, name, j[side + a], angle(j[side + a], j[side + b]), front or side == "near", view, side == "far", j[side + b])
 
 
 def limb_group(c, j, side, which, view):
@@ -127,8 +137,8 @@ def draw(fig, pose):
     P.draw_equipment(c, j, posed, "far", view)
     if view != "front":
         limbs(c, body, j, "near", "leg", view)
-    part(c, body, "neck", j["shoulder"], angle(j["shoulder"], j["neckTop"]), view=view)
-    part(c, body, "torso", j["hip"], angle(j["hip"], j["shoulder"]), view=view)
+    part(c, body, "neck", j["shoulder"], angle(j["shoulder"], j["neckTop"]), view=view, to=j["neckTop"])
+    part(c, body, "torso", j["hip"], angle(j["hip"], j["shoulder"]), view=view, to=j["shoulder"])
     part(c, body, "head", j["head"], angle(j["neckTop"], j["head"]), view=view)
     body.flush(c)
     if view == "front":
@@ -138,16 +148,27 @@ def draw(fig, pose):
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="fig">' + "".join(c.out) + "</svg>\n"
 
 
+def still(fig, which):
+    """The pose to draw: the last key pose (the worked position) unless figures.txt names another: its index, or a
+    fraction of the way from the first key pose to the last (0.5: halfway, where the end pose is too extreme)."""
+    keys = [P.complete(p, fig) for p in fig["poses"]]
+    if which is None:
+        return keys[-1]
+    if "." in which:
+        return P.lerp_pose(keys[0], keys[-1], float(which))
+    return keys[int(which)]
+
+
 def main(only):
     OUT.mkdir(parents=True, exist_ok=True)
     rows = [line.split() for line in (HERE / "figures.txt").read_text().splitlines() if line.strip() and not line.startswith("#")]
-    for ex_id, fig_id in rows:
+    for ex_id, fig_id, *which in rows:
         if only and ex_id not in only:
             continue
         fig = P.load(HERE / "figures" / f"{fig_id}.json")
         for problem in P.problems(fig):
             print(f"{ex_id} ({fig_id}): {problem}")
-        (OUT / f"{ex_id}.svg").write_text(draw(fig, P.complete(fig["poses"][-1], fig)))
+        (OUT / f"{ex_id}.svg").write_text(draw(fig, still(fig, which[0] if which else None)))
     print(f"drew {len(rows) if not only else len(only)} figure(s) into {OUT}")
 
 
