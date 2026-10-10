@@ -14,7 +14,7 @@ const colTitle = (c, ex) =>
 
 // g: gesture bindings from ActiveWorkout; sel: {ei, set} while selecting sets; act: the card's actions;
 // step: the progression step when the exercise has stalled (model/progression nextStep); fold: the screen's useFolds
-export function ExerciseCard({ e, ei, ex, exData, last, step, records, cols, compact, sort, sortCount, g, sel, rests, liveKey, liveMs, act, open, fold }) {
+export function ExerciseCard({ e, ei, ex, exData, last, step, records, cols, rirOn, compact, sort, sortCount, g, sel, rests, liveKey, liveMs, act, open, fold }) {
   const labels = setLabels(e.sets);
   const cardio = ex.kind === "cardio";
   const exCols = cardio ? ["r", "w"] : cols; // cardio: minutes and km, whatever the strength columns are
@@ -54,7 +54,7 @@ export function ExerciseCard({ e, ei, ex, exData, last, step, records, cols, com
           {e.sets.map((s, si) => {
             const key = `${ei}:${si}`;
             return (
-              <SetRow key={si} s={s} ex={ex} cols={exCols} label={labels[si]}
+              <SetRow key={si} s={s} ex={ex} cols={exCols} rirOn={rirOn && !cardio} label={labels[si]}
                 grouped={!!(s.g && si > 0 && e.sets[si - 1].g === s.g)}
                 selected={!!(selHere && selHere.set.has(si))}
                 rest={rests[key]} live={liveKey === key ? liveMs : null} record={records.has(si)}

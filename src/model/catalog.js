@@ -32,7 +32,7 @@ export const ASSIST_DEFAULTS = { "assisted-pull-up": true };
 
 // Effort per set, RP / Israetel style: reps in reserve. 4 means "4 or more".
 // Set row columns: order and visibility are user settings. Weight and reps can't be hidden.
-export const COLUMNS = { w: "Вес", r: "Повторы / секунды", p: "Частичные повторы", rir: "RIR (повторов в запасе)", rest: "Отдых (в кнопке ✓)" };
+export const COLUMNS = { w: "Вес", r: "Повторы / секунды", p: "Частичные повторы", rir: "RIR (в кнопке ✓: удержи и потяни)", rest: "Отдых (в кнопке ✓)" };
 
 // weight and reps are always on, the rest stopwatch in ✓ is on by default; partials and RIR are opt-in (Settings → columns)
 export const DEFAULT_COLUMNS = [{ key: "w", on: true }, { key: "r", on: true }, { key: "p", on: false }, { key: "rir", on: false }, { key: "rest", on: true }];

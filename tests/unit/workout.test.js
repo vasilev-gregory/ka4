@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { seed } from "../../src/model/state.js";
-import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, fmtSets, setColumns, restShown } from "../../src/model/workout.js";
+import { setLabels, normalizeGroups, stats, makeBodyWeightAt, restBefore, fmtSets, setColumns, restShown, rirShown } from "../../src/model/workout.js";
 import { closeStaleWorkout } from "../../src/model/workoutActions.js";
 
 test("set labels and group normalization", () => {
@@ -78,8 +78,10 @@ test("running workout abandoned since yesterday ends at its last set", () => {
   assert.equal(closeStaleWorkout(d2, new Date(2026, 4, 10, 0, 30).getTime()), d2);
 });
 
-test("columns: rest is never a real column, w/r always on", () => {
-  assert.deepEqual(setColumns({ columns: [{ key: "rir", on: true }, { key: "w", on: false }, { key: "rest", on: true }] }), ["rir", "w", "r"]); // partials are opt-in
+test("columns: rest and RIR are never real columns (they live in ✓), w/r always on", () => {
+  assert.deepEqual(setColumns({ columns: [{ key: "rir", on: true }, { key: "w", on: false }, { key: "rest", on: true }] }), ["w", "r"]); // partials are opt-in
+  assert.equal(rirShown({}), false); // RIR is opt-in
+  assert.equal(rirShown({ columns: [{ key: "rir", on: true }] }), true);
   assert.equal(restShown({}), true); // the rest stopwatch in ✓ is on until turned off
   assert.equal(restShown({ columns: [{ key: "rest", on: false }] }), false);
 });

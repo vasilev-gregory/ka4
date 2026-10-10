@@ -84,9 +84,9 @@ test("warm-up toggle clears RIR; a new set takes hints from the last one", () =>
 });
 
 test("moving a column keeps hidden ones in place", () => {
-  const settings = { columns: [{ key: "w", on: true }, { key: "r", on: true }, { key: "p", on: false }, { key: "rir", on: true }, { key: "rest", on: true }] };
-  A.moveColumn(settings, 2, 0); // rir to the front
-  assert.deepEqual(settings.columns.map((c) => c.key), ["rir", "w", "p", "r", "rest"]);
+  const settings = { columns: [{ key: "w", on: true }, { key: "rir", on: true }, { key: "r", on: true }, { key: "p", on: true }, { key: "rest", on: true }] };
+  A.moveColumn(settings, 2, 0); // partials to the front; RIR (in ✓, not a column) stays where it was
+  assert.deepEqual(settings.columns.map((c) => c.key), ["p", "rir", "w", "r", "rest"]);
 });
 
 test("the running rest stopwatch sits on the next unconfirmed set, also in the next exercise", () => {
