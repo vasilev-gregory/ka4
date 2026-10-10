@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { seed } from "../../src/model/state.js";
 import { liveRestKey, restBefore } from "../../src/model/workout.js";
 import * as A from "../../src/model/workoutActions.js";
+import * as P from "../../src/model/programActions.js";
 
 const T0 = 1_700_000_000_000;
 const withWorkout = (sets) => {
@@ -166,16 +167,16 @@ test("finishing as a bad day files the workout «не в зачёт»", () => {
 test("programs: create, items added with their kind's plan, replaced keeping sets within a kind, removed", () => {
   const d = seed();
   const exMap = Object.fromEntries(d.exercises.map((e) => [e.id, e]));
-  A.createProgram(d, "p1");
+  P.createProgram(d, "p1");
   const p = d.programs.find((x) => x.id === "p1");
-  A.addProgramItems(p, [exMap.squat, exMap.elliptical]);
+  P.addProgramItems(p, [exMap.squat, exMap.elliptical]);
   assert.equal(p.items[1].min, 20);
   p.items[0].sets = 5;
-  A.replaceProgramItem(p, 0, exMap["leg-press"], exMap);
+  P.replaceProgramItem(p, 0, exMap["leg-press"], exMap);
   assert.deepEqual(p.items[0], { exerciseId: "leg-press", sets: 5 }); // the same kind keeps its sets
-  A.replaceProgramItem(p, 1, exMap.squat, exMap);
+  P.replaceProgramItem(p, 1, exMap.squat, exMap);
   assert.equal(p.items[1].min, undefined); // cardio -> strength starts from the defaults
-  A.removeProgram(d, "p1");
+  P.removeProgram(d, "p1");
   assert.equal(d.programs.some((x) => x.id === "p1"), false);
 });
 
@@ -196,11 +197,11 @@ test("turning the countdown off drops the one going on; workouts and the running
 test("a program left empty and unnamed is dropped, one with a name or an exercise stays", async () => {
   const S = await import("../../src/model/stretchActions.js");
   const d = seed();
-  A.createProgram(d, "e");
-  A.createProgram(d, "n");
+  P.createProgram(d, "e");
+  P.createProgram(d, "n");
   d.programs.find((p) => p.id === "n").name = "Ноги";
-  A.dropEmptyProgram(d, "e");
-  A.dropEmptyProgram(d, "n");
+  P.dropEmptyProgram(d, "e");
+  P.dropEmptyProgram(d, "n");
   assert.deepEqual(d.programs.filter((p) => ["e", "n"].includes(p.id)).map((p) => p.id), ["n"]);
   const s = d.stretch;
   S.createProgram(s, "x");
@@ -251,7 +252,7 @@ test("a program from a finished workout: its exercises in order, working sets (a
     { exerciseId: "dips", sets: [blank({ t: "w", done: true })] },
     { exerciseId: "run", sets: [blank({ r: "12,5", done: true }), blank({ r: "10", done: true })] },
   ] };
-  A.programFromWorkout(d, w, "p1", exMap);
+  P.programFromWorkout(d, w, "p1", exMap);
   assert.deepEqual(d.programs.find((p) => p.id === "p1"), { id: "p1", name: "Ноги", items: [
     { exerciseId: "squat", sets: 2 }, { exerciseId: "dips", sets: 1 }, { exerciseId: "run", sets: 1, min: 23 },
   ] });

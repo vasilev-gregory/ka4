@@ -1,7 +1,8 @@
 // A finished exercise's sets as rows, read-only, laid out like the running workout: number (warm-up «Р», a drop
 // set as 2a, 2b with the accent edge), weight, reps, partials and RIR when any set has them, the rest before.
 import { fmtDur, fmtNum, num } from "../core/util.js";
-import { setLabels } from "../model/workout.js";
+import { setKind, setLabels } from "../model/workout.js";
+import { SET_LABEL } from "./setMarks.js";
 
 // sets: the exercise's saved sets; kind: the exercise's kind; rest(si): ms before the set, "drop", or nothing
 export function SetTable({ sets, kind, assist, bw, rest }) {
@@ -24,7 +25,7 @@ export function SetTable({ sets, kind, assist, bw, rest }) {
         const r = rest(si);
         return (
           <div key={si} className={`flex items-center gap-1 border-l-2 px-1 py-1 ${s.g ? "border-accent-400" : "border-transparent"}`}>
-            <span className={`w-7 text-center font-semibold ${s.t === "w" ? "text-sky-400" : s.rir === 0 ? "text-fail" : "text-accent-400"}`}>{s.t === "w" ? "Р" : labels[si]}</span>
+            <span className={`w-7 text-center font-semibold ${SET_LABEL[setKind(s)]}`}>{s.t === "w" ? "Р" : labels[si]}</span>
             {cardio ? <><span className={cell}>{fmtNum(num(s.r))}</span><span className={cell}>{num(s.w) ? fmtNum(num(s.w)) : "—"}</span></>
               : <><span className={cell}>{fmtNum(num(s.w))}</span><span className={cell}>{num(s.r)}</span></>}
             {partials && <span className="w-12 text-center tabular-nums text-neutral-300">{num(s.p) ? `+${num(s.p)}` : ""}</span>}

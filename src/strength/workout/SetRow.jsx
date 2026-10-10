@@ -5,13 +5,10 @@ import { useEffect, useRef } from "react";
 import { Check, Play, Trophy } from "lucide-react";
 import { fmtDur, numericInput } from "../../core/util.js";
 import { setKind } from "../../model/workout.js";
+import { SET_CHECK as DONE_CHECK, SET_LABEL as DONE_LABEL, SET_TEXT as DONE_TEXT } from "../setMarks.js";
 import { useNow } from "../../ui/kit.jsx";
 import { useRirDial } from "./RirDial.jsx";
 
-// how a set is marked (model setKind): a warm-up in blue, a working set in the accent, one to failure in its own colour
-const DONE_TEXT = { warmup: "text-sky-300", work: "text-accent-300", fail: "text-fail" };
-const DONE_CHECK = { warmup: "bg-sky-400 text-neutral-900", work: "bg-accent-400 text-neutral-900", fail: "bg-fail text-neutral-900" };
-const DONE_LABEL = { warmup: "text-sky-400", work: "text-accent-400", fail: "text-fail" };
 
 const BOX = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-hidden placeholder:text-neutral-600 focus:ring-2 focus:ring-accent-400";
 

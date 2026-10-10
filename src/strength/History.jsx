@@ -14,7 +14,8 @@ import { sessionProgress } from "../model/records.js";
 import { workoutKcal } from "../model/energy.js";
 import { Button, Card, DeleteButton, Header, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
 import { muscleLoad, stillCounted } from "../model/muscles.js";
-import { programFromWorkout, removeWorkout, setWorkoutOff } from "../model/workoutActions.js";
+import { programFromWorkout } from "../model/programActions.js";
+import { removeWorkout, setWorkoutOff } from "../model/workoutActions.js";
 
 // "+2,5 кг", "−1 кг", "так же"
 const fmtDelta = (d) => (Math.abs(d) < 0.25 ? "так же" : `${d > 0 ? "+" : "−"}${fmtNum(Math.round(Math.abs(d) * 2) / 2)} кг`);
