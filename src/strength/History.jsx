@@ -66,9 +66,12 @@ export function WorkoutDetail({ data, up, exMap, id, back, open, live = false })
       </DayOnly>
       <CopyText text={() => workoutText(data, w, exMap, bwAt, nm1, live)} />
       {!live && <>
-        <Button variant="secondary" block className="mt-2" onClick={() => { const pid = uid(); up((d) => programFromWorkout(d, w, pid, exMap)); open({ type: "program", id: pid }); }}>
-          Сделать программой
-        </Button>
+        {/* done from a program that is still there: it already is one */}
+        {!data.programs.some((p) => p.id === w.programId) && (
+          <Button variant="secondary" block className="mt-2" onClick={() => { const pid = uid(); up((d) => programFromWorkout(d, w, pid, exMap)); open({ type: "program", id: pid }); }}>
+            Сделать программой
+          </Button>
+        )}
         {w.off && <NotForNothing data={data} w={w} exMap={exMap} />}
         <SwitchRow title="Не в зачёт" className="mt-3" on={!!w.off} onClick={() => up((d) => setWorkoutOff(d, id, !w.off))}
           hint="Плохой день: остаётся в истории и в счёте тренировок, но не в графиках упражнений, рекордах и «прошлом разе»" />

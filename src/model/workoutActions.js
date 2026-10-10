@@ -1,10 +1,10 @@
 // Strength actions: every change to a workout the UI can make. Each takes the app data (an immer draft
 // inside up()) and mutates it; time comes in as `now` so the rules are testable.
-import { num, progTitle, uid } from "../core/util.js";
+import { moveItem, num, progTitle, uid } from "../core/util.js";
 import {
   buildSets, CARDIO_PLAN, closeSegment, columnConfig, defaultSets, itemsOf, lastActivity, lastTick, normalizeGroups, programDiff, programItem, runningSession, segmentsOf, setColumns,
 } from "./workout.js";
-import { moveItem } from "../core/util.js";
+import { minutesSince } from "./cardioActions.js";
 import { nextStep } from "./progression.js";
 
 // an exercise's starting sets, with a progression step in the hints when it has stalled
@@ -87,9 +87,9 @@ export function toggleSet(d, ei, si, now = Date.now()) {
     a.lastSetAt = lastTick(a);
     return;
   }
+  if (s.from) { s.r = minutesSince(s.from, now); delete s.from; } // a cardio stopwatch: its time is the minutes
   if (s.w === "" && s.hw) s.w = s.hw;
-  // only partials typed: no full reps were done, so 0 (not last time's reps)
-  if (s.r === "" && num(s.p) > 0) s.r = "0";
+  if (s.r === "" && num(s.p) > 0) s.r = "0"; // only partials typed: no full reps were done, so 0 (not last time's reps)
   if (s.r === "" && s.hr) s.r = s.hr;
   if (s.t !== "w" && (num(s.p) > 0 || (s.g && s.rir == null))) s.rir = 0; // to failure
   const prev = a.lastSetAt;

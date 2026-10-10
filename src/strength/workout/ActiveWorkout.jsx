@@ -9,6 +9,7 @@ import {
 } from "../../model/workout.js";
 import { bestE1rm, recordSets } from "../../model/records.js";
 import * as A from "../../model/workoutActions.js";
+import { startCardioTimer } from "../../model/cardioActions.js";
 import { nextStep } from "../../model/progression.js";
 import { useHoldReorder, useLongPress, useSwipeRows } from "../../ui/gestures.js";
 import { Button, DeleteButton, Sheet, useApp, useNow, useUndo } from "../../ui/kit.jsx";
@@ -84,6 +85,7 @@ export function ActiveWorkout({ data, up, exMap, open, onPrograms }) {
     editSet: (si, patch) => up((d) => A.setSet(d, ei, si, patch)),
     toggleSet: (si) => { unlockAudio(); up((d) => A.toggleSet(d, ei, si)); },
     rirSet: (si, n) => { unlockAudio(); up((d) => A.markSetRir(d, ei, si, n)); },
+    timerSet: (si) => up((d) => startCardioTimer(d, ei, si)),
     swipeSet: (si, dir) => {
       const s = a.exercises[ei]?.sets[si];
       if (!s) return;

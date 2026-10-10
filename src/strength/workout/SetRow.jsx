@@ -2,9 +2,10 @@
 // ✓ and slide: done with a RIR (RirDial), and a done ✓ shows it — RIR has no column of its own.
 // The row swipes: right = done / undone, left = delete.
 import { useEffect, useRef } from "react";
-import { Check, Trophy } from "lucide-react";
+import { Check, Play, Trophy } from "lucide-react";
 import { fmtDur, numericInput } from "../../core/util.js";
 import { setKind } from "../../model/workout.js";
+import { useNow } from "../../ui/kit.jsx";
 import { useRirDial } from "./RirDial.jsx";
 
 // how a set is marked (model setKind): a warm-up in blue, a working set in the accent, one to failure in its own colour
@@ -40,7 +41,11 @@ function Cell({ col, s, ex, edit }) {
 
 // label: "1", "2a", …; rest: ms before this set or "drop"; live: the running stopwatch is here (ms so far);
 // record: this set beat the exercise's best estimated 1RM; rir(n): done with RIR n (the dial on ✓)
-export function SetRow({ s, ex, cols, rirOn, label, grouped, selected, rest, live, record, swipe, swipeProps, numberProps, edit, toggle, rir }) {
+// timer(): cardio's ▶ — a stopwatch on the set; its ✓ stops it and writes the minutes (model cardioActions)
+export function SetRow({ s, ex, cols, rirOn, label, grouped, selected, rest, live: rested, record, swipe, swipeProps, numberProps, edit, toggle, rir, timer }) {
+  const running = !!s.from && !s.done;
+  const now = useNow(1000, running);
+  const live = running ? Math.max(0, now - s.from) : rested; // the cardio stopwatch, else the rest one
   const dial = useRirDial({ onTap: toggle, onPick: rir, enabled: rirOn && s.t !== "w" });
   const rirLabel = rirOn && s.done && s.rir != null ? (s.rir === 4 ? "4+" : String(s.rir)) : null;
   const shownRest = rest === "drop" || rest >= 1000 ? rest : null; // under a second (warm-up closed by this tick): nothing to show
@@ -69,6 +74,11 @@ export function SetRow({ s, ex, cols, rirOn, label, grouped, selected, rest, liv
           <span className={selected ? "" : s.t === "w" || s.done ? DONE_LABEL[setKind(s)] : "text-neutral-500"}>{s.t === "w" ? "Р" : label}</span>
         </button>
         {cols.map((c) => <Cell key={c} col={c} s={s} ex={ex} edit={edit} />)}
+        {timer && !s.done && !running && (
+          <button onClick={timer} aria-label="Засечь время" className="flex h-11 w-9 shrink-0 items-center justify-center rounded-lg bg-neutral-800 text-accent-400">
+            <Play size={18} />
+          </button>
+        )}
         <button {...dial.bind} aria-label="Подход сделан" style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
           className={`relative flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg leading-none ${
             s.done ? DONE_CHECK[setKind(s)] : live != null ? "bg-neutral-800 text-accent-400" : "bg-neutral-800 text-neutral-400"}`}>

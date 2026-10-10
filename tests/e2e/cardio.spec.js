@@ -51,3 +51,19 @@ test("cardio as part of a strength workout: «+ Кардио» next to adding ex
   await expect(page.getByText("Добавить отрезок")).toBeVisible();
   await expect(page.getByText("Разминка")).toBeVisible();
 });
+
+test("cardio stopwatch: ▶ times the set in ✓, ✓ stops it and writes the minutes", async ({ page }) => {
+  await page.clock.install();
+  await openApp(page);
+  await seedStorage(page, (d) => {
+    d.settings.gestureHintSeen = true;
+    d.programs = [{ id: "c", name: "Эллипс", items: [{ exerciseId: "elliptical", sets: 1, min: 30 }] }];
+  });
+  await page.getByRole("button", { name: "Начать" }).click();
+  await page.getByRole("button", { name: "Засечь время" }).click();
+  await expect(page.getByRole("button", { name: "Засечь время" })).toHaveCount(0);
+  await page.clock.runFor(90_000);
+  await expect(page.getByRole("button", { name: "Подход сделан" })).toHaveText("1:30");
+  await page.getByRole("button", { name: "Подход сделан" }).click();
+  await expect(page.locator("input[inputmode=decimal]").first()).toHaveValue("1,5");
+});
