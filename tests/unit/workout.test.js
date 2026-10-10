@@ -126,3 +126,8 @@ test("an exercise's sessions newest first; the previous workout of the same prog
   assert.equal(previousOfProgram(ws, ws[2]).id, "1");
   assert.equal(previousOfProgram(ws, ws[0]), null);
 });
+
+test("a set's kind for its mark: warm-up, working, to failure", async () => {
+  const { setKind } = await import("../../src/model/workout.js");
+  assert.deepEqual([setKind({ t: "w", rir: 0 }), setKind({ rir: 0 }), setKind({ rir: 2 }), setKind({})], ["warmup", "fail", "work", "work"]);
+});

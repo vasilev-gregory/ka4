@@ -278,11 +278,13 @@ test("every step of a drop set is to failure: RIR 0 at the tick unless one was g
   const d = withWorkout([blank({ w: "60", g: "x" }), blank({ w: "45", g: "x" }), blank({ w: "30", g: "x", rir: 2 }), blank({ w: "40" })]);
   [0, 1, 2, 3].forEach((si) => A.toggleSet(d, 0, si, T0 + si * 1000));
   assert.deepEqual(d.active.exercises[0].sets.map((s) => s.rir), [0, 0, 2, undefined]);
-  // ticked first, merged after: the ticked steps get RIR 0 at the merge; ones still to do get it at their tick
-  const e = withWorkout([blank({ w: "60" }), blank({ w: "45" }), blank({ w: "30" })]);
-  A.toggleSet(e, 0, 0, T0); A.toggleSet(e, 0, 1, T0 + 1000);
-  A.mergeSets(e, 0, new Set([0, 1, 2]));
-  assert.deepEqual(e.active.exercises[0].sets.map((x) => x.rir), [0, 0, undefined]);
+  // merged after: every step is done, to failure — the unticked ones get ticked by the merge
+  const e = withWorkout([blank({ w: "60" }), blank({ w: "45" }), blank({ w: "30", rir: 1 }), blank({ w: "20", t: "w" })]);
+  A.toggleSet(e, 0, 0, T0);
+  A.mergeSets(e, 0, new Set([0, 1, 2]), T0 + 5000);
+  const es = e.active.exercises[0].sets;
+  assert.deepEqual(es.map((x) => [x.done, x.rir]), [[true, 0], [true, 0], [true, 1], [false, undefined]]);
+  assert.equal(es[1].at, T0 + 5000);
 });
 
 test("partials are never hinted nor filled from last time", () => {

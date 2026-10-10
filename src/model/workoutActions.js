@@ -143,17 +143,18 @@ export function deleteSets(d, ei, indexes) {
 }
 
 // Drop set: the picked sets get one group id and move next to each other, at the first one's place.
-export function mergeSets(d, ei, indexes) {
+// a drop set is made after it was done: its steps still unticked are ticked (each to failure, RIR 0 unless given)
+export function mergeSets(d, ei, indexes, now = Date.now()) {
   const ex = d.active.exercises[ei];
   const idx = [...indexes].sort((x, y) => x - y);
   const g = uid();
-  const picked = idx.map((i) => ex.sets[i]);
-  picked.forEach((s) => { s.g = g; if (s.done && s.t !== "w" && s.rir == null) s.rir = 0; }); // ticked steps: to failure
+  const picked = idx.map((i) => Object.assign(ex.sets[i], { g }));
   const rest = ex.sets.filter((_, i) => !indexes.has(i));
   const at = ex.sets.slice(0, idx[0]).filter((_, i) => !indexes.has(i)).length;
   rest.splice(at, 0, ...picked);
   normalizeGroups(rest);
   ex.sets = rest;
+  picked.filter((s) => s.t !== "w").forEach((s) => { if (!s.done) toggleSet(d, ei, ex.sets.indexOf(s), now); if (s.rir == null) s.rir = 0; });
 }
 
 export function unmergeSets(d, ei, indexes) {
