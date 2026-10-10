@@ -281,12 +281,16 @@ test("hold ✓ and slide to a RIR: the set is done with it; let go at the centre
   await page.mouse.up();
   await expect(page.getByTestId("rir-dial")).toHaveCount(0);
   await expect(check).not.toHaveClass(/bg-accent-400/);
+  // typing the reps, then straight to the dial; Safari doesn't move the focus to a pressed button — neither does this
+  await check.evaluate((el) => el.addEventListener("mousedown", (e) => e.preventDefault()));
+  await page.locator("input").nth(1).focus();
   await page.mouse.move(cx, cy);
   await page.mouse.down();
   await expect(page.getByTestId("rir-dial")).toBeVisible();
   await page.mouse.move(cx - 40, cy - 10, { steps: 4 });
   await page.mouse.move(cx - 72, cy, { steps: 4 }); // left: the middle of the fan, 2
   await page.mouse.up();
+  await expect(page.locator("input:focus")).toHaveCount(0); // marking ends the typing: no field keeps the cursor
   await expect(check).toHaveClass(/bg-accent-400/);
   await expect.poll(async () => (await stored(page)).active.exercises[0].sets[0]).toMatchObject({ done: true, rir: 2 });
   await expect(check.getByLabel("RIR 2")).toBeVisible(); // the done ✓ shows it; RIR has no column of its own
