@@ -45,12 +45,3 @@ export function exerciseSeries(workouts, exId, ex, bwAt, metric, since = -Infini
   });
   return out;
 }
-
-// chart time windows, months back from now (0 = everything)
-export const WINDOWS = [[3, "3 мес"], [6, "полгода"], [12, "год"], [0, "всё"]];
-
-export function windowStart(months, now = Date.now()) {
-  if (!months) return -Infinity;
-  const d = new Date(now);
-  return new Date(d.getFullYear(), d.getMonth() - months, d.getDate()).getTime();
-}

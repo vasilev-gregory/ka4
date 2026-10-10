@@ -78,7 +78,7 @@
 | Упражнения сессии с подходами (карточка и «День» истории) | `WorkoutExercises` (`strength/History.jsx`), `StretchHeld` (`stretch/StretchSession.jsx`) | |
 | Обзор при первом запуске (карточки по вкладкам, повтор из Настроек) | `shell/Tour` (`TOUR`, `useTour`), пульс значка — `TabBar` `pulse` | |
 | Карточка переезда на новый адрес (только на старом) | `shell/MoveBanner` (`NEW_HOME`, `isOldHome`) | |
-| Календарь истории | `PeriodNav`, `usePeriod`, `PeriodCard` | |
+| Календарь истории | `PeriodNav` (полоса масштаба и стрелок — `usePeriodBar`, общая с графиками), `usePeriod`, `PeriodCard` | |
 | Строка истории, заголовок карточки сессии, плитки чисел, её упражнения только на «Дне» | `HistoryRow`, `SessionHeader`, `StatTiles`, `DayOnly` (`ui/Session.jsx`) | |
 | Список программ: строки, «+ Новая программа», «Без программы» | `ProgramRows` | |
 | Редактор программы: название, строки (перетащить, убрать с «Вернуть»), начать / удалить | `ProgramName`, `ProgramItems`, `ProgramFooter` (`ui/ProgramEdit.jsx`) | |
@@ -89,7 +89,7 @@
 | От мышцы плана к упражнениям на неё (только редактор программы — силы и растяжки) | `find` у `LoadBreakdown` (кнопка у выделенной мышцы, двойной тап по схеме) (через `MuscleBreakdown` / `StretchBreakdown` / `ProgramMuscles`) → выбор с фильтром (`Picker` `muscle`, `StretchPicker` `area`) | ⚙ `find` в сплите / истории / карточке тренировки (упражнения — в программу, программы — в сплит) |
 | Выбор упражнений / растяжек (поиск, фильтры — кнопки фильтров `filters` от раздела, раскрывающие чипы, группы, «твои», несколько сразу, «уже в программе», создать новое) | `ExercisePicker` (`ui/ExercisePicker.jsx`) | свой экран выбора в разделе |
 | Подтверждение / вопрос снизу | `Sheet` | |
-| Графики | `<Trend>` | ⚙ `recharts` напрямую |
+| Графики | `<Trend>` (`ui/Trend.jsx`), период — та же полоса, что в истории: `usePeriodBar` + `usePeriod` (`ui/PeriodNav.jsx`) | ⚙ `recharts` напрямую |
 | Открыться там, где оставили (вкладка, экраны, открытый выбор и его отметки) | `useNavigation` + `useRestorable(ключ, начальное)` вместо `useState` (`ui/navigation.js`), место — `uiPlace` (`storage.js`) | хранить место в данных приложения |
 | Поиск в выборе упражнений (слова, окончания, «ближе всего», другие названия: `EX_AKA` в каталоге и `aka` упражнения) | `model/picker.js` (`matchesQuery`, `pickerSections`) | фильтровать список в экране |
 | Экраны и «назад» | таблица `SCREENS` в `App.jsx` + `open({ type })`; слой поверх экранов (шторка, выбор, плеер) — `useBackCloses(закрыть)` (`ui/navigation.js`) | ⚙ `history.pushState / back / go` вне `ui/navigation.js` |

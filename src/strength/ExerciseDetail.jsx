@@ -7,8 +7,9 @@ import { MuscleChips } from "./MuscleChips.jsx";
 import { exerciseSessions, fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
-import { Button, Chip, Header, PhotoPicker, Segmented, Sheet, Trend, useApp } from "../ui/kit.jsx";
+import { Button, Chip, Header, PhotoPicker, Segmented, Sheet, useApp } from "../ui/kit.jsx";
 import { ExerciseBody, ExerciseNameFields, ExerciseSessions, ExerciseStats, ExerciseTitle } from "../ui/ExerciseCard.jsx";
+import { Trend } from "../ui/Trend.jsx";
 
 // "Мышцы: квадрицепс; помогают: ягодицы"
 const fmtWorked = (w) => {

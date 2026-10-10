@@ -4,6 +4,7 @@ import { DAY, weekStartOf } from "../core/util.js";
 
 // The period of the given zoom containing `ts`: { from, to } (to exclusive), local calendar boundaries.
 export function periodOf(zoom, ts) {
+  if (zoom === "all") return { from: -Infinity, to: Infinity }; // all the time (a chart's «Всё»)
   const d = new Date(ts);
   if (zoom === "day") return { from: new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(), to: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime() };
   if (zoom === "week") { const from = weekStartOf(ts); return { from, to: weekStartOf(from + 8 * DAY) }; }
@@ -13,6 +14,7 @@ export function periodOf(zoom, ts) {
 
 // start of the period k periods away from the one containing ts
 export function shiftPeriod(zoom, ts, k) {
+  if (zoom === "all") return ts;
   const d = new Date(periodOf(zoom, ts).from);
   if (zoom === "day") return new Date(d.getFullYear(), d.getMonth(), d.getDate() + k).getTime();
   if (zoom === "week") return weekStartOf(d.getTime() + k * 7 * DAY + 3 * DAY); // mid-week: DST-safe

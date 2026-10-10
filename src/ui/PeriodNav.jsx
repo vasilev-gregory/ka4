@@ -21,10 +21,10 @@ const remember = (key, zoom, at, grid) => { remembered[key] = { zoom, at, grid }
 // on another zoom: around today when the current period holds it, else from the period's start
 const anchorFor = (range) => { const now = Date.now(); return now >= range.from && now < range.to ? now : range.from; };
 
-// { zoom, range, grid, go(zoom, ts), shift(k), rezoom(zoom) } of a history's calendar, month by default; grid: the
+// { zoom, range, grid, go(zoom, ts), shift(k), rezoom(zoom) } of a history's calendar (or a chart's: first), month by default; grid: the
 // calendar drawn on a day — the week or the month it was picked from (so a month's days can be tapped one by one)
-export function usePeriod(key) {
-  const [zoom, setZoom] = useState(() => remembered[key]?.zoom || "month");
+export function usePeriod(key, first = "month") {
+  const [zoom, setZoom] = useState(() => remembered[key]?.zoom || first);
   const [at, setAt] = useState(() => remembered[key]?.at ?? Date.now());
   const [grid, setGrid] = useState(() => remembered[key]?.grid || "month");
   const go = (z, t) => {
@@ -36,6 +36,7 @@ export function usePeriod(key) {
 }
 
 function periodLabel(zoom, { from, to }) {
+  if (zoom === "all") return "За всё время";
   const d = new Date(from);
   if (zoom === "year") return String(d.getFullYear());
   if (zoom === "month") return capitalize(d.toLocaleDateString("ru-RU", { month: "long", year: "numeric" }));
@@ -97,28 +98,43 @@ function YearGrid({ year, dates, onMonth }) {
   );
 }
 
-// period: from usePeriod; dates: start times of the workouts / sessions; children: the period's panel (flicks with it)
-export function PeriodNav({ period, dates, children }) {
-  const { zoom, range, go, shift, rezoom } = period;
-  const view = zoom === "day" ? period.grid : zoom; // the calendar drawn: a day keeps the week or month it came from
-  // nothing to see before the first session or after today
+// The zoom switch and the period with its arrows, shared by the history calendar and the charts (ui/Trend): paging not
+// before the first date's period nor past today's; «Всё» (zoom "all") has nothing to page. Returns { bar, flick }:
+// flick goes on what pages with a sideways swipe.
+export function usePeriodBar({ period, dates, zooms = ZOOMS }) {
+  const { zoom, range, shift, rezoom } = period;
   const now = useNow(60e3);
-  const can = (k) => (k < 0 ? range.from > Math.min(now, ...dates) : range.to <= now);
+  const can = (k) => zoom !== "all" && (k < 0 ? range.from > Math.min(now, ...dates) : range.to <= now);
   const step = (k) => can(k) && shift(k);
   const flick = useFlick((dir) => step(-dir));
+  const bar = (
+    <>
+      <Segmented options={zooms} value={zoom} onChange={rezoom} />
+      {zoom !== "all" && (
+        <div className="my-2 flex items-center justify-between">
+          <button onClick={() => step(-1)} disabled={!can(-1)} className="p-2 text-neutral-400 disabled:opacity-20" aria-label="Раньше"><ChevronLeft size={20} /></button>
+          <div className="font-semibold" data-testid="period">{periodLabel(zoom, range)}</div>
+          <button onClick={() => step(1)} disabled={!can(1)} className="rotate-180 p-2 text-neutral-400 disabled:opacity-20" aria-label="Позже"><ChevronLeft size={20} /></button>
+        </div>
+      )}
+    </>
+  );
+  return { bar, flick };
+}
+
+// period: from usePeriod; dates: start times of the workouts / sessions; children: the period's panel (flicks with it)
+export function PeriodNav({ period, dates, children }) {
+  const { zoom, range, go } = period;
+  const view = zoom === "day" ? period.grid : zoom; // the calendar drawn: a day keeps the week or month it came from
+  const { bar, flick } = usePeriodBar({ period, dates });
   const trained = new Set(dates.map((t) => new Date(t).toDateString()));
   const weeks = [];
   const month = view === "month" ? periodOf("month", range.from) : null;
   if (month) for (let ws = weekStartOf(month.from); ws < month.to; ws = weekStartOf(ws + 8 * DAY)) weeks.push(ws);
   return (
     <>
-      <Segmented options={ZOOMS} value={zoom} onChange={rezoom} />
+      {bar}
       <div className="mb-5" {...flick}>
-        <div className="my-2 flex items-center justify-between">
-          <button onClick={() => step(-1)} disabled={!can(-1)} className="p-2 text-neutral-400 disabled:opacity-20" aria-label="Раньше"><ChevronLeft size={20} /></button>
-          <div className="font-semibold" data-testid="period">{periodLabel(zoom, range)}</div>
-          <button onClick={() => step(1)} disabled={!can(1)} className="rotate-180 p-2 text-neutral-400 disabled:opacity-20" aria-label="Позже"><ChevronLeft size={20} /></button>
-        </div>
         {zoom !== "year" && <DayNames />}
         {view === "week" && (
           <WeekRow ws={weekStartOf(range.from)} trained={trained} day={zoom === "day" ? range.from : null} onDay={(t) => go("day", t)} />

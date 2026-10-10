@@ -3,7 +3,8 @@ import { removeMeasurement, saveMeasurement } from "../model/measureActions.js";
 import { useState } from "react";
 import { fmtDate, fmtNum, isoDay, num, numericInput } from "../core/util.js";
 import { MEASURES } from "../model/catalog.js";
-import { Button, DeleteButton, Header, Sheet, Trend } from "../ui/kit.jsx";
+import { Button, DeleteButton, Header, Sheet } from "../ui/kit.jsx";
+import { Trend } from "../ui/Trend.jsx";
 
 export function MeasuresTab({ data, open, openSettings }) {
   const [sel, setSel] = useState("weight");

@@ -6,7 +6,8 @@ import { ST_AREAS, isBuiltInStretch } from "../model/catalog.js";
 import { AREA_PARTS, areaOf, stretchSessionsOf } from "../model/stretch.js";
 import { updateExercise } from "../model/stretchActions.js";
 import { ExerciseBody, ExerciseNameFields, ExerciseSessions, ExerciseStats, ExerciseTitle } from "../ui/ExerciseCard.jsx";
-import { Chip, Header, PhotoPicker, Trend } from "../ui/kit.jsx";
+import { Chip, Header, PhotoPicker } from "../ui/kit.jsx";
+import { Trend } from "../ui/Trend.jsx";
 
 export function StretchDetail({ stretch, upStretch, id, back, open }) {
   const [edit, setEdit] = useState(false);
