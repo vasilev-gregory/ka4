@@ -87,4 +87,12 @@ test("picker filters: buttons opening their chips — by the muscle an exercise 
   await picker.getByRole("button", { name: /^Снаряд: блок/ }).click();
   await picker.getByTestId("filter-equip").getByRole("button", { name: "блок" }).click(); // tapped again: off
   await expect(picker.getByText("Махи гантелями в стороны")).toBeVisible();
+  // by muscle group: «руки» take biceps, triceps and forearms together
+  await page.getByRole("button", { name: "Закрыть" }).first().click();
+  await page.getByRole("button", { name: "Добавить упражнение" }).click();
+  await picker.getByRole("button", { name: /^Группа: все/ }).click();
+  await picker.getByTestId("filter-group").getByRole("button", { name: "руки" }).click();
+  await expect(picker.getByText("Сгибание рук со штангой").first()).toBeVisible();
+  await expect(picker.getByText("Брусья на трицепс").first()).toBeVisible();
+  await expect(picker.getByText("Жим ногами", { exact: false })).toHaveCount(0);
 });

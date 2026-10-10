@@ -1,5 +1,5 @@
 // Picking strength exercises: the shared picker (ui/ExercisePicker) with the strength catalog, filters by the muscle
-// it works most (or cardio) and by equipment, sections by muscle group, "твои" from the workouts and programs, and
+// it works most (or cardio), by muscle group (a few together: «руки») and by equipment, sections by muscle group, "твои" from the workouts and programs, and
 // the form for a new exercise (names, group, kind).
 import { useState } from "react";
 import { uid } from "../core/util.js";
@@ -31,7 +31,13 @@ function NewExercise({ name: start, group, cancel, done }) {
   );
 }
 
+// a muscle group, or a few together: «ноги» take the calves, «руки» — biceps, triceps and forearms
+const GROUP_CHIPS = [["ноги", ["ноги", "икры"]], ["руки", ["бицепс", "трицепс", "предплечья"]], ["плечи"], ["грудь"], ["спина"], ["кор"],
+  ["кардио"], ["бицепс"], ["трицепс"], ["предплечья"], ["икры"]].map(([g, of]) => [g, of || [g]]);
+const GROUP_OF = Object.fromEntries(GROUP_CHIPS);
+
 const FILTERS = [
+  { id: "group", label: "Группа", chips: GROUP_CHIPS.map(([g]) => [g, g]), fits: (e, g) => GROUP_OF[g].includes(e.group) },
   { id: "muscle", label: "Мышца", chips: [...MUSCLES.map(([m, l]) => [m, l]), ["cardio", "кардио"]],
     fits: (e, m) => (m === "cardio" ? e.kind === "cardio" : musclesOf(e)[m] >= 1) },
   { id: "equip", label: "Снаряд", chips: EQUIPMENT.map(([k, l]) => [k, l]), fits: (e, k) => equipmentOf(e).includes(k) },
