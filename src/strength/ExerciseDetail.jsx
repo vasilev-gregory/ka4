@@ -2,7 +2,8 @@
 import { useState, useMemo } from "react";
 import { fmtDate, fmtKg, fmtNum, plural } from "../core/util.js";
 import { EX_KINDS, GROUPS } from "../model/catalog.js";
-import { cycleMuscle, MUSCLE_NAME, MUSCLES, musclesOf } from "../model/muscles.js";
+import { MUSCLE_NAME, MUSCLES, musclesOf } from "../model/muscles.js";
+import { MuscleChips } from "./MuscleChips.jsx";
 import { exerciseSessions, fmtSets } from "../model/workout.js";
 import { exerciseSeries } from "../model/periods.js";
 import { bestE1rm } from "../model/records.js";
@@ -11,7 +12,8 @@ import { ExerciseBody, ExerciseNameFields, ExerciseSessions, ExerciseStats, Exer
 
 // "Мышцы: квадрицепс; помогают: ягодицы"
 const fmtWorked = (w) => {
-  const by = (main) => MUSCLES.filter(([m]) => (main ? w[m] >= 1 : w[m] > 0 && w[m] < 1)).map(([m]) => MUSCLE_NAME[m]).join(", ");
+  const by = (main) => MUSCLES.filter(([m]) => (main ? w[m] >= 1 : w[m] > 0 && w[m] < 1))
+    .map(([m]) => MUSCLE_NAME[m] + (main || w[m] === 0.5 ? "" : ` ${Math.round(w[m] * 100)}%`)).join(", ");
   return `Мышцы: ${by(true) || "—"}${by(false) ? `; помогают: ${by(false)}` : ""}`;
 };
 
@@ -59,14 +61,7 @@ export function ExerciseDetail({ data, up, exMap, id, back, open }) {
             ))}
           </div>
           {!isCardio && <>
-            <div className="mb-1.5 mt-3 text-xs text-neutral-400">Мышцы: тап — основная, ещё тап — вспомогательная, ещё — убрать</div>
-            <div className="flex flex-wrap gap-1.5">
-              {MUSCLES.map(([m, name]) => (
-                <Chip key={m} on={worked[m] >= 1} half={worked[m] > 0 && worked[m] < 1} onClick={() => changeMuscles((x) => { x.muscles = cycleMuscle(x, m); })}>
-                  {name}
-                </Chip>
-              ))}
-            </div>
+            <MuscleChips ex={ex} worked={worked} onChange={(ms) => changeMuscles((x) => { x.muscles = ms; })} />
             {ex.muscles && <button onClick={() => changeMuscles((x) => { delete x.muscles; })} className="mt-1.5 text-[11px] text-neutral-400 underline">как в каталоге</button>}
           </>}
           <div className="mb-1.5 mt-3 text-xs text-neutral-400">Фото</div>

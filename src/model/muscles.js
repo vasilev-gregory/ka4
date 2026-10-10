@@ -82,13 +82,13 @@ export function musclesOf(ex) {
   return rule ? rule[2] : {};
 }
 
-// The user's change of one muscle of an exercise: none -> main -> helping -> none. Returns the new muscles map,
-// starting from what the exercise works now; empty means "back to the rules".
+// The user's change of one muscle of an exercise: none -> main (1) -> helping 50% -> helping 25% -> none. Returns the
+// new muscles map, starting from what the exercise works now; empty means "back to the rules".
+export const MUSCLE_STEPS = [1, 0.5, 0.25];
 export function cycleMuscle(ex, m) {
   const cur = { ...musclesOf(ex) };
-  if (!cur[m]) cur[m] = 1;
-  else if (cur[m] >= 1) cur[m] = 0.5;
-  else delete cur[m];
+  const next = cur[m] ? MUSCLE_STEPS.find((k) => k < cur[m]) : 1;
+  if (next) cur[m] = next; else delete cur[m];
   return cur;
 }
 

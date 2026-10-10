@@ -6,18 +6,23 @@ import { uid } from "../core/util.js";
 import { EX_KINDS, GROUPS } from "../model/catalog.js";
 import { EQUIPMENT, equipmentOf } from "../model/equipment.js";
 import { MUSCLES, musclesOf } from "../model/muscles.js";
+import { MuscleChips } from "./MuscleChips.jsx";
 import { exerciseUsage } from "../model/workout.js";
 import { createExercise } from "../model/workoutActions.js";
 import { Chip } from "../ui/kit.jsx";
 import { CreateForm, ExercisePicker, NameInput } from "../ui/ExercisePicker.jsx";
 
-// a new exercise of the user's own: two names, a muscle group, a kind (choosing cardio puts it into «кардио»)
+// a new exercise of the user's own: two names, a muscle group, a kind (choosing cardio puts it into «кардио»), its
+// muscles (shown as the rules see it until picked)
 function NewExercise({ name: start, group, cancel, done }) {
   const [name, setName] = useState(start);
   const [ru, setRu] = useState("");
   const [grp, setGrp] = useState(group || "спина");
   const [kind, setKind] = useState("reps");
-  const create = () => done({ id: uid(), name: name.trim(), ...(ru.trim() ? { ru: ru.trim() } : {}), group: grp, kind });
+  const [muscles, setMuscles] = useState(null); // null: by the rules for its name and group, as it would be without a pick
+  const draft = { id: "new", name: name.trim(), ru: ru.trim(), group: grp, kind, ...(muscles ? { muscles } : {}) };
+  const create = () => done({ id: uid(), name: name.trim(), ...(ru.trim() ? { ru: ru.trim() } : {}), group: grp, kind,
+    ...(muscles && Object.keys(muscles).length ? { muscles } : {}) });
   return (
     <CreateForm canCreate={!!name.trim()} cancel={cancel} create={create}>
       <NameInput value={name} onChange={setName} placeholder="Название" />
@@ -27,6 +32,7 @@ function NewExercise({ name: start, group, cancel, done }) {
       <div className="mb-3 flex flex-wrap gap-1.5">
         {EX_KINDS.map(([k, l]) => <Chip key={k} secondary on={kind === k} onClick={() => { setKind(k); if (k === "cardio") setGrp("кардио"); }}>{l}</Chip>)}
       </div>
+      {kind !== "cardio" && <div className="mb-3"><MuscleChips ex={draft} worked={musclesOf(draft)} onChange={setMuscles} /></div>}
     </CreateForm>
   );
 }

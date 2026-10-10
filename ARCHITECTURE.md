@@ -69,6 +69,7 @@
 | Карточка упражнения / растяжки: заголовок с ✎, поля названий, картинка с цифрами, список сессий; строка упражнения в карточке сессии | `ExerciseTitle`, `ExerciseNameFields`, `ExerciseStats`, `ExerciseBody` (что работает — схема обычного размера в карточке), `ExerciseSessions`, `ExerciseRow` (`ui/ExerciseCard.jsx`) | |
 | Свойства растяжки (названия, группа, фото, стороны) и её история | `stretch/StretchDetail` (экран `stretchExercise`) | менять их в редакторе программы |
 | Пустая безымянная программа после выхода из редактора | `useDropIfEmpty` + `dropEmptyProgram` (сила и растяжка) | |
+| Выбор мышц упражнения (карточка, новое): основная → 50% → 25% → нет | `strength/MuscleChips` → `cycleMuscle` (`model/muscles.js`) | |
 | Схема тела | `BodyMap` | |
 | Нагрузка по частям тела (схема + список) | `LoadBreakdown` через `strength/MuscleBreakdown` / `stretch/StretchBreakdown` | |
 | Мышцы / группы за период — один блок для истории и карточки сессии (день / неделя / месяц / год) | `PeriodCard` (заголовок, «?», «в среднем за неделю», пусто, свой переключатель — `onZoom`); считают `strength/MusclesPanel`, `stretch/StretchPanel` | второй блок мышц в карточке |

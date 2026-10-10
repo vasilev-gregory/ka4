@@ -140,15 +140,17 @@ test("changing an exercise's muscles asks first: it recounts the whole history",
   await page.getByText("Приседания со штангой").click();
   await expect(page.getByText("Мышцы: квадрицепс; помогают: ягодицы")).toBeVisible();
   await page.getByRole("button", { name: "Изменить" }).click();
-  await page.getByRole("button", { name: "ягодицы", exact: true }).click();
+  await page.getByRole("button", { name: "ягодицы 50%", exact: true }).click();
   const ask = page.getByRole("dialog", { name: "Пересчитать всю историю?" });
   await expect(ask.getByText(/для всех его тренировок \(3\)/)).toBeVisible();
   await ask.getByRole("button", { name: "Отмена" }).click();
   await expect(page.getByText("Мышцы: квадрицепс; помогают: ягодицы")).toBeVisible(); // nothing changed
 
-  await page.getByRole("button", { name: "ягодицы", exact: true }).click();
+  await page.getByRole("button", { name: "ягодицы 50%", exact: true }).click();
   await ask.getByRole("button", { name: "Пересчитать" }).click();
-  await expect(page.getByText("Мышцы: квадрицепс", { exact: true })).toBeVisible(); // a helping muscle tapped once more: removed
+  await expect(page.getByText("Мышцы: квадрицепс; помогают: ягодицы 25%")).toBeVisible(); // helping 50% → 25%
+  await page.getByRole("button", { name: "ягодицы 25%", exact: true }).click();
+  await expect(page.getByText("Мышцы: квадрицепс", { exact: true })).toBeVisible(); // and once more: removed
   await page.getByRole("button", { name: "бицепс бедра", exact: true }).click(); // asked once per visit
   await expect(ask).toHaveCount(0);
   await expect.poll(async () => (await stored(page)).exercises.find((e) => e.id === "squat").muscles).toEqual({ quads: 1, hams: 1 });

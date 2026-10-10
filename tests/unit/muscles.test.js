@@ -49,15 +49,16 @@ test("rules: the right heads and parts of the legs", () => {
   assert.deepEqual(musclesOf({ id: "x4", name: "Side raise", ru: "Махи в стороны", group: "плечи", kind: "reps" }), { sidedelt: 1 });
 });
 
-test("the user's choice wins; a tap cycles main -> helping -> none; empty = back to the rules", () => {
+test("the user's choice wins; a tap cycles main -> helping 50% -> 25% -> none; empty = back to the rules", () => {
   const e = { ...ex("lateral-raise") };
   e.muscles = cycleMuscle(e, "traps");
   assert.deepEqual(e.muscles, { sidedelt: 1, traps: 1 });
   e.muscles = cycleMuscle(e, "traps");
   assert.equal(musclesOf(e).traps, 0.5);
   e.muscles = cycleMuscle(e, "traps");
-  e.muscles = cycleMuscle(e, "sidedelt");
-  e.muscles = cycleMuscle(e, "sidedelt");
+  assert.equal(musclesOf(e).traps, 0.25);
+  e.muscles = cycleMuscle(e, "traps");
+  for (let i = 0; i < 3; i++) e.muscles = cycleMuscle(e, "sidedelt");
   assert.deepEqual(e.muscles, {});
   assert.deepEqual(musclesOf(e), { sidedelt: 1 });
 });
