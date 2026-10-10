@@ -227,7 +227,7 @@ mountain-climber 0630
 pallof-press 0979
 side-plank 0705
 dead-bug 0276
-russian-twist own-russian-twist 0
+russian-twist own-russian-twist
 waiter-s-walk 4244
 turkish-get-up 0551
 st-hip-flexor-forward 1585
