@@ -1,7 +1,7 @@
 // The running workout: header with time and volume, exercise cards, add / finish / pause, the
 // "update the program?" question, undo of a deleted set, the exercise picker.
 import { useState } from "react";
-import { ClipboardList, ListOrdered, Play, Timer } from "lucide-react";
+import { ChevronLeft, ClipboardList, Play, Timer } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, plural, progTitle } from "../../core/util.js";
 import {
@@ -22,7 +22,7 @@ import { WorkoutHelp } from "./WorkoutHelp.jsx";
 
 const UNKNOWN_EXERCISE = { name: "Удалённое упражнение", kind: "reps" };
 
-export function ActiveWorkout({ data, up, exMap, open }) {
+export function ActiveWorkout({ data, up, exMap, open, onPrograms }) {
   const { bwAt, nm1 } = useApp();
   const a = data.active;
   // {} = add, { group } = add, list opened on that group, { replace: ei } = swap that exercise
@@ -120,7 +120,9 @@ export function ActiveWorkout({ data, up, exMap, open }) {
   return (
     <div className="p-4 pb-44">
       <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
+        {/* back to the programs: the workout goes on (its pill leads back here) */}
+        <button onClick={onPrograms} aria-label="К программам" className="-ml-2 mt-1 shrink-0 p-1 text-neutral-400"><ChevronLeft size={24} /></button>
+        <div className="min-w-0 flex-1">
           <p className="text-xs text-neutral-400">{a.paused ? "На паузе" : segs.length > 1 ? `Продолжение, отрезок ${segs.length}` : "Идёт тренировка"}</p>
           <h1 className="flex items-center gap-2 text-lg font-bold">
             {a.name}
@@ -139,10 +141,6 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           {/* the card it would get if finished now: muscles, progress, text — without finishing */}
           <button onClick={() => open({ type: "workoutNow" })} className="mt-1 flex w-full items-center justify-end gap-1 text-xs text-accent-400">
             <ClipboardList size={14} /> Итог сейчас
-          </button>
-          {/* the other programs, to look at or edit; none starts until this one ends */}
-          <button onClick={() => open({ type: "programs" })} className="mt-1 flex w-full items-center justify-end gap-1 text-xs text-accent-400">
-            <ListOrdered size={14} /> Программы
           </button>
           {/* the rest strip was hidden: bring it back */}
           {!a.restEndsAt && a.lastSetAt && !a.paused && data.settings.countdown !== false && (

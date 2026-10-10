@@ -20,7 +20,6 @@ import { SplitEditor } from "./strength/SplitEditor.jsx";
 import { RestBar } from "./strength/workout/RestBar.jsx";
 import { WorkoutPill } from "./strength/workout/WorkoutPill.jsx";
 import { WorkoutTab } from "./strength/workout/WorkoutTab.jsx";
-import { ProgramList } from "./strength/workout/ProgramList.jsx";
 import { StretchEditor } from "./stretch/StretchEditor.jsx";
 import { StretchHistory } from "./stretch/StretchHistory.jsx";
 import { StretchSession } from "./stretch/StretchSession.jsx";
@@ -87,9 +86,14 @@ function Shell({ data, up, replace, saved }) {
   const playNow = (exerciseIds) => { if (!busy) upStretch((s) => playQuick(s, exerciseIds, Date.now())); };
 
   const sound = data.settings.sound !== false;
-  useEffect(() => setSoundThroughSilent(data.settings.soundSilent), [data.settings.soundSilent]);
+  useEffect(() => setSoundThroughSilent(data.settings.soundSilent !== false), [data.settings.soundSilent]);
   // strips above the tab bar: the content leaves room for them
-  const workoutPill = !!data.active && (stretchMode || tab !== "workout" || !!view);
+  // «‹» in a running workout shows the programs at the tab's root; the pill leads back. Kept per workout (its start),
+  // so the next one opens on itself
+  const [listFor, setListFor] = useState(null);
+  const workoutList = !!data.active && listFor === data.active.startedAt;
+  const setWorkoutList = (on) => setListFor(on && data.active ? data.active.startedAt : null);
+  const workoutPill = !!data.active && (stretchMode || tab !== "workout" || !!view || workoutList);
   const bars = (data.active?.restEndsAt ? 1 : 0) + (data.stretch.active && !runOpen ? 1 : 0) + (workoutPill ? 1 : 0);
   // the screen stays on while a strength workout runs, whatever screen is open (stretching: StretchRun)
   useWakeLock(!!data.active && !data.active.paused);
@@ -108,10 +112,9 @@ function Shell({ data, up, replace, saved }) {
     workoutNow: () => <WorkoutDetail {...common} live />, // the running workout's card as if finished now
     program: (v) => <ProgramEditor {...common} id={v.id} goWorkout={() => nav.setTab("workout")} />,
     split: (v) => <SplitEditor {...common} id={v.id} />,
-    programs: () => <ProgramList {...common} />, // during a workout
   };
   const TABS = {
-    workout: () => (stretchMode ? <StretchHome {...stretchProps} /> : <WorkoutTab {...common} />),
+    workout: () => (stretchMode ? <StretchHome {...stretchProps} /> : <WorkoutTab {...common} list={workoutList} setList={setWorkoutList} />),
     history: () => (stretchMode ? <StretchHistory {...stretchProps} /> : <HistoryTab {...common} />),
     measures: () => <MeasuresTab {...common} openSettings={() => open({ type: "settings" })} />,
     settings: () => <SettingsTab data={data} up={up} saved={saved} setMode={switchMode} replace={restore} onTour={tour.start} />,
@@ -134,7 +137,7 @@ function Shell({ data, up, replace, saved }) {
         <PullToRefresh />
         <FloatingStack>
           {/* a session going on is always in sight: off its own screen, a pill in the corner leads back to it */}
-          {workoutPill && <WorkoutPill active={data.active} onOpen={() => { if (stretchMode) switchMode("strength"); nav.setTab("workout"); }} />}
+          {workoutPill && <WorkoutPill active={data.active} onOpen={() => { if (stretchMode) switchMode("strength"); setWorkoutList(false); nav.setTab("workout"); }} />}
           <StretchRun stretch={data.stretch} upStretch={upStretch} sound={sound} open={runOpen} setOpen={setRunOpen} settings={settings} />
           {data.active?.restEndsAt && (
             <RestBar endsAt={data.active.restEndsAt} total={data.settings.restSec} up={up} sound={sound} label={stretchMode ? "Отдых · сила" : "Отдых"} />

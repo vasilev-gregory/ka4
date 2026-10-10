@@ -1,9 +1,9 @@
 // Timer sounds (Web Audio). Must be unlocked by a user gesture; "ambient" session so music keeps playing.
 export let actx = null;
-let throughSilent = false;
+let throughSilent = true;
 
 // iOS: "ambient" mixes with music but the silent switch mutes it; "playback" sounds through the silent switch (music
-// from another app may be paused by it) — settings.soundSilent
+// from another app may be paused by it) — settings.soundSilent, on unless turned off
 export function setSoundThroughSilent(on) {
   throughSilent = !!on;
   try { if (navigator.audioSession) navigator.audioSession.type = throughSilent ? "playback" : "ambient"; } catch (e) {}
@@ -37,18 +37,18 @@ export function tone(freq, at, len, vol = 0.35) {
 // short tick for the 3-2-1 countdown
 export function tick() {
   if (!actx) return;
-  try { wake(); tone(660, 0, 0.09, 0.3); } catch (e) {}
+  try { wake(); tone(660, 0, 0.09, 0.6); } catch (e) {}
 }
 
 // soft blip when rest starts
 export function blip() {
   if (!actx) return;
-  try { wake(); tone(520, 0, 0.07, 0.15); } catch (e) {}
+  try { wake(); tone(520, 0, 0.07, 0.35); } catch (e) {}
 }
 
 export function beep() {
   if (!actx) return;
-  try { wake(); tone(988, 0, 0.18); tone(988, 0.22, 0.18); tone(1319, 0.44, 0.45); } catch (e) {}
+  try { wake(); tone(988, 0, 0.18, 0.9); tone(988, 0.22, 0.18, 0.9); tone(1319, 0.44, 0.45, 0.9); } catch (e) {}
 }
 
 // Vibration: a short buzz for a touch that took (long press, drag), a long one for "time to act" (with beep()).
