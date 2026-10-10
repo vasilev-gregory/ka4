@@ -4,7 +4,7 @@ import { ASSIST_DEFAULTS, BW_DEFAULTS, EX_MERGES, EX_RENAMES, SEED_EX, ST_AREA_D
 
 export const KEY = "gymapp-state-v1";
 // bumped whenever migrate() learns a new upgrade step
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 export function seed() {
   const exercises = SEED_EX.map(([name, ru, group, kind]) => ({ id: slug(name), name, ru, group, kind: kind || "reps" }));
@@ -98,6 +98,8 @@ export function migrate(d) {
   // v6: «трапеции и ромбы» split into the upper trapezius (traps) and the middle of the back (midback): an exercise's own
   // muscles that had the trapezius get the middle of the back too, once
   if ((d.version || 0) < 6) d.exercises.forEach((e) => { if (e.muscles && e.muscles.traps && !e.muscles.midback) e.muscles.midback = e.muscles.traps; });
+  // v7: the first-launch tour is for new installs; data from before it has seen the app already
+  if ((d.version || 0) < 7 && d.settings && d.settings.tourDone === undefined) d.settings.tourDone = true;
   d.version = SCHEMA_VERSION;
   return d;
 }

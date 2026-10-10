@@ -73,6 +73,7 @@
 | Мышцы / группы за период — один блок для истории и карточки сессии (день / неделя / месяц / год) | `PeriodCard` (заголовок, «?», «в среднем за неделю», пусто, свой переключатель — `onZoom`); считают `strength/MusclesPanel`, `stretch/StretchPanel` | второй блок мышц в карточке |
 | Блок упражнения (шапка, строки, сворачивание по нажатию и строка-сводка) — один в тренировке, «Итоге сейчас», карточке, истории | `ExerciseRow` + `useFolds` (`ui/ExerciseCard.jsx`), сводка — `foldSummary` (`model/workout.js`) | ⚙ своё сворачивание / своя шапка упражнения в экране |
 | Упражнения сессии с подходами (карточка и «День» истории) | `WorkoutExercises` (`strength/History.jsx`), `StretchHeld` (`stretch/StretchSession.jsx`) | |
+| Обзор при первом запуске (карточки по вкладкам, повтор из Настроек) | `shell/Tour` (`TOUR`, `useTour`), пульс значка — `TabBar` `pulse` | |
 | Карточка переезда на новый адрес (только на старом) | `shell/MoveBanner` (`NEW_HOME`, `isOldHome`) | |
 | Календарь истории | `PeriodNav`, `usePeriod`, `PeriodCard` | |
 | Строка истории, заголовок карточки сессии, плитки чисел, её упражнения только на «Дне» | `HistoryRow`, `SessionHeader`, `StatTiles`, `DayOnly` (`ui/Session.jsx`) | |
