@@ -22,7 +22,7 @@ export function WorkoutHelp({ rirOn, onClose }) {
   return (
     <Sheet title="Как работать с подходами" onClose={onClose}>
       <ul className="space-y-2 text-sm text-neutral-300">
-        <Row how="Свайп вправо" what="подход сделан (ещё раз — снять отметку)" />
+        <Row how="Свайп вправо" what="выбрать подход (ещё раз — снять выбор): объединить в дроп-сет или удалить" />
         {rirOn && <Row how="Удержание ✓" what="веер RIR: потяни к 0–4+ и отпусти — подход сделан с этим RIR" />}
         <Row how="Свайп влево" what="удалить подход, можно вернуть" />
         <Row how="Свайп упражнения" what="по названию: влево — убрать, вправо — заменить" />

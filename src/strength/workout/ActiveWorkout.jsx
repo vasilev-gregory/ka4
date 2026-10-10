@@ -37,7 +37,7 @@ export function ActiveWorkout({ data, up, exMap, open, onPrograms }) {
   const { drag: colDrag, headerProps } = useHoldReorder((from, to) => up((d) => A.moveColumn(d.settings, from, to)));
   const folds = useFolds(`workout:${a.startedAt}`); // folded by a tap only
   const longPress = useLongPress();
-  const { swipe, bind: swipeBind } = useSwipeRows({ disabled: !!sel, onStart: longPress.cancel });
+  const { swipe, bind: swipeBind } = useSwipeRows({ onStart: longPress.cancel }); // while picking: right picks more, left does nothing
   const { swipe: exSwipe, bind: exSwipeBind } = useSwipeRows({ disabled: !!sel || sort.dragging });
 
   const cols = setColumns(data.settings);
@@ -87,12 +87,15 @@ export function ActiveWorkout({ data, up, exMap, open, onPrograms }) {
     swipeSet: (si, dir) => {
       const s = a.exercises[ei]?.sets[si];
       if (!s) return;
-      if (dir > 0) {
-        unlockAudio();
-        up((d) => A.toggleSet(d, ei, si));
-        undo.offer(s.done ? "Отметка снята" : "Подход отмечен", () => up((d) => { A.toggleSet(d, ei, si); if (!s.done) A.clearRest(d); }));
+      if (dir > 0) { // right: pick the set (as a hold on its number does), again — unpick
+        setSel((prev) => {
+          const n = new Set(prev && prev.ei === ei ? prev.set : []);
+          if (n.has(si)) n.delete(si); else n.add(si);
+          return n.size ? { ei, set: n } : null;
+        });
         return;
       }
+      if (sel) return;
       const removed = structuredClone(s);
       up((d) => A.deleteSet(d, ei, si));
       undo.offer("Подход удалён", () => up((d) => A.restoreSet(d, ei, si, removed)));

@@ -26,6 +26,7 @@ const BUILT_IN = {
   "one-arm-reverse-fly": ["dumbbell"], "one-arm-triceps-kickback": ["dumbbell"], "one-arm-wrist-curl": ["dumbbell"],
   "suitcase-carry": ["dumbbell"], "bench-dips": ["body"], "barbell-hack-squat": ["barbell"],
   "machine-lat-pulldown": ["machine"], "one-arm-machine-lat-pulldown": ["machine"],
+  "pure-plate-rotary-pulldown": ["machine"], "one-arm-pure-plate-rotary-pulldown": ["machine"],
   "dumbbell-sumo-squat": ["dumbbell"], "dumbbell-deadlift": ["dumbbell"], "dumbbell-lying-leg-curl": ["dumbbell"], "arnold-press": ["dumbbell"],
   "plate-front-raise": ["barbell"], "sled-push": ["machine"], "step-up": ["body"],
   "dead-bug": ["body"], "russian-twist": ["body"], "side-plank": ["body"], "wall-sit": ["body"], "superman": ["body"], "v-up": ["body"], "mountain-climber": ["body"],

@@ -50,8 +50,8 @@ export function SetRow({ s, ex, cols, rirOn, label, grouped, selected, rest, liv
   return (
     <div ref={rowRef} className={`relative overflow-hidden rounded-lg ${grouped ? "mt-0.5" : "mt-1.5"}`}>
       {swipe && (
-        <div className={`absolute inset-0 flex items-center px-4 text-xs font-semibold ${swipe.dx > 0 ? "justify-start bg-accent-400 text-black" : "justify-end bg-red-600 text-white"}`}>
-          {swipe.dx > 0 ? (s.done ? "Снять отметку" : "Сделано") : "Удалить"}
+        <div className={`absolute inset-0 flex items-center px-4 text-xs font-semibold ${swipe.dx > 0 ? "justify-start bg-neutral-600 text-white" : "justify-end bg-red-600 text-white"}`}>
+          {swipe.dx > 0 ? (selected ? "Снять выбор" : "Выбрать") : "Удалить"}
         </div>
       )}
       <div {...swipeProps}
