@@ -24,6 +24,8 @@ function pickAt(dx, dy) {
 // browser has not started a scroll by the time the dial opens
 let opened = false;
 const block = (e) => { if (opened) e.preventDefault(); };
+// a set marked (tap or dial) means its typing is over: the field that had the cursor lets go, the keyboard closes
+const endTyping = () => { const el = document.activeElement; if (el && el.tagName === "INPUT") el.blur(); };
 
 // onTap: a plain tap (✓); onPick(rir): a value picked on the dial; enabled: false = a plain ✓ (warm-up, cardio)
 // → { bind: props for ✓, dial: the fan to render }. The fan follows ✓ on screen every frame while shown: the page
@@ -63,6 +65,9 @@ export function useRirDial({ onTap, onPick, enabled }) {
         opened = true;
         fired.current = true;
         vibrate(20);
+        // an open keyboard shifts iOS's visual viewport, and the fan (fixed, in a portal) would open off ✓ — the typing
+        // is over anyway; the fan follows ✓ every frame while the keyboard closes
+        endTyping();
         setAt(centre());
         setDial({ pick: null });
       }, HOLD);
@@ -87,7 +92,7 @@ export function useRirDial({ onTap, onPick, enabled }) {
     },
     onPointerUp: () => {
       const s = st.current;
-      if (s && s.open && s.pick != null) onPick(s.pick);
+      if (s && s.open && s.pick != null) { onPick(s.pick); endTyping(); }
       if (s && s.open) close();
       else release();
     },
@@ -95,6 +100,7 @@ export function useRirDial({ onTap, onPick, enabled }) {
     onClick: () => {
       if (fired.current) { fired.current = false; return; } // the dial had it
       onTap();
+      endTyping();
       if (!enabled) return;
       setAt(centre());
       setDial({ pick: null, flash: true });
