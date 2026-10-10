@@ -1,0 +1,29 @@
+{
+ "extends": "templates/chest-pullover.json",
+ "poses": [
+  {
+   "torso": 270,
+   "arms": [
+    6,
+    2
+   ],
+   "legs": [
+    105,
+    180,
+    95
+   ]
+  },
+  {
+   "torso": 270,
+   "arms": [
+    258,
+    250
+   ],
+   "legs": [
+    105,
+    180,
+    95
+   ]
+  }
+ ]
+}

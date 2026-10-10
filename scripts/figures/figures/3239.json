@@ -1,0 +1,51 @@
+{
+ "extends": "templates/core-plank.json",
+ "anchor": [
+  "nearKnee",
+  [
+   -0.3,
+   0.07
+  ]
+ ],
+ "contact": [
+  "farWrist",
+  0.04
+ ],
+ "poses": [
+  {
+   "torso": 90,
+   "head": 90,
+   "arms": [
+    180,
+    180,
+    90
+   ],
+   "legs": [
+    270,
+    330,
+    330
+   ]
+  },
+  {
+   "torso": 90,
+   "head": 90,
+   "arms": {
+    "near": [
+     140,
+     330,
+     330
+    ],
+    "far": [
+     180,
+     180,
+     90
+    ]
+   },
+   "legs": [
+    270,
+    330,
+    330
+   ]
+  }
+ ]
+}

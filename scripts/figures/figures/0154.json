@@ -1,0 +1,18 @@
+{
+ "extends": "templates/sh-bent-rear-fly.json",
+ "equipment": [
+  {
+   "type": "cable",
+   "from": [
+    0.45,
+    0.12
+   ],
+   "on": [
+    "nearHand"
+   ]
+  },
+  {
+   "type": "handle"
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+{
+ "extends": "templates/legs-glute-bridge.json",
+ "anchor": [
+  "nearAnkle",
+  [
+   0.5,
+   0.09
+  ]
+ ],
+ "poses": [
+  {
+   "torso": 270,
+   "arms": [
+    90,
+    90,
+    90
+   ],
+   "legs": {
+    "near": [
+     40,
+     150,
+     95
+    ],
+    "far": [
+     60,
+     60,
+     0
+    ]
+   },
+   "head": 270
+  },
+  {
+   "torso": 250,
+   "arms": [
+    80,
+    80,
+    90
+   ],
+   "legs": {
+    "near": [
+     72,
+     168,
+     95
+    ],
+    "far": [
+     72,
+     72,
+     0
+    ]
+   },
+   "head": 265
+  }
+ ]
+}

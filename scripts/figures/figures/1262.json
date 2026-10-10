@@ -1,0 +1,77 @@
+{
+ "extends": "templates/chest-decline-fly.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    0.028,
+    0.44
+   ],
+   "length": 1.1,
+   "angle": 70
+  },
+  {
+   "type": "roller",
+   "at": [
+    0.56,
+    0.2
+   ],
+   "r": 0.07
+  },
+  {
+   "type": "cable",
+   "from": [
+    -0.8,
+    0.1
+   ]
+  },
+  {
+   "type": "handle",
+   "on": [
+    "nearHand"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 250,
+   "arms": {
+    "near": [
+     2,
+     2
+    ],
+    "far": [
+     75,
+     75
+    ]
+   },
+   "legs": [
+    100,
+    200,
+    120
+   ]
+  },
+  {
+   "torso": 250,
+   "arms": {
+    "near": [
+     156,
+     162
+    ],
+    "far": [
+     75,
+     75
+    ]
+   },
+   "legs": [
+    100,
+    200,
+    120
+   ],
+   "shorten": {
+    "upperArm": 0.35,
+    "forearm": 0.35
+   }
+  }
+ ]
+}

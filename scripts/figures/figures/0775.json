@@ -1,0 +1,23 @@
+{
+ "extends": "templates/sh-upright-row-front.json",
+ "equipment": [
+  {
+   "type": "rails",
+   "at": [
+    0.62,
+    0
+   ]
+  },
+  {
+   "type": "rails",
+   "at": [
+    -0.62,
+    0
+   ]
+  },
+  {
+   "type": "barbell",
+   "half": 0.62
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+{
+ "view": "side",
+ "anchor": [
+  "hip",
+  [
+   0.05,
+   0.98
+  ]
+ ],
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.55,
+    0.85
+   ],
+   "length": 1.0,
+   "angle": 90
+  },
+  {
+   "type": "roller",
+   "at": "nearAnkle",
+   "r": 0.06
+  }
+ ],
+ "poses": [
+  {
+   "torso": 88,
+   "head": 92,
+   "arms": [
+    248,
+    112
+   ],
+   "legs": [
+    270,
+    270,
+    185
+   ]
+  },
+  {
+   "torso": 168,
+   "head": 175,
+   "arms": [
+    328,
+    192
+   ],
+   "legs": [
+    270,
+    270,
+    185
+   ]
+  }
+ ]
+}

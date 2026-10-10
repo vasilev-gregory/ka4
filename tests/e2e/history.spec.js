@@ -143,6 +143,7 @@ test("exercise chart: metric, a period paged like the history, drag to zoom and 
 test("changing an exercise's muscles asks first: it recounts the whole history", async ({ page }) => {
   await page.getByText("Октябрьская").click();
   await page.getByText("Приседания со штангой").click();
+  await expect(page.getByRole("img", { name: "Как выполняется" })).toBeVisible(); // a built-in: the figure doing it
   await expect(page.getByText("Мышцы: квадрицепс; помогают: ягодицы")).toBeVisible();
   await page.getByRole("button", { name: "Изменить" }).click();
   await page.getByRole("button", { name: "ягодицы 50%", exact: true }).click();

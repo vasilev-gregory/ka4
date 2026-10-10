@@ -1,0 +1,23 @@
+{
+ "extends": "templates/legs-prone-leg-curl.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    0.25,
+    0.415
+   ],
+   "length": 1.1
+  },
+  {
+   "type": "lever",
+   "from": [
+    -0.44,
+    0.52
+   ],
+   "on": [
+    "nearAnkle"
+   ]
+  }
+ ]
+}

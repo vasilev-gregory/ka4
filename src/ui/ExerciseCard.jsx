@@ -31,17 +31,19 @@ export function ExerciseNameFields({ ex, onChange }) {
   );
 }
 
-// the picture and a few numbers: stats [[value, label, accent?], …]
+// the picture (the figure doing it, for a built-in) and a few numbers: stats [[value, label, accent?], …]
 export function ExerciseStats({ ex, stats }) {
   return (
     <div className="mb-4 flex items-center gap-6">
-      <ExImg ex={ex} size={64} />
-      {stats.map(([v, l, accent]) => (
-        <div key={l}>
-          <div className={`text-2xl font-bold tabular-nums ${accent ? "text-accent-400" : ""}`}>{v}</div>
-          <div className="text-xs text-neutral-400">{l}</div>
-        </div>
-      ))}
+      <ExImg ex={ex} size={ex.photo ? 64 : 112} label="Как выполняется" />
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        {stats.map(([v, l, accent]) => (
+          <div key={l}>
+            <div className={`text-2xl font-bold tabular-nums ${accent ? "text-accent-400" : ""}`}>{v}</div>
+            <div className="text-xs text-neutral-400">{l}</div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,0 +1,49 @@
+{
+ "extends": "templates/sh-upright-row-front.json",
+ "equipment": [
+  {
+   "type": "dumbbell",
+   "on": [
+    "nearHand"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": {
+    "near": [
+     188,
+     182
+    ],
+    "far": [
+     178,
+     178
+    ]
+   },
+   "legs": [
+    180,
+    180,
+    120
+   ]
+  },
+  {
+   "torso": 0,
+   "arms": {
+    "near": [
+     122,
+     300
+    ],
+    "far": [
+     178,
+     178
+    ]
+   },
+   "legs": [
+    180,
+    180,
+    120
+   ]
+  }
+ ]
+}

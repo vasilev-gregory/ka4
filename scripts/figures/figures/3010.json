@@ -1,0 +1,31 @@
+{
+ "extends": "templates/back-pullover.json",
+ "poses": [
+  {
+   "torso": 270,
+   "head": 270,
+   "arms": [
+    12,
+    325
+   ],
+   "legs": [
+    95,
+    180,
+    95
+   ]
+  },
+  {
+   "torso": 270,
+   "head": 270,
+   "arms": [
+    272,
+    205
+   ],
+   "legs": [
+    95,
+    180,
+    95
+   ]
+  }
+ ]
+}

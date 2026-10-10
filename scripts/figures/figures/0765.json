@@ -1,0 +1,60 @@
+{
+ "extends": "templates/sh-seat-bar-press-side.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.05,
+    0.36
+   ],
+   "length": 0.55,
+   "angle": 90
+  },
+  {
+   "type": "bench",
+   "at": [
+    -0.2,
+    0.8
+   ],
+   "length": 0.66,
+   "angle": 2
+  },
+  {
+   "type": "rails",
+   "at": [
+    0.13,
+    0
+   ]
+  },
+  {
+   "type": "barbell",
+   "r": 0.12
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": [
+    12,
+    8
+   ],
+   "legs": [
+    92,
+    180,
+    95
+   ]
+  },
+  {
+   "torso": 0,
+   "arms": [
+    155,
+    8
+   ],
+   "legs": [
+    92,
+    180,
+    95
+   ]
+  }
+ ]
+}

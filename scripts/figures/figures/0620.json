@@ -1,0 +1,50 @@
+{
+ "extends": "templates/core-leg-raise.json",
+ "poses": [
+  {
+   "torso": 270,
+   "head": 275,
+   "arms": [
+    90,
+    90,
+    90
+   ],
+   "legs": [
+    105,
+    105,
+    75
+   ]
+  },
+  {
+   "torso": 270,
+   "head": 275,
+   "arms": [
+    90,
+    90,
+    90
+   ],
+   "legs": [
+    2,
+    2,
+    332
+   ]
+  }
+ ],
+ "anchor": [
+  "hip",
+  [
+   0.0,
+   0.6
+  ]
+ ],
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.2,
+    0.42
+   ],
+   "length": 1.3
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+{
+ "view": "side",
+ "poses": [
+  {
+   "torso": 0,
+   "head": 5,
+   "arms": [
+    30,
+    255,
+    0
+   ],
+   "legs": [
+    178,
+    186,
+    95
+   ]
+  },
+  {
+   "torso": 55,
+   "head": 70,
+   "arms": [
+    85,
+    310,
+    55
+   ],
+   "legs": [
+    172,
+    190,
+    95
+   ]
+  }
+ ],
+ "anchor": [
+  "nearAnkle",
+  [
+   0,
+   0.09
+  ]
+ ],
+ "equipment": [
+  {
+   "type": "cable",
+   "from": [
+    -0.55,
+    2.2
+   ],
+   "on": [
+    "nearHand"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,50 @@
+{
+ "extends": "templates/sh-press-front.json",
+ "equipment": [
+  {
+   "type": "dumbbell",
+   "axis": 90,
+   "on": [
+    "nearHand"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": {
+    "near": [
+     100,
+     8
+    ],
+    "far": [
+     178,
+     178
+    ]
+   },
+   "legs": [
+    180,
+    180,
+    120
+   ]
+  },
+  {
+   "torso": 0,
+   "arms": {
+    "near": [
+     12,
+     4
+    ],
+    "far": [
+     178,
+     178
+    ]
+   },
+   "legs": [
+    180,
+    180,
+    120
+   ]
+  }
+ ]
+}

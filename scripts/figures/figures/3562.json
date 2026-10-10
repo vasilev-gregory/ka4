@@ -1,0 +1,50 @@
+{
+ "extends": "templates/legs-hip-thrust.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.6,
+    0.355
+   ],
+   "length": 0.6
+  },
+  {
+   "type": "barbell",
+   "on": [
+    "hip"
+   ],
+   "r": 0.2
+  }
+ ],
+ "poses": [
+  {
+   "torso": 302.6,
+   "arms": [
+    150,
+    60,
+    60
+   ],
+   "legs": [
+    51.5,
+    159.9,
+    95
+   ],
+   "head": 300
+  },
+  {
+   "torso": 265.4,
+   "arms": [
+    120,
+    60,
+    60
+   ],
+   "legs": [
+    93.0,
+    183.7,
+    95
+   ],
+   "head": 275
+  }
+ ]
+}

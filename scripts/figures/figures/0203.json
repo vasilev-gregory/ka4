@@ -1,0 +1,46 @@
+{
+ "extends": "templates/sh-bent-rear-row.json",
+ "equipment": [
+  {
+   "type": "cable",
+   "from": [
+    0.95,
+    0.12
+   ],
+   "on": [
+    "nearHand"
+   ]
+  },
+  {
+   "type": "handle"
+  }
+ ],
+ "poses": [
+  {
+   "torso": 72,
+   "head": 70,
+   "legs": [
+    165,
+    192,
+    95
+   ],
+   "arms": [
+    140,
+    140
+   ]
+  },
+  {
+   "torso": 72,
+   "head": 70,
+   "legs": [
+    165,
+    192,
+    95
+   ],
+   "arms": [
+    268,
+    160
+   ]
+  }
+ ]
+}

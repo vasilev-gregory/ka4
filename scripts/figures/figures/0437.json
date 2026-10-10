@@ -1,0 +1,8 @@
+{
+ "extends": "templates/sh-upright-row-front.json",
+ "equipment": [
+  {
+   "type": "dumbbell"
+  }
+ ]
+}

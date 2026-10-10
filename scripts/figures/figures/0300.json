@@ -1,0 +1,35 @@
+{
+ "extends": "templates/legs-deadlift.json",
+ "equipment": [
+  {
+   "type": "dumbbell"
+  }
+ ],
+ "poses": [
+  {
+   "torso": 60.8,
+   "arms": [
+    180,
+    180
+   ],
+   "legs": [
+    100,
+    205,
+    95
+   ],
+   "head": 45
+  },
+  {
+   "torso": 0,
+   "arms": [
+    180,
+    180
+   ],
+   "legs": [
+    180,
+    180,
+    95
+   ]
+  }
+ ]
+}

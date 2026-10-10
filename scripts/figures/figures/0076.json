@@ -1,0 +1,9 @@
+{
+ "extends": "templates/sh-bent-rear-row.json",
+ "equipment": [
+  {
+   "type": "barbell",
+   "r": 0.12
+  }
+ ]
+}

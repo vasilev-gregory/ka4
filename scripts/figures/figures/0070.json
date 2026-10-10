@@ -1,0 +1,36 @@
+{
+ "extends": "templates/bi-preacher-curl.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.15,
+    0.36
+   ],
+   "length": 0.7,
+   "angle": 90
+  },
+  {
+   "type": "rails",
+   "at": [
+    0.159,
+    0
+   ],
+   "h": 0.628
+  },
+  {
+   "type": "pad",
+   "at": [
+    0.209,
+    0.778
+   ],
+   "w": 0.4,
+   "h": 0.12,
+   "angle": 135.0
+  },
+  {
+   "type": "barbell",
+   "r": 0.15
+  }
+ ]
+}

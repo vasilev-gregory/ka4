@@ -1,0 +1,60 @@
+{
+ "view": "side",
+ "anchor": [
+  "hip",
+  [
+   0,
+   0.52
+  ]
+ ],
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.05,
+    0.36
+   ],
+   "length": 0.55,
+   "angle": 90
+  },
+  {
+   "type": "bench",
+   "at": [
+    -0.2,
+    0.8
+   ],
+   "length": 0.66,
+   "angle": 2
+  },
+  {
+   "type": "barbell",
+   "r": 0.12
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": [
+    140,
+    15
+   ],
+   "legs": [
+    92,
+    180,
+    95
+   ]
+  },
+  {
+   "torso": 0,
+   "arms": [
+    4,
+    2
+   ],
+   "legs": [
+    92,
+    180,
+    95
+   ]
+  }
+ ]
+}

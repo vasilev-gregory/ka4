@@ -8,7 +8,7 @@ import { fmtDur, progTitle, weekStartOf } from "../core/util.js";
 import { AREA_PARTS, PHASE, areaOf, stExMap, stretchWeek } from "../model/stretch.js";
 import { QUICK, findProgram } from "../model/stretchActions.js";
 import { BodyMap } from "../ui/BodyMap.jsx";
-import { Button, ConfirmButton, ExImg, ProgressBar, SessionPill, exPhoto, useApp } from "../ui/kit.jsx";
+import { Button, ConfirmButton, ExImg, ProgressBar, SessionPill, exHasPicture, useApp } from "../ui/kit.jsx";
 import { usePullDown } from "../ui/gestures.js";
 import { StretchBreakdown } from "./StretchBreakdown.jsx";
 import { StretchEditor } from "./StretchEditor.jsx";
@@ -77,7 +77,7 @@ export function StretchPlayer({ stretch, upStretch, run, act, settings }) {
             </div>
             {resting && shownEx && <div className="mb-1 text-sm text-neutral-500">Следующая</div>}
             <div className="flex items-center gap-3">
-              {shownEx && exPhoto(shownEx) && <ExImg ex={shownEx} size={140} />}
+              {shownEx && exHasPicture(shownEx) && <ExImg ex={shownEx} size={140} />}
               {parts.length > 0 && (
                 <div className="flex flex-col items-center">
                   <BodyMap parts={parts} fill={Object.fromEntries(parts.map((m) => [m, 1]))} small title="Что тянется" />

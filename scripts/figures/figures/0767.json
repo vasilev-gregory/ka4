@@ -1,0 +1,25 @@
+{
+ "extends": "templates/back-shrug.json",
+ "equipment": [
+  {
+   "type": "rails",
+   "at": [
+    0.8,
+    0
+   ],
+   "h": 2.1
+  },
+  {
+   "type": "rails",
+   "at": [
+    -0.8,
+    0
+   ],
+   "h": 2.1
+  },
+  {
+   "type": "barbell",
+   "half": 0.62
+  }
+ ]
+}

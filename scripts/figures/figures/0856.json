@@ -1,0 +1,9 @@
+{
+ "extends": "templates/chest-standing-press.json",
+ "equipment": [
+  {
+   "type": "plate",
+   "r": 0.13
+  }
+ ]
+}

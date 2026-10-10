@@ -1,0 +1,52 @@
+{
+ "extends": "templates/chest-decline-press.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    0.028,
+    0.44
+   ],
+   "length": 1.1,
+   "angle": 70
+  },
+  {
+   "type": "roller",
+   "at": [
+    0.56,
+    0.2
+   ],
+   "r": 0.07
+  },
+  {
+   "type": "barbell",
+   "r": 0.17
+  }
+ ],
+ "poses": [
+  {
+   "torso": 250,
+   "arms": [
+    2,
+    2
+   ],
+   "legs": [
+    100,
+    200,
+    120
+   ]
+  },
+  {
+   "torso": 250,
+   "arms": [
+    252,
+    250
+   ],
+   "legs": [
+    100,
+    200,
+    120
+   ]
+  }
+ ]
+}

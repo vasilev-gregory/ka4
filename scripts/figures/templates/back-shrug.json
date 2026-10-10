@@ -1,0 +1,46 @@
+{
+ "view": "front",
+ "anchor": [
+  "hip",
+  [
+   0,
+   0.97
+  ]
+ ],
+ "equipment": [
+  {
+   "type": "dumbbell",
+   "axis": 0
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": [
+    176,
+    178
+   ],
+   "legs": [
+    180,
+    180,
+    120
+   ]
+  },
+  {
+   "torso": 0,
+   "arms": [
+    176,
+    178
+   ],
+   "legs": [
+    180,
+    180,
+    120
+   ],
+   "shorten": {
+    "torso": 1.18,
+    "neck": 0.1
+   }
+  }
+ ]
+}

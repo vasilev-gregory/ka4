@@ -1,0 +1,8 @@
+{
+ "extends": "templates/legs-romanian-deadlift.json",
+ "equipment": [
+  {
+   "type": "dumbbell"
+  }
+ ]
+}

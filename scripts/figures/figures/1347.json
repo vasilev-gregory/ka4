@@ -1,0 +1,41 @@
+{
+ "extends": "templates/back-lever-pulldown.json",
+ "poses": [
+  {
+   "torso": -4,
+   "arms": {
+    "near": [
+     10,
+     6
+    ],
+    "far": [
+     150,
+     95
+    ]
+   },
+   "legs": [
+    88,
+    192,
+    95
+   ]
+  },
+  {
+   "torso": -8,
+   "arms": {
+    "near": [
+     170,
+     14
+    ],
+    "far": [
+     150,
+     95
+    ]
+   },
+   "legs": [
+    88,
+    192,
+    95
+   ]
+  }
+ ]
+}

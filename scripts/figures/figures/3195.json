@@ -1,0 +1,74 @@
+{
+ "extends": "templates/legs-prone-leg-curl.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    0.25,
+    0.415
+   ],
+   "length": 1.1
+  },
+  {
+   "type": "lever",
+   "from": [
+    -0.44,
+    0.52
+   ],
+   "on": [
+    "nearAnkle"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 90,
+   "arms": [
+    100,
+    160,
+    160
+   ],
+   "legs": [
+    270,
+    270,
+    180
+   ],
+   "head": 95
+  },
+  {
+   "torso": 90,
+   "arms": [
+    100,
+    160,
+    160
+   ],
+   "legs": [
+    270,
+    15,
+    280
+   ],
+   "head": 95
+  },
+  {
+   "torso": 90,
+   "arms": [
+    100,
+    160,
+    160
+   ],
+   "legs": {
+    "near": [
+     270,
+     15,
+     280
+    ],
+    "far": [
+     270,
+     270,
+     180
+    ]
+   },
+   "head": 95
+  }
+ ]
+}

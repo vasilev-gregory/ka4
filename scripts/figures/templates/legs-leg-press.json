@@ -1,0 +1,65 @@
+{
+ "view": "side",
+ "anchor": [
+  "hip",
+  [
+   0,
+   0.45
+  ]
+ ],
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.28,
+    0.5
+   ],
+   "length": 0.7,
+   "angle": 300
+  },
+  {
+   "type": "bench",
+   "at": [
+    0.05,
+    0.33
+   ],
+   "length": 0.4,
+   "angle": 75
+  },
+  {
+   "type": "pad",
+   "at": "nearAnkle",
+   "w": 0.5,
+   "h": 0.06,
+   "angle": 135
+  }
+ ],
+ "poses": [
+  {
+   "torso": 300,
+   "arms": [
+    120,
+    60
+   ],
+   "legs": [
+    15,
+    150,
+    50
+   ],
+   "head": 300
+  },
+  {
+   "torso": 300,
+   "arms": [
+    120,
+    60
+   ],
+   "legs": [
+    47,
+    47,
+    330
+   ],
+   "head": 300
+  }
+ ]
+}

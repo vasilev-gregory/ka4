@@ -1,0 +1,9 @@
+{
+ "extends": "templates/back-shrug.json",
+ "equipment": [
+  {
+   "type": "barbell",
+   "half": 0.62
+  }
+ ]
+}

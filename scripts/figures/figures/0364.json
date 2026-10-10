@@ -1,0 +1,64 @@
+{
+ "extends": "templates/arms-seated-wrist-curl.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.12,
+    0.335
+   ],
+   "length": 0.62,
+   "angle": 90
+  },
+  {
+   "type": "dumbbell",
+   "on": [
+    "nearHand"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 30,
+   "head": 48,
+   "legs": [
+    90.1,
+    176.0,
+    95
+   ],
+   "arms": {
+    "near": [
+     173.7,
+     98.7,
+     150
+    ],
+    "far": [
+     173.7,
+     98.7,
+     100
+    ]
+   }
+  },
+  {
+   "torso": 30,
+   "head": 48,
+   "legs": [
+    90.1,
+    176.0,
+    95
+   ],
+   "arms": {
+    "near": [
+     173.7,
+     98.7,
+     35
+    ],
+    "far": [
+     173.7,
+     98.7,
+     100
+    ]
+   }
+  }
+ ]
+}

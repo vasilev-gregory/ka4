@@ -1,0 +1,41 @@
+{
+ "extends": "templates/cable-triceps-pushdown.json",
+ "poses": [
+  {
+   "torso": 8,
+   "arms": {
+    "near": [
+     178,
+     40
+    ],
+    "far": [
+     180,
+     178
+    ]
+   },
+   "legs": [
+    180,
+    180,
+    95
+   ]
+  },
+  {
+   "torso": 8,
+   "arms": {
+    "near": [
+     182,
+     178
+    ],
+    "far": [
+     180,
+     178
+    ]
+   },
+   "legs": [
+    180,
+    180,
+    95
+   ]
+  }
+ ]
+}
