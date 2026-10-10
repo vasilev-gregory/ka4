@@ -91,7 +91,6 @@ export function toggleSet(d, ei, si, now = Date.now()) {
   // only partials typed: no full reps were done, so 0 (not last time's reps)
   if (s.r === "" && num(s.p) > 0) s.r = "0";
   if (s.r === "" && s.hr) s.r = s.hr;
-  if (!s.p && s.hp) s.p = s.hp;
   if (s.t !== "w" && (num(s.p) > 0 || (s.g && s.rir == null))) s.rir = 0; // to failure
   const prev = a.lastSetAt;
   if (a.paused) resumeWorkout(d, now);
@@ -116,7 +115,7 @@ export function markSetRir(d, ei, si, rir, now = Date.now()) {
 // a new set takes its hints from the last one
 export function addSet(d, ei) {
   const ss = d.active.exercises[ei].sets, l = ss[ss.length - 1];
-  ss.push({ w: "", r: "", p: "", hw: l ? l.w || l.hw || "" : "", hr: l ? l.r || l.hr || "" : "", hp: l ? l.p || l.hp || "" : "", done: false });
+  ss.push({ w: "", r: "", p: "", hw: l ? l.w || l.hw || "" : "", hr: l ? l.r || l.hr || "" : "", done: false });
 }
 
 export function deleteSet(d, ei, si) {
