@@ -85,8 +85,7 @@
  * @property {number|null} [rest]       rest before it, fixed at the tick (ms; null: none — first, or across a pause)
  * @property {boolean} done
  * @property {string} [hw]               hints from last time, shown grey (running workout only)
- * @property {string} [hr]
- * @property {string} [hp]
+ * @property {string} [hr]               (partials get no hint: they can't be planned)
  */
 
 /** @typedef {{ id: string, date: number, values: Record<string, string>, source?: string }} Measurement  values keyed by MEASURES ids */

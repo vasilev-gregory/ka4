@@ -41,8 +41,8 @@ export function buildSets(d, exId, n, next = null) {
   const prev = last ? last.sets : [];
   const warm = prev.filter((s) => s.t === "w");
   const work = prev.filter((s) => s.t !== "w");
-  const hint = (s) => ({ hw: s ? s.w : "", hr: s ? s.r : "", hp: s && s.p ? s.p : "" });
-  const stepHint = next && { hw: next.w ? fmtNum(next.w) : "", hr: String(next.r), hp: "" };
+  const hint = (s) => ({ hw: s ? s.w : "", hr: s ? s.r : "" }); // partials never: they can't be planned
+  const stepHint = next && { hw: next.w ? fmtNum(next.w) : "", hr: String(next.r) };
   return [
     ...warm.map((s) => ({ w: "", r: "", p: "", t: "w", ...hint(s), done: false })),
     ...Array.from({ length: n || Math.max(work.length, 3) }, (_, i) => {

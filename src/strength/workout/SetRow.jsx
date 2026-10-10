@@ -27,7 +27,7 @@ function Cell({ col, s, ex, edit }) {
       onChange={(e) => edit({ r: numericInput(e.target.value, ex.kind === "cardio") })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
   );
   return ex.kind === "time" ? <span className="w-9" /> : (
-    <input value={s.p || ""} inputMode="numeric" placeholder={s.hp ? String(s.hp) : "+"} aria-label="Частичные повторы" onFocus={takeHint(s.p || "", "", "p", edit)}
+    <input value={s.p || ""} inputMode="numeric" placeholder="+" aria-label="Частичные повторы" onFocus={takeHint(s.p || "", "", "p", edit)}
       onChange={(e) => edit({ p: numericInput(e.target.value, false) })} className={`w-9 ${BOX} ${doneText || "text-neutral-300"}`} />
   );
 }

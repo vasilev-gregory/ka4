@@ -38,7 +38,7 @@ test("partial reps can't be planned: typed, the set is done to failure (RIR 0) a
 });
 
 test("the dial on ✓ marks the set done with the RIR picked (over the RIR 0 of partials); on a done set only the RIR changes", () => {
-  const d = withWorkout([blank({ hw: "80", hr: "6", hp: "2" })]);
+  const d = withWorkout([blank({ hw: "80", hr: "6", p: "2" })]);
   A.markSetRir(d, 0, 0, 2, T0 + 1000);
   const s = d.active.exercises[0].sets[0];
   assert.deepEqual([s.done, s.w, s.rir, s.at], [true, "80", 2, T0 + 1000]);
@@ -283,4 +283,14 @@ test("every step of a drop set is to failure: RIR 0 at the tick unless one was g
   A.toggleSet(e, 0, 0, T0); A.toggleSet(e, 0, 1, T0 + 1000);
   A.mergeSets(e, 0, new Set([0, 1, 2]));
   assert.deepEqual(e.active.exercises[0].sets.map((x) => x.rir), [0, 0, undefined]);
+});
+
+test("partials are never hinted nor filled from last time", () => {
+  const d = withWorkout([blank({ hw: "80", hr: "6" })]);
+  d.active.exercises[0].sets[0].p = "3";
+  A.addSet(d, 0);
+  const s = d.active.exercises[0].sets[1];
+  assert.equal(s.hp, undefined);
+  A.toggleSet(d, 0, 1, T0 + 1000);
+  assert.equal(s.p, "");
 });
