@@ -25,7 +25,7 @@ export const EX_KINDS = [["reps", "вес и повторы"], ["time", "вес 
 export const BW_DEFAULTS = {
   "pull-up": 1, "close-grip-pull-up": 1, "close-grip-chin-up": 1, "dips": 0.95, "triceps-dips": 0.95,
   "bodyweight-squat": 0.85, "push-up": 0.65, "one-arm-push-up": 0.65, "inverted-row": 0.55,
-  "wide-grip-pull-up": 1, "decline-push-up": 0.75, "bench-dips": 0.5, "single-leg-squat": 0.85,
+  "wide-grip-pull-up": 1, "decline-push-up": 0.75, "knee-push-up": 0.5, "bench-dips": 0.5, "single-leg-squat": 0.85,
 };
 
 export const ASSIST_DEFAULTS = { "assisted-pull-up": true };
@@ -82,6 +82,7 @@ export const EX_AKA = {
   "barbell-bench-press": "жим лёжа жим лежа bench press",
   "dumbbell-bench-press": "жим гантелей лёжа db bench",
   "dips": "брусья отжимания на брусьях chest dips",
+  "knee-push-up": "отжимания с коленей на коленях женские отжимания",
   "triceps-dips": "брусья отжимания на брусьях",
   "machine-pec-fly": "бабочка пекдек pec deck",
   "cable-crossover": "кроссовер сведения в кроссовере cable fly",
