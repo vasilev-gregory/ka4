@@ -1,7 +1,7 @@
 // App shell: loads the data, then tabs with a stack of detail screens on top, strength / stretching
 // mode, and the global overlays (save error, backup reminder, rest countdown, mode toast).
 import { useState, useEffect, useMemo } from "react";
-import { unlockAudio } from "./core/sound.js";
+import { setSoundThroughSilent, unlockAudio } from "./core/sound.js";
 import { MeasureEditor, MeasuresTab } from "./measures/Measures.jsx";
 import { usePersistentData } from "./model/usePersistentData.js";
 import { makeBodyWeightAt, makeNames, RUNNING_NOTE, runningSession } from "./model/workout.js";
@@ -87,6 +87,7 @@ function Shell({ data, up, replace, saved }) {
   const playNow = (exerciseIds) => { if (!busy) upStretch((s) => playQuick(s, exerciseIds, Date.now())); };
 
   const sound = data.settings.sound !== false;
+  useEffect(() => setSoundThroughSilent(data.settings.soundSilent), [data.settings.soundSilent]);
   // strips above the tab bar: the content leaves room for them
   const workoutPill = !!data.active && (stretchMode || tab !== "workout" || !!view);
   const bars = (data.active?.restEndsAt ? 1 : 0) + (data.stretch.active && !runOpen ? 1 : 0) + (workoutPill ? 1 : 0);

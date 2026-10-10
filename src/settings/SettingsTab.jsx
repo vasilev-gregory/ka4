@@ -1,6 +1,6 @@
 // Settings: app update, mode, per-mode preferences, storage protection, backups.
 import { ChevronDown } from "lucide-react";
-import { beep, unlockAudio } from "../core/sound.js";
+import { beep, setSoundThroughSilent, unlockAudio } from "../core/sound.js";
 import { fmtDur, fmtNum, num, numericInput } from "../core/util.js";
 import { ST_DEFAULTS, ST_FIELDS } from "../model/catalog.js";
 import { setCountdown } from "../model/workoutActions.js";
@@ -30,6 +30,11 @@ export function SettingsTab({ data, up, replace, saved, back, setMode, onTour })
       <SwitchRow title="Звук таймера" hint={`Щелчки 3-2-1 и сигналы${stretch ? " в плеере растяжки" : " в конце отдыха"}`}
         on={s.sound !== false} className="mb-6"
         onClick={() => { unlockAudio(); up((d) => { d.settings.sound = d.settings.sound === false; }); if (s.sound === false) beep(); }} />
+      {s.sound !== false && (
+        <SwitchRow title="И в беззвучном режиме" hint="iPhone: пищать, даже когда переключатель сбоку на «беззвучно». Музыка из другого приложения может встать на паузу"
+          on={!!s.soundSilent} className="-mt-4 mb-6"
+          onClick={() => { const on = !s.soundSilent; setSoundThroughSilent(on); unlockAudio(); up((d) => { d.settings.soundSilent = on; }); beep(); }} />
+      )}
       {!stretch && <ColumnsSettings settings={s} up={up} />}
       <Button variant="secondary" block onClick={onTour} className="mb-3">Как пользоваться — обзор</Button>
       <details className="group mt-2 rounded-xl bg-neutral-950">

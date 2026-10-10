@@ -1,10 +1,17 @@
 // Timer sounds (Web Audio). Must be unlocked by a user gesture; "ambient" session so music keeps playing.
 export let actx = null;
+let throughSilent = false;
+
+// iOS: "ambient" mixes with music but the silent switch mutes it; "playback" sounds through the silent switch (music
+// from another app may be paused by it) — settings.soundSilent
+export function setSoundThroughSilent(on) {
+  throughSilent = !!on;
+  try { if (navigator.audioSession) navigator.audioSession.type = throughSilent ? "playback" : "ambient"; } catch (e) {}
+}
 
 export function unlockAudio() {
   try {
-    // iOS: "ambient" mixes with music instead of stopping it (but respects the silent switch)
-    if (navigator.audioSession) navigator.audioSession.type = "ambient";
+    if (navigator.audioSession) navigator.audioSession.type = throughSilent ? "playback" : "ambient";
     if (!actx || actx.state === "closed") { const C = window.AudioContext || window.webkitAudioContext; actx = new C(); }
     wake();
   } catch (e) {}
