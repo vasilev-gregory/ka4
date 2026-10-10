@@ -8,7 +8,7 @@ import { Button, Chip, ExImg, Header, useApp } from "./kit.jsx";
 import { useBackCloses, useRestorable } from "./navigation.js";
 
 // items: exercises / stretches; groups, groupOf(e): the sections (and the chips, unless filters are given);
-// filters: [{ id, label, chips: [[value, label]], fits(e, value) }] — one button each («Мышца: все ▾»), opening its
+// filters: [{ id, label, chips: [[value, label]], within?(picked) → the chips to offer now, fits(e, value) }] — one button each («Мышца: все ▾»), opening its
 // chips wrapped in lines; a chip tapped again (or «все») clears it; start: { [filter id]: the chip chosen at the start }; usage: model/picker usageOf;
 // already: ids in the program; tags(e, inMine): small words on the right; onPick(e) for one, onPickMany(list) for
 // several (the picker stays open); action: the button's word; newLabel: «+ Новое упражнение»;
@@ -24,7 +24,17 @@ export function ExercisePicker({ title, items, groups, groupOf, filters: rows, s
   const [chips, setChips] = useRestorable("picker-filters", start); // { [filter id]: value }
   const keep = (e) => filters.every((f) => !chips[f.id] || f.fits(e, chips[f.id]));
   const [openFilter, setOpenFilter] = useState(null); // the filter whose chips are shown
-  const pickChip = (id, v) => { setChips((c) => ({ ...c, [id]: c[id] === v ? "" : v })); setOpenFilter(null); };
+  // a filter's chips may depend on the others (within: the muscles of the group picked); a pick that leaves another's value
+  // out of its chips drops it
+  const chipsOf = (f, c) => (f.within ? f.within(c) : f.chips);
+  const pickChip = (id, v) => {
+    setChips((c) => {
+      const n = { ...c, [id]: c[id] === v ? "" : v };
+      filters.forEach((f) => { if (n[f.id] && !chipsOf(f, n).some(([x]) => x === n[f.id])) n[f.id] = ""; });
+      return n;
+    });
+    setOpenFilter(null);
+  };
   const [creating, setCreating] = useState(null); // the name a new one starts with
   const [chosenIds, setChosenIds] = useRestorable("picker-chosen", []); // ids: kept if the app is closed meanwhile
   const chosen = chosenIds.map((id) => items.find((e) => e.id === id)).filter(Boolean);
@@ -64,7 +74,7 @@ export function ExercisePicker({ title, items, groups, groupOf, filters: rows, s
         {filters.filter((f) => f.id === openFilter).map((f) => (
           <div key={f.id} className="mt-2 flex flex-wrap gap-1.5 rounded-xl bg-neutral-900 p-2" data-testid={`filter-${f.id}`}>
             <Chip on={!chips[f.id]} onClick={() => pickChip(f.id, "")}>все</Chip>
-            {f.chips.map(([v, l]) => <Chip key={v} on={chips[f.id] === v} onClick={() => pickChip(f.id, v)}>{l}</Chip>)}
+            {chipsOf(f, chips).map(([v, l]) => <Chip key={v} on={chips[f.id] === v} onClick={() => pickChip(f.id, v)}>{l}</Chip>)}
           </div>
         ))}
 

@@ -39,6 +39,10 @@ const GROUP_OF = Object.fromEntries(GROUP_CHIPS);
 const FILTERS = [
   { id: "group", label: "Группа", chips: GROUP_CHIPS.map(([g]) => [g, g]), fits: (e, g) => GROUP_OF[g].includes(e.group) },
   { id: "muscle", label: "Мышца", chips: [...MUSCLES.map(([m, l]) => [m, l]), ["cardio", "кардио"]],
+    // with a group picked: only its muscles (cardio for «кардио»)
+    within: (picked) => (picked.group
+      ? [...MUSCLES.filter(([, , g]) => GROUP_OF[picked.group].includes(g)).map(([m, l]) => [m, l]), ...(picked.group === "кардио" ? [["cardio", "кардио"]] : [])]
+      : FILTERS[1].chips),
     fits: (e, m) => (m === "cardio" ? e.kind === "cardio" : musclesOf(e)[m] >= 1) },
   { id: "equip", label: "Снаряд", chips: EQUIPMENT.map(([k, l]) => [k, l]), fits: (e, k) => equipmentOf(e).includes(k) },
 ];
