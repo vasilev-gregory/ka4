@@ -59,10 +59,11 @@ export function resumeWorkout(d, now = Date.now()) {
   d.active.paused = false;
 }
 
-export function setSet(d, ei, si, patch) {
+// Partial reps can't be planned ahead: typed, the set was done, to failure — marked done (as ✓) with RIR 0.
+export function setSet(d, ei, si, patch, now = Date.now()) {
   const s = d.active.exercises[ei].sets[si];
   Object.assign(s, patch);
-  if (patch.p !== undefined && num(patch.p) > 0 && s.t !== "w") s.rir = 0; // partial reps mean the set went to failure
+  if (patch.p !== undefined && num(patch.p) > 0 && s.t !== "w") { if (!s.done) toggleSet(d, ei, si, now); s.rir = 0; }
 }
 
 // Tap on a set number: warm-up on/off. A warm-up has no RIR.
@@ -72,10 +73,10 @@ export function toggleWarmup(d, ei, si) {
   else { s.t = "w"; s.rir = null; }
 }
 
-// ✓ on a set. Confirming without typing means "same as last time"; partial reps, or a drop set's step with no RIR
-// given (each step goes to failure by definition), mean the set went to failure; a confirmed set ends a pause and starts the rest countdown (not in the middle of a drop set).
-// Its rest is fixed at the tick (since the previous tick, none across a pause): other ticks in any order never
-// move it. Unticking steps the running rest back to the tick before; the countdown goes with its set.
+// ✓ on a set. Confirming without typing means "same as last time"; partial reps, or a drop set's step with no RIR given (each
+// step goes to failure by definition), mean failure; a confirmed set ends a pause and starts the rest countdown (not mid drop set).
+// Its rest is fixed at the tick (since the previous tick, none across a pause): other ticks in any order never move it.
+// Unticking steps the running rest back to the tick before; the countdown goes with its set.
 export function toggleSet(d, ei, si, now = Date.now()) {
   const a = d.active;
   const s = a.exercises[ei].sets[si];
@@ -313,8 +314,7 @@ export function setCountdown(d, on) {
 export const ABANDONED_AFTER = 4 * 3600e3;
 
 // A workout left paused overnight is finished on the next launch. So is one left running
-// (app killed, phone died) since yesterday: it ends at its last activity, not at "now".
-// If it differed from its program, the change is offered later via data.pendingProgramUpdate.
+// (app killed, phone died) since yesterday: it ends at its last activity, not at "now". If it differed from its program, the change is offered later via data.pendingProgramUpdate.
 export function closeStaleWorkout(d0, now = Date.now()) {
   const a = d0.active;
   if (!a) return d0;

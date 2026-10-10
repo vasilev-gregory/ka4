@@ -32,8 +32,8 @@ export function SettingsTab({ data, up, replace, saved, back, setMode, onTour })
         onClick={() => { unlockAudio(); up((d) => { d.settings.sound = d.settings.sound === false; }); if (s.sound === false) beep(); }} />
       {s.sound !== false && (
         <SwitchRow title="И в беззвучном режиме" hint="iPhone: пищать, даже когда переключатель сбоку на «беззвучно». Музыка из другого приложения может встать на паузу"
-          on={!!s.soundSilent} className="-mt-4 mb-6"
-          onClick={() => { const on = !s.soundSilent; setSoundThroughSilent(on); unlockAudio(); up((d) => { d.settings.soundSilent = on; }); beep(); }} />
+          on={s.soundSilent !== false} className="-mt-4 mb-6"
+          onClick={() => { const on = s.soundSilent === false; setSoundThroughSilent(on); unlockAudio(); up((d) => { d.settings.soundSilent = on; }); beep(); }} />
       )}
       {!stretch && <ColumnsSettings settings={s} up={up} />}
       <Button variant="secondary" block onClick={onTour} className="mb-3">Как пользоваться — обзор</Button>

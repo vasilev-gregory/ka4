@@ -1,8 +1,8 @@
 // No workout running: the programs to start from (shared rows, ui/ProgramRows) — the active split's first, in its
 // order, marked with what this week did and which is next (model/splits) — the splits, and yesterday's auto-closed
 // workout asking to update its program. A hold on programs picks them to make a split of, add to one, or delete.
-// During a workout the same list is a screen (`back`): programs open and edit as usual, the running one is marked
-// «идёт» and its ▶ goes back to the workout, nothing else starts.
+// During a workout (reached by «‹» in it) programs open and edit as usual, the running one is marked «идёт» and its ▶
+// goes back to the workout (onReturn), nothing else starts.
 import { useState } from "react";
 import { RUNNING_NOTE, runningSession } from "../../model/workout.js";
 import { activeSplit, splitMarks } from "../../model/splits.js";
@@ -21,7 +21,7 @@ function splitNote(m) {
   return [done, m.next ? "следующая по сплиту" : left > 0 && m.times > 1 && `ещё ${left}`].filter(Boolean).join(" · ") || null;
 }
 
-export function ProgramList({ data, up, exMap, open, back }) {
+export function ProgramList({ data, up, exMap, open, onReturn }) {
   const { nm1 } = useApp();
   const last = data.workouts[data.workouts.length - 1];
   const pending = data.pendingProgramUpdate;
@@ -63,7 +63,7 @@ export function ProgramList({ data, up, exMap, open, back }) {
   const running = a ? a.programId || "" : null; // "": a workout without a program — nothing to mark, nothing starts
   return (
     <div className="p-4">
-      <Header title={a ? "Программы" : "Силовая тренировка"} back={back} />
+      <Header title="Силовая тренировка" />
       {last && <p className="mb-3 text-xs text-neutral-400">Прошлая: {last.name}, {fmtDate(last.startedAt)}</p>}
       {pendingProgram && (
         <Card className="mb-3">
@@ -77,7 +77,7 @@ export function ProgramList({ data, up, exMap, open, back }) {
       )}
       <ProgramRows onOpen={(id) => open({ type: "program", id })} onCreate={create} onWithout={() => start(null)}
         blocked={runningSession(data) === "stretch" ? RUNNING_NOTE.stretch : null}
-        running={running} onStart={(id) => (a ? back() : start(data.programs.find((x) => x.id === id)))} select={{ ids: picked, toggle }}
+        running={running} onStart={(id) => (a ? onReturn() : start(data.programs.find((x) => x.id === id)))} select={{ ids: picked, toggle }}
         group={sm && { ids: sm.order, onTitle: () => open({ type: "split", id: split.id }),
           title: `Сплит «${progTitle(split)}» · ${sm.doneCount === sm.total ? "неделя закрыта ✓" : `${sm.doneCount} из ${sm.total} на этой неделе`}` }}
         programs={ordered.map((p) => ({

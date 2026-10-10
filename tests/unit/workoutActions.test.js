@@ -26,12 +26,15 @@ test("✓ without typing takes last time's values, stamps the time and starts th
   assert.equal(s.done, false); assert.equal(s.at, undefined);
 });
 
-test("partial reps mean failure (RIR 0), but not on a warm-up", () => {
-  const d = withWorkout([blank(), blank({ t: "w" })]);
-  A.setSet(d, 0, 0, { p: "2" });
-  A.setSet(d, 0, 1, { p: "2" });
-  assert.equal(d.active.exercises[0].sets[0].rir, 0);
-  assert.equal(d.active.exercises[0].sets[1].rir, undefined);
+test("partial reps can't be planned: typed, the set is done to failure (RIR 0) at once; not on a warm-up", () => {
+  const d = withWorkout([blank({ hw: "80", r: "8" }), blank({ t: "w" })]);
+  A.setSet(d, 0, 0, { p: "2" }, T0 + 1000);
+  A.setSet(d, 0, 1, { p: "2" }, T0 + 2000);
+  const [s, w] = d.active.exercises[0].sets;
+  assert.deepEqual([s.done, s.rir, s.w, s.r, s.at], [true, 0, "80", "8", T0 + 1000]);
+  A.setSet(d, 0, 0, { p: "25" }, T0 + 3000); // typing on: still the same tick
+  assert.equal(s.at, T0 + 1000);
+  assert.deepEqual([w.done, w.rir], [false, undefined]);
 });
 
 test("the dial on ✓ marks the set done with the RIR picked (over the RIR 0 of partials); on a done set only the RIR changes", () => {
