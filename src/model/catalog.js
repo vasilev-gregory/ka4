@@ -83,6 +83,7 @@ export const EX_AKA = {
   "dumbbell-bench-press": "жим гантелей лёжа db bench",
   "dips": "брусья отжимания на брусьях chest dips",
   "knee-push-up": "отжимания с коленей на коленях женские отжимания",
+  "pure-plate-rotary-pulldown": "rotary pulldown ротационная тяга рычажная тяга сверху плейт",
   "triceps-dips": "брусья отжимания на брусьях",
   "machine-pec-fly": "бабочка пекдек pec deck",
   "cable-crossover": "кроссовер сведения в кроссовере cable fly",

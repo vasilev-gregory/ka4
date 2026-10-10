@@ -138,6 +138,8 @@ export const SEED_EX = [
   ["Close-grip lat pulldown", "Тяга верхнего блока узким хватом", "спина"],
   ["Machine lat pulldown", "Тяга сверху в рычажном тренажёре", "спина"],
   ["One-arm machine lat pulldown", "Тяга сверху одной рукой в рычажном тренажёре", "спина"],
+  ["Pure Plate rotary pulldown", "Ротационная тяга сверху Pure Plate", "спина"],
+  ["One-arm Pure Plate rotary pulldown", "Ротационная тяга сверху одной рукой Pure Plate", "спина"],
   ["Wide-grip pull-up", "Подтягивания широким хватом", "спина"],
   ["Close-grip pull-up", "Подтягивания узким хватом", "спина"],
   ["Hyperextension", "Гиперэкстензия", "спина"],

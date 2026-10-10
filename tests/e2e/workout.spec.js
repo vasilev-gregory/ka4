@@ -2,7 +2,7 @@
 import { test, expect } from "@playwright/test";
 import { finishWorkout, openApp, seedStorage, startWorkout, stored, tab } from "./helpers.js";
 
-test("swipe right marks a set done, swipe left deletes it with undo", async ({ page, context }) => {
+test("swipe right picks a set (not marks it), swipe left deletes it with undo", async ({ page, context }) => {
   const errors = await openApp(page);
   await startWorkout(page);
   const checks = page.getByRole("button", { name: "Подход сделан" });
@@ -19,7 +19,10 @@ test("swipe right marks a set done, swipe left deletes it with undo", async ({ p
   };
   const n0 = await checks.count();
   await swipe(0, 140);
-  await expect(page.locator("button[aria-label='Подход сделан'].bg-accent-400")).toHaveCount(1);
+  await expect(page.getByText("Выбрано: 1")).toBeVisible();
+  await expect(page.locator("button[aria-label='Подход сделан'].bg-accent-400")).toHaveCount(0);
+  await swipe(0, 140); // again: unpicked
+  await expect(page.getByText(/^Выбрано:/)).toHaveCount(0);
   await swipe(1, -140);
   await expect(checks).toHaveCount(n0 - 1);
   await page.getByText("Вернуть").click();
@@ -101,16 +104,19 @@ test("hints, last time's values, numbers only, records, undo of a swipe mark, pr
   await page.getByRole("button", { name: "Подход сделан" }).first().click();
   await expect(page.getByLabel("Рекорд")).toHaveCount(1);
 
-  // swipe right on the second set marks it; "Вернуть" takes it back
+  // swipe right on the second set picks it (as a hold on its number); again — unpicks
   const cdp = await context.newCDPSession(page);
   const box = await page.getByRole("button", { name: "Подход сделан" }).nth(1).boundingBox();
   const x = box.x - 120, y = box.y + box.height / 2;
   await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
   for (let k = 1; k <= 12; k++) { await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + (140 * k) / 12, y }] }); await page.waitForTimeout(15); }
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-  await expect(page.getByText("Подход отмечен")).toBeVisible();
-  await page.getByText("Вернуть").click();
-  await expect(page.locator("button[aria-label='Подход сделан'].bg-accent-400")).toHaveCount(1);
+  await expect(page.getByText("Выбрано: 1")).toBeVisible();
+  await expect(page.locator("button[aria-label='Подход сделан'].bg-accent-400")).toHaveCount(1); // not marked
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+  for (let k = 1; k <= 12; k++) { await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + (140 * k) / 12, y }] }); await page.waitForTimeout(15); }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await expect(page.getByText(/^Выбрано:/)).toHaveCount(0);
 
   await finishWorkout(page);
   const keep = page.getByText("Оставить программу как была");
