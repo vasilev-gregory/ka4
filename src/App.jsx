@@ -11,6 +11,7 @@ import { MoveBanner } from "./shell/MoveBanner.jsx";
 import { PullToRefresh } from "./ui/PullToRefresh.jsx";
 import { SharedImport } from "./shell/SharedImport.jsx";
 import { TabBar } from "./shell/TabBar.jsx";
+import { Tour, TOUR, useTour } from "./shell/Tour.jsx";
 import { ExerciseDetail } from "./strength/ExerciseDetail.jsx";
 import { WorkoutDetail } from "./strength/History.jsx";
 import { HistoryTab } from "./strength/HistoryTab.jsx";
@@ -52,6 +53,7 @@ export default function App() {
 
 function Shell({ data, up, replace, saved }) {
   const nav = useNavigation();
+  const tour = useTour(data, up);
   const { tab, view, open, back } = nav;
   const stretchMode = data.settings.mode === "stretch";
   // stretching screens only get the stretching part of the data
@@ -92,7 +94,7 @@ function Shell({ data, up, replace, saved }) {
 
   const common = { data, up, exMap, open, back };
   const stretchProps = { stretch: data.stretch, upStretch, open, back, play, playNow, busy };
-  const settings = (close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={restore} />;
+  const settings = (close) => <SettingsTab data={data} up={up} saved={saved} back={close} setMode={switchMode} replace={restore} onTour={tour.start} />;
   const SCREENS = {
     stretchProgram: (v) => <StretchEditor {...stretchProps} id={v.id} />,
     stretchSession: (v) => <StretchSession {...stretchProps} id={v.id} />,
@@ -109,7 +111,7 @@ function Shell({ data, up, replace, saved }) {
     workout: () => (stretchMode ? <StretchHome {...stretchProps} /> : <WorkoutTab {...common} />),
     history: () => (stretchMode ? <StretchHistory {...stretchProps} /> : <HistoryTab {...common} />),
     measures: () => <MeasuresTab {...common} openSettings={() => open({ type: "settings" })} />,
-    settings: () => <SettingsTab data={data} up={up} saved={saved} setMode={switchMode} replace={restore} />,
+    settings: () => <SettingsTab data={data} up={up} saved={saved} setMode={switchMode} replace={restore} onTour={tour.start} />,
   };
   const content = view ? SCREENS[view.type](view) : TABS[tab]();
 
@@ -141,8 +143,9 @@ function Shell({ data, up, replace, saved }) {
           </div>
         )}
         <SharedImport data={data} up={up} replace={restore} onImported={() => nav.setTab("history")} />
+        {tour.open && <Tour i={tour.i} setI={tour.setI} onTab={nav.setTab} onDone={() => { tour.done(); nav.setTab("workout"); }} />}
         <TabBar tab={tab} onTab={nav.setTab} onSwipe={() => switchMode()} stretchMode={stretchMode}
-          running={!!runningSession(data)} />
+          running={!!runningSession(data)} pulse={tour.open ? TOUR[tour.i][0] : null} />
       </div>
     </AppCtx.Provider>
   );

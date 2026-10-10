@@ -1,6 +1,6 @@
 // The move to the new address: the card shows on the old address (GitHub Pages) only.
 import { test, expect } from "@playwright/test";
-import { openApp } from "./helpers.js";
+import { openApp, skipTour } from "./helpers.js";
 
 test("no moving card on the new address", async ({ page }) => {
   await openApp(page);
@@ -16,6 +16,7 @@ test("on the old address: save a copy, then the link to the new one", async ({ p
   await page.goto("https://vasilev-gregory.github.io/ka4/");
   const card = page.getByTestId("move-banner");
   await expect(card.getByText("Кач переезжает")).toBeVisible();
+  await skipTour(page);
   await expect(card.getByRole("link", { name: "Открыть" })).toHaveAttribute("href", "https://kach.hb.ru-msk.vkcloud-storage.ru/index.html");
   await page.evaluate(() => { delete navigator.canShare; Object.defineProperty(navigator, "canShare", { value: undefined }); });
   const download = page.waitForEvent("download");

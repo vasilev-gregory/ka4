@@ -97,3 +97,10 @@ test("v6: an exercise's own muscles with the trapezius get the middle of the bac
   delete m.exercises.find((e) => e.id === "mine").muscles.midback; // the user takes it off: it stays off
   assert.equal(migrate(m).exercises.find((e) => e.id === "mine").muscles.midback, undefined);
 });
+
+test("v7: the first-launch tour is for fresh installs; data from before it counts as having seen it", () => {
+  assert.equal(migrate(seed()).settings.tourDone, undefined);
+  const old = seed();
+  old.version = 6;
+  assert.equal(migrate(old).settings.tourDone, true);
+});

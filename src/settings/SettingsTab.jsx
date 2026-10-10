@@ -4,7 +4,7 @@ import { beep, unlockAudio } from "../core/sound.js";
 import { fmtDur, fmtNum, num, numericInput } from "../core/util.js";
 import { ST_DEFAULTS, ST_FIELDS } from "../model/catalog.js";
 import { setCountdown } from "../model/workoutActions.js";
-import { Card, Header, SecStepper, Segmented, Stepper, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
+import { Button, Card, Header, SecStepper, Segmented, Stepper, SwitchRow, useApp, useNow } from "../ui/kit.jsx";
 import { colorOf, COLOR_KEY, PALETTES } from "../ui/palettes.js";
 import { BackupSection } from "./BackupSection.jsx";
 import { ColumnsSettings } from "./ColumnsSettings.jsx";
@@ -13,7 +13,7 @@ import { UpdateButton } from "./UpdateButton.jsx";
 
 const buildDate = new Date(__BUILD_TIME__).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
-export function SettingsTab({ data, up, replace, saved, back, setMode }) {
+export function SettingsTab({ data, up, replace, saved, back, setMode, onTour }) {
   const s = data.settings;
   const stretch = s.mode === "stretch";
   return (
@@ -31,6 +31,7 @@ export function SettingsTab({ data, up, replace, saved, back, setMode }) {
         on={s.sound !== false} className="mb-6"
         onClick={() => { unlockAudio(); up((d) => { d.settings.sound = d.settings.sound === false; }); if (s.sound === false) beep(); }} />
       {!stretch && <ColumnsSettings settings={s} up={up} />}
+      <Button variant="secondary" block onClick={onTour} className="mb-3">Как пользоваться — обзор</Button>
       <details className="group mt-2 rounded-xl bg-neutral-950">
         <summary className="flex cursor-pointer list-none items-center justify-between py-3 font-semibold">
           Данные и приложение <ChevronDown size={18} className="text-neutral-500 transition-transform group-open:rotate-180" />

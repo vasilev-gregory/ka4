@@ -29,6 +29,7 @@
  * @property {"amber"|"amberGlow"|"red"|"roseGlow"|"pink"|"violet"|"teal"|"aurora"} [stretchColor]   stretching mode's accent (default teal)
  * @property {boolean} [namesRu]          Russian exercise names first (default); false = English first
  * @property {boolean} [gestureHintSeen]  the gestures hint on the first workout was dismissed
+ * @property {boolean} [tourDone]         the first-launch tour was finished or skipped (absent on a fresh install)
  * @property {string} [bodyWeight]        manual body weight, used when there are no measurements
  * @property {{ key: "w"|"r"|"p"|"rir"|"rest", on: boolean }[]} [columns] set columns, in order
  * @property {number} [lastBackupAt]

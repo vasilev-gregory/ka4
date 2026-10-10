@@ -9,9 +9,17 @@ export async function openApp(page) {
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto("./");
   await expect(page.getByRole("button", { name: "Тренировка" }).last()).toBeVisible();
+  await skipTour(page);
   // wait for the first save so localStorage holds the seed
   await expect.poll(() => page.evaluate((k) => !!localStorage.getItem(k), KEY)).toBe(true);
   return errors;
+}
+
+// a fresh install opens with the tour (shell/Tour), in the same render as the tabs; most scenarios skip it. Another
+// instance on data that has seen it gets none
+export async function skipTour(page) {
+  const tour = page.getByRole("dialog", { name: "Обзор Кача" });
+  if (await tour.count()) await tour.getByRole("button", { name: "Пропустить" }).click();
 }
 
 export const tab = (page, name) => page.getByRole("button", { name }).last().click();
