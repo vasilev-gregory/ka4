@@ -1,7 +1,7 @@
 // History periods and exercise progress series.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { exerciseSeries, periodSummary, windowStart } from "../../src/model/periods.js";
+import { exerciseSeries, periodSummary } from "../../src/model/periods.js";
 import { periodOf, shiftPeriod } from "../../src/model/calendar.js";
 
 const at = (y, m, d, h = 12) => new Date(y, m, d, h).getTime();
@@ -11,6 +11,8 @@ test("periods: week from Monday, month and year by the calendar, shifting across
   const t = at(2026, 9, 7); // Wed 7 Oct 2026
   assert.deepEqual(periodOf("week", t), { from: at(2026, 9, 5, 0), to: at(2026, 9, 12, 0) });
   assert.deepEqual(periodOf("month", t), { from: at(2026, 9, 1, 0), to: at(2026, 10, 1, 0) });
+  assert.deepEqual(periodOf("all", t), { from: -Infinity, to: Infinity }); // a chart's «Всё»
+  assert.equal(shiftPeriod("all", t, -1), t);
   assert.deepEqual(periodOf("year", t), { from: at(2026, 0, 1, 0), to: at(2027, 0, 1, 0) });
   assert.equal(shiftPeriod("week", t, -1), at(2026, 8, 28, 0));
   assert.equal(shiftPeriod("week", at(2026, 2, 30), -1), at(2026, 2, 23, 0)); // over the DST switch
@@ -41,8 +43,7 @@ test("exercise series: max, estimated 1RM, volume; warm-ups out; window", () => 
   assert.deepEqual(exerciseSeries(workouts, "sq", ex, bwAt, "max").map((p) => p.v), [100, 110]);
   assert.deepEqual(exerciseSeries(workouts, "sq", ex, bwAt, "e1rm").map((p) => p.v), [116.7, 126.7]);
   assert.deepEqual(exerciseSeries(workouts, "sq", ex, bwAt, "vol").map((p) => p.v), [500, 330 + 830]);
-  assert.equal(exerciseSeries(workouts, "sq", ex, bwAt, "max", windowStart(6, at(2026, 9, 5))).length, 1);
-  assert.equal(windowStart(0), -Infinity);
+  assert.equal(exerciseSeries(workouts, "sq", ex, bwAt, "max", at(2026, 3, 5)).length, 1);
   assert.deepEqual(exerciseSeries(workouts, "sq", { id: "sq", kind: "time" }, bwAt, "e1rm"), []);
 });
 

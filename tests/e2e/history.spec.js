@@ -110,16 +110,21 @@ test("history: month by default, paging, year overview drills down to a month an
   await expect(period).toHaveText("5 окт. – 11 окт.");
 });
 
-test("exercise chart: metric, time window, drag to zoom and reset", async ({ page }) => {
+test("exercise chart: metric, a period paged like the history, drag to zoom and reset", async ({ page }) => {
   await page.getByText("Октябрьская").click();
   await page.getByText("Приседания со штангой").click();
-  await expect(page.getByText(/60 кг → 90 кг, 3 тренировки/)).toBeVisible();
-  await page.getByRole("button", { name: "3 мес" }).click();
+  await expect(page.getByText(/60 кг → 90 кг, 3 тренировки/)).toBeVisible(); // «Всё» by default
+  await page.getByRole("button", { name: "Год", exact: true }).click();
+  await expect(page.getByTestId("period")).toHaveText("2026");
   await expect(page.getByText(/80 кг → 90 кг, 2 тренировки/)).toBeVisible();
   await page.getByRole("button", { name: "объём" }).click();
   await expect(page.getByText(/800 кг → 900 кг/)).toBeVisible();
+  await page.getByRole("button", { name: "Раньше" }).click(); // the year before: one workout
+  await expect(page.getByTestId("period")).toHaveText("2025");
+  await expect(page.getByText("За этот срок меньше двух точек.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Раньше" })).toBeDisabled(); // nothing before the first point
 
-  await page.getByRole("button", { name: "всё" }).click();
+  await page.getByRole("button", { name: "Всё", exact: true }).click();
   await page.getByRole("button", { name: "макс. вес" }).click();
   await page.getByTestId("trend").scrollIntoViewIfNeeded(); // below the muscles card: drag where it's on screen
   const box = await page.getByTestId("trend").boundingBox();
