@@ -65,6 +65,9 @@ export function useRirDial({ onTap, onPick, enabled }) {
         opened = true;
         fired.current = true;
         vibrate(20);
+        // an open keyboard shifts iOS's visual viewport, and the fan (fixed, in a portal) would open off ✓ — the typing
+        // is over anyway; the fan follows ✓ every frame while the keyboard closes
+        endTyping();
         setAt(centre());
         setDial({ pick: null });
       }, HOLD);

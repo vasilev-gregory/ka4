@@ -287,6 +287,7 @@ test("hold ✓ and slide to a RIR: the set is done with it; let go at the centre
   await page.mouse.move(cx, cy);
   await page.mouse.down();
   await expect(page.getByTestId("rir-dial")).toBeVisible();
+  await expect(page.locator("input:focus")).toHaveCount(0); // the keyboard closes as the fan opens (iOS would shift it off ✓)
   await page.mouse.move(cx - 40, cy - 10, { steps: 4 });
   await page.mouse.move(cx - 72, cy, { steps: 4 }); // left: the middle of the fan, 2
   await page.mouse.up();
