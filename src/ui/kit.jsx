@@ -1,7 +1,7 @@
 // Shared UI primitives and the app context hook.
 import { useState, useEffect, createContext, useContext, useRef } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
-import { IMGS } from "../model/images.js";
+import { ExFigure, hasFigure } from "./ExFigure.jsx";
 import { useBackCloses } from "./navigation.js";
 
 // Derived, read-only helpers that depend on user data/settings, provided by App to all screens.
@@ -20,12 +20,13 @@ export function useNow(ms, on = true) {
   return n;
 }
 
-// Picture of an exercise: own photo from the phone > built-in thumbnail > initials.
-export const exPhoto = (ex) => (ex && (ex.photo || IMGS[ex.id])) || null;
-export function ExImg({ ex, size = 40 }) {
-  const src = exPhoto(ex);
+// Picture of an exercise: own photo from the phone > the built-in figure doing it (ui/ExFigure) > initials. `label`: the
+// picture's name for screen readers where it shows how the exercise is done (its card); a thumbnail in a list has none.
+export const exHasPicture = (ex) => !!(ex && (ex.photo || hasFigure(ex)));
+export function ExImg({ ex, size = 40, label }) {
   const st = { width: size, height: size };
-  if (src) return <img src={src} alt="" style={st} className="shrink-0 rounded-full object-cover" />;
+  if (ex && ex.photo) return <img src={ex.photo} alt="" style={st} className="shrink-0 rounded-full object-cover" />;
+  if (hasFigure(ex)) return <ExFigure ex={ex} size={size} round={size < 64} label={label} />;
   return (
     <div style={st} className="flex shrink-0 items-center justify-center rounded-full bg-neutral-800 text-xs font-semibold text-neutral-400">
       {(ex?.name || "?").slice(0, 2).toUpperCase()}

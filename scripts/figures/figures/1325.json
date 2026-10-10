@@ -1,0 +1,30 @@
+{
+ "extends": "templates/back-lat-pulldown.json",
+ "poses": [
+  {
+   "torso": 2,
+   "arms": [
+    4,
+    2
+   ],
+   "legs": [
+    88,
+    192,
+    95
+   ]
+  },
+  {
+   "torso": 4,
+   "head": 25,
+   "arms": [
+    195,
+    355
+   ],
+   "legs": [
+    88,
+    192,
+    95
+   ]
+  }
+ ]
+}

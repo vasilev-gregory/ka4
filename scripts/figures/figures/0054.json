@@ -1,0 +1,47 @@
+{
+ "extends": "templates/legs-forward-lunge.json",
+ "equipment": [
+  {
+   "type": "barbell",
+   "on": [
+    "nearWrist"
+   ],
+   "r": 0.15
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": [
+    215,
+    15,
+    15
+   ],
+   "legs": [
+    180,
+    180,
+    95
+   ]
+  },
+  {
+   "torso": 2,
+   "arms": [
+    222,
+    20,
+    20
+   ],
+   "legs": {
+    "near": [
+     90,
+     180.0,
+     95
+    ],
+    "far": [
+     185,
+     285,
+     175
+    ]
+   }
+  }
+ ]
+}

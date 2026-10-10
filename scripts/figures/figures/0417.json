@@ -1,0 +1,8 @@
+{
+ "extends": "templates/calf-standing-raise.json",
+ "equipment": [
+  {
+   "type": "dumbbell"
+  }
+ ]
+}

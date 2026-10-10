@@ -1,0 +1,48 @@
+{
+ "extends": "templates/back-chin-up.json",
+ "equipment": [
+  {
+   "type": "pullupBar",
+   "at": [
+    0.05,
+    2.3
+   ]
+  },
+  {
+   "type": "lever",
+   "from": [
+    -0.8,
+    1.05
+   ],
+   "on": [
+    "nearKnee"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": -4,
+   "arms": [
+    4,
+    4
+   ],
+   "legs": [
+    180,
+    268,
+    260
+   ]
+  },
+  {
+   "torso": -12,
+   "arms": [
+    118.1,
+    345.0
+   ],
+   "legs": [
+    180,
+    268,
+    260
+   ]
+  }
+ ]
+}

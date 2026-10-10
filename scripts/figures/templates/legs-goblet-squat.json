@@ -1,0 +1,40 @@
+{
+ "view": "side",
+ "equipment": [
+  {
+   "type": "dumbbell",
+   "on": [
+    "nearWrist"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": [
+    165,
+    20,
+    20
+   ],
+   "legs": [
+    180,
+    180,
+    95
+   ]
+  },
+  {
+   "torso": 22,
+   "arms": [
+    175,
+    40,
+    40
+   ],
+   "legs": [
+    100,
+    215,
+    95
+   ],
+   "head": 5
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+{
+ "extends": "templates/core-v-up.json",
+ "equipment": [
+  {
+   "type": "band",
+   "from": "nearToe",
+   "on": [
+    "nearHand"
+   ]
+  }
+ ]
+}

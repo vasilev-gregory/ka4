@@ -1,0 +1,11 @@
+{
+ "extends": "templates/legs-single-leg-deadlift.json",
+ "equipment": [
+  {
+   "type": "dumbbell",
+   "on": [
+    "nearHand"
+   ]
+  }
+ ]
+}

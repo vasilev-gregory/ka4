@@ -1,0 +1,19 @@
+{
+ "extends": "templates/legs-back-squat.json",
+ "equipment": [
+  {
+   "type": "rails",
+   "at": [
+    -0.04,
+    0
+   ]
+  },
+  {
+   "type": "barbell",
+   "on": [
+    "nearWrist"
+   ],
+   "r": 0.16
+  }
+ ]
+}

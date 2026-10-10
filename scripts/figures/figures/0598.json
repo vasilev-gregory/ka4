@@ -1,0 +1,35 @@
+{
+ "extends": "templates/legs-seated-abduction-front.json",
+ "poses": [
+  {
+   "torso": 0,
+   "arms": [
+    165,
+    175
+   ],
+   "legs": [
+    125,
+    180,
+    120
+   ],
+   "shorten": {
+    "thigh": 0.3
+   }
+  },
+  {
+   "torso": 0,
+   "arms": [
+    165,
+    175
+   ],
+   "legs": [
+    178,
+    180,
+    120
+   ],
+   "shorten": {
+    "thigh": 0.3
+   }
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+{
+ "extends": "templates/bi-standing-curl.json",
+ "equipment": [
+  {
+   "type": "barbell",
+   "r": 0.15
+  }
+ ]
+}

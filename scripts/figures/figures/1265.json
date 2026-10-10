@@ -1,0 +1,77 @@
+{
+ "extends": "templates/chest-incline-press.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    0.12,
+    0.45
+   ],
+   "length": 0.45,
+   "angle": 90
+  },
+  {
+   "type": "bench",
+   "at": [
+    -0.143,
+    0.701
+   ],
+   "length": 0.8,
+   "angle": 135
+  },
+  {
+   "type": "cable",
+   "from": [
+    -0.75,
+    0.45
+   ]
+  },
+  {
+   "type": "handle",
+   "on": [
+    "nearHand"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 315,
+   "arms": {
+    "near": [
+     134,
+     6
+    ],
+    "far": [
+     130,
+     100
+    ]
+   },
+   "legs": [
+    105,
+    180,
+    95
+   ],
+   "shorten": {
+    "upperArm": 0.72
+   }
+  },
+  {
+   "torso": 315,
+   "arms": {
+    "near": [
+     20,
+     18
+    ],
+    "far": [
+     130,
+     100
+    ]
+   },
+   "legs": [
+    105,
+    180,
+    95
+   ]
+  }
+ ]
+}

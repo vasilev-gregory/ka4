@@ -1,0 +1,41 @@
+{
+ "view": "side",
+ "equipment": [
+  {
+   "type": "dumbbell"
+  }
+ ],
+ "poses": [
+  {
+   "torso": 72,
+   "head": 70,
+   "legs": [
+    165,
+    192,
+    95
+   ],
+   "arms": [
+    180,
+    175
+   ]
+  },
+  {
+   "torso": 72,
+   "head": 70,
+   "legs": [
+    165,
+    192,
+    95
+   ],
+   "arms": [
+    175,
+    170
+   ],
+   "shorten": {
+    "upperArm": 0.25,
+    "forearm": 0.25,
+    "hand": 0.4
+   }
+  }
+ ]
+}

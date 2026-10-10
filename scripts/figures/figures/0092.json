@@ -1,0 +1,18 @@
+{
+ "extends": "templates/tri-seated-overhead-extension.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.15,
+    0.36
+   ],
+   "length": 0.7,
+   "angle": 90
+  },
+  {
+   "type": "barbell",
+   "r": 0.15
+  }
+ ]
+}

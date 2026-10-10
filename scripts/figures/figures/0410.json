@@ -1,0 +1,16 @@
+{
+ "extends": "templates/legs-bulgarian-split-squat.json",
+ "equipment": [
+  {
+   "type": "bench",
+   "at": [
+    -0.6,
+    0.4
+   ],
+   "length": 0.5
+  },
+  {
+   "type": "dumbbell"
+  }
+ ]
+}

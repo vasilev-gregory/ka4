@@ -1,0 +1,33 @@
+{
+ "extends": "templates/core-tuck-crunch.json",
+ "poses": [
+  {
+   "torso": 270,
+   "head": 275,
+   "arms": [
+    300,
+    165,
+    270
+   ],
+   "legs": [
+    42.9,
+    142.7,
+    95
+   ]
+  },
+  {
+   "torso": 300,
+   "head": 328,
+   "arms": [
+    10,
+    190,
+    240
+   ],
+   "legs": [
+    42.9,
+    142.7,
+    95
+   ]
+  }
+ ]
+}

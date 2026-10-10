@@ -1,0 +1,18 @@
+{
+ "extends": "templates/sh-front-raise-side.json",
+ "equipment": [
+  {
+   "type": "cable",
+   "from": [
+    -0.3,
+    0.12
+   ],
+   "on": [
+    "nearHand"
+   ]
+  },
+  {
+   "type": "handle"
+  }
+ ]
+}

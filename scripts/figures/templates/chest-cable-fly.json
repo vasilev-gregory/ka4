@@ -1,0 +1,62 @@
+{
+ "view": "front",
+ "anchor": [
+  "hip",
+  [
+   0,
+   0.96
+  ]
+ ],
+ "equipment": [
+  {
+   "type": "cable",
+   "from": [
+    1.0,
+    1.35
+   ],
+   "on": [
+    "nearHand"
+   ]
+  },
+  {
+   "type": "cable",
+   "from": [
+    -1.0,
+    1.35
+   ],
+   "on": [
+    "farHand"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": [
+    95,
+    102
+   ],
+   "legs": [
+    178,
+    182,
+    120
+   ]
+  },
+  {
+   "torso": 0,
+   "arms": [
+    212,
+    196
+   ],
+   "legs": [
+    178,
+    182,
+    120
+   ],
+   "shorten": {
+    "upperArm": 0.55,
+    "forearm": 0.55
+   }
+  }
+ ]
+}

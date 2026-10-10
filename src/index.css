@@ -44,3 +44,19 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
   --color-accent-900: var(--t-900, #134e4a);
   --color-accent-950: var(--t-950, #042f2e);
 }
+
+/* An exercise figure (ui/ExFigure, drawn by scripts/figures/build.py): the body in greys, lines a constant width at any
+   size; its muscles take their fill from --m-<id>, set by ExFigure */
+.ex-fig svg { width: 100%; height: 100%; }
+.ex-fig .b { fill: var(--color-neutral-800); stroke: var(--color-neutral-400); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.ex-fig .m { stroke: var(--color-neutral-700); stroke-width: 0.6px; vector-effect: non-scaling-stroke; }
+.ex-fig .far .b { fill: var(--color-neutral-900); stroke: var(--color-neutral-600); }
+.ex-fig-small .b { stroke-width: 0.6px; }
+.ex-fig-small .m { stroke: none; }
+.ex-fig .floor { stroke: var(--color-neutral-800); }
+.ex-fig .steel { fill: var(--color-neutral-500); stroke: var(--color-neutral-500); }
+.ex-fig .iron { fill: none; stroke: var(--color-neutral-400); }
+.ex-fig circle.iron, .ex-fig polygon.iron { stroke-width: 0.7; }
+.ex-fig .pad, .ex-fig .ball { fill: var(--color-neutral-700); }
+.ex-fig .frame { fill: var(--color-neutral-700); stroke: var(--color-neutral-700); }
+.ex-fig .band { stroke: var(--color-accent-400); }

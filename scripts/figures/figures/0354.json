@@ -1,0 +1,51 @@
+{
+ "extends": "templates/tri-kickback.json",
+ "equipment": [
+  {
+   "type": "dumbbell",
+   "on": [
+    "nearHand"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": 65,
+   "head": 75,
+   "arms": {
+    "near": [
+     222,
+     168
+    ],
+    "far": [
+     168,
+     168
+    ]
+   },
+   "legs": [
+    162,
+    195,
+    95
+   ]
+  },
+  {
+   "torso": 65,
+   "head": 75,
+   "arms": {
+    "near": [
+     228,
+     228
+    ],
+    "far": [
+     168,
+     168
+    ]
+   },
+   "legs": [
+    162,
+    195,
+    95
+   ]
+  }
+ ]
+}

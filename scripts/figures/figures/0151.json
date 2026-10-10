@@ -1,0 +1,55 @@
+{
+ "extends": "templates/chest-standing-press.json",
+ "equipment": [
+  {
+   "type": "cable",
+   "from": [
+    -0.75,
+    1.35
+   ]
+  },
+  {
+   "type": "handle"
+  }
+ ],
+ "poses": [
+  {
+   "torso": 4,
+   "legs": {
+    "near": [
+     160,
+     175,
+     95
+    ],
+    "far": [
+     198,
+     200,
+     95
+    ]
+   },
+   "arms": [
+    162.1,
+    25.6
+   ]
+  },
+  {
+   "torso": 8,
+   "legs": {
+    "near": [
+     160,
+     175,
+     95
+    ],
+    "far": [
+     198,
+     200,
+     95
+    ]
+   },
+   "arms": [
+    101.9,
+    80.3
+   ]
+  }
+ ]
+}

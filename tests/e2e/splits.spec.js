@@ -56,9 +56,9 @@ test("from a program's muscle to exercises for it; a split only shows its muscle
   await page.locator('[data-muscle="quads"]').first().click(); // another muscle in between: no double tap from it
   await chest.dblclick();
   const picker = page.getByTestId("picker");
-  await expect(picker.getByRole("button", { name: /^Жим штанги лёжа/ })).toBeVisible();
+  await expect(picker.getByRole("button", { name: /^Жим штанги лёжа Barbell bench/ })).toBeVisible();
   await expect(picker.getByRole("button", { name: /^Приседания со штангой/ })).toHaveCount(0); // filtered on chest
-  await picker.getByRole("button", { name: /^Жим штанги лёжа/ }).click();
+  await picker.getByRole("button", { name: /^Жим штанги лёжа Barbell bench/ }).click();
   await page.getByRole("button", { name: "Добавить (1)" }).click();
   await expect(page.getByText("Жим штанги лёжа").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /^грудь \d/ })).toBeVisible(); // now loaded: a row

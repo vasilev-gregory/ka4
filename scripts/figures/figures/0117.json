@@ -1,0 +1,38 @@
+{
+ "view": "front",
+ "equipment": [
+  {
+   "type": "barbell"
+  }
+ ],
+ "poses": [
+  {
+   "torso": 0,
+   "arms": [
+    185,
+    185
+   ],
+   "legs": [
+    128,
+    196,
+    120
+   ],
+   "shorten": {
+    "thigh": 0.5
+   },
+   "head": 0
+  },
+  {
+   "torso": 0,
+   "arms": [
+    182,
+    182
+   ],
+   "legs": [
+    160,
+    180,
+    120
+   ]
+  }
+ ]
+}
