@@ -14,39 +14,39 @@ barbell-bench-press 0025
 incline-barbell-bench-press 0047
 dumbbell-bench-press 0289
 dips 0251
-cable-crossover 0227
-machine-pec-fly 0596
+cable-crossover 0227 0
+machine-pec-fly 0596 0
 lat-pulldown 0198
 pull-up 0652
 bent-over-barbell-row 0027
 seated-row 0861
 machine-row 1350
-pullover 0375
-cable-pullover 0237
-rope-cable-pullover 0237
+pullover 0375 0.5
+cable-pullover 0237 0.5
+rope-cable-pullover 0237 0.5
 lying-cable-pullover 0184
-barbell-pullover 0073
-decline-barbell-pullover 1255
-ez-bar-pullover 3010
-bent-arm-dumbbell-pullover 0375
+barbell-pullover 0073 0.5
+decline-barbell-pullover 1255 0.5
+ez-bar-pullover 3010 0.5
+bent-arm-dumbbell-pullover 0375 0.5
 machine-pullover 2285
-one-arm-cable-pullover 3563
+one-arm-cable-pullover 3563 0.5
 cable-preacher-curl 0195
 dumbbell-seated-curl 0391
 machine-preacher-curl 0592
-cable-extension 0201
+cable-extension 0201 0.5
 cable-extension-samurai 0194
 triceps-kickback 0333
 triceps-press-machine 0591
 wrist-curl 0126
 calf-raise 0605
-deadlift 0032
+deadlift 0032 0.5
 farmer-s-walk 2133
 duck-press 0603
 reverse-pec-deck 0602
 plate-overhead-press 0426
 dumbbell-shoulder-press 0405
-cable-shoulder-press 0219
+cable-shoulder-press 0219 0.5
 machine-shoulder-press 0603
 lying-rear-delt-raise 0348
 rear-delt-row 0377
@@ -78,7 +78,7 @@ one-arm-cable-row 0214
 one-arm-cable-chest-press 1265
 one-arm-incline-dumbbell-press 1281
 one-arm-incline-cable-press 1265
-sumo-deadlift 0117
+sumo-deadlift 0117 0.5
 romanian-deadlift 0085
 lying-leg-curl 0586
 machine-chest-press 0576
@@ -99,8 +99,8 @@ one-arm-shoulder-press 0361
 one-arm-upright-row 0363
 one-arm-reverse-fly 0359
 one-arm-dumbbell-bench-press 0343
-single-arm-cable-crossover 1262
-one-arm-machine-pec-fly 0596
+single-arm-cable-crossover 1262 0.5
+one-arm-machine-pec-fly 0596 0
 one-arm-lat-pulldown 3563
 one-arm-seated-row 0214
 one-arm-machine-row 1313
@@ -108,7 +108,7 @@ one-arm-dumbbell-row 0292
 one-arm-cable-preacher-curl 1633
 one-arm-machine-preacher-curl 0592
 one-arm-seated-dumbbell-curl 0391
-one-arm-cable-extension 1723
+one-arm-cable-extension 1723 0.5
 one-arm-cable-extension-samurai 0231
 one-arm-triceps-kickback 0354
 one-arm-triceps-press-machine 0591
@@ -163,7 +163,7 @@ machine-crunch 1452
 hanging-knee-raise 1764
 lying-leg-raise 0620
 bird-dog 3239
-burpee 1160
+burpee 1160 2
 treadmill-run pulse-0004
 running 0685
 treadmill-walk pulse-0005
@@ -201,12 +201,12 @@ plate-front-raise 0834
 dumbbell-skull-crusher 0351
 skull-crusher 0060
 one-arm-cable-kickback 0860
-step-up 0431
-dumbbell-step-up 0431
+step-up 0431 0
+dumbbell-step-up 0431 0
 dumbbell-split-squat 0410
-dumbbell-deadlift 0300
-smith-machine-deadlift 0752
-smith-machine-sumo-deadlift 0752
+dumbbell-deadlift 0300 0.5
+smith-machine-deadlift 0752 0.5
+smith-machine-sumo-deadlift 0752 0.5
 dumbbell-hip-thrust 3523
 dumbbell-lying-leg-curl 0586
 good-morning 0044
@@ -229,7 +229,7 @@ side-plank 0705
 dead-bug 0276
 russian-twist own-russian-twist
 waiter-s-walk 4244
-turkish-get-up 0551
+turkish-get-up 0551 1
 st-hip-flexor-forward 1585
 st-hip-flexor-tall 1564
 st-figure-four 1710
