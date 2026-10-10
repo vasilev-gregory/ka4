@@ -32,8 +32,9 @@ function NewExercise({ name: start, group, cancel, done }) {
 }
 
 // a muscle group, or a few together: «ноги» take the calves, «руки» — biceps, triceps and forearms
+// (only big groups here: biceps, calves… are muscles — the muscle filter, narrowed by the group)
 const GROUP_CHIPS = [["ноги", ["ноги", "икры"]], ["руки", ["бицепс", "трицепс", "предплечья"]], ["плечи"], ["грудь"], ["спина"], ["кор"],
-  ["кардио"], ["бицепс"], ["трицепс"], ["предплечья"], ["икры"]].map(([g, of]) => [g, of || [g]]);
+  ["кардио"]].map(([g, of]) => [g, of || [g]]);
 const GROUP_OF = Object.fromEntries(GROUP_CHIPS);
 
 const FILTERS = [
