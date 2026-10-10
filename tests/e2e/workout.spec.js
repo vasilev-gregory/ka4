@@ -28,8 +28,8 @@ test("swipe right picks a set (not marks it), swipe left deletes it with undo", 
   await page.getByText("Вернуть").click();
   await expect(checks).toHaveCount(n0);
 
-  await page.getByRole("button", { name: "Отменить", exact: true }).click();
-  await page.getByRole("button", { name: "Не сохранять?" }).click();
+  await page.getByRole("button", { name: "Удалить", exact: true }).click();
+  await page.getByRole("button", { name: "Удалить тренировку?" }).click();
   await expect(page.getByText("+ Новая программа")).toBeVisible();
   expect(errors).toEqual([]);
 });

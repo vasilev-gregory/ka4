@@ -53,7 +53,11 @@ function ModeColor({ settings, mode, up }) {
   const key = COLOR_KEY[mode];
   return (
     <Card className="mb-3">
-      <div className="mb-2 font-semibold">Цвет {mode === "stretch" ? "растяжки" : "силовой"}</div>
+      <div className="font-semibold">Цвет режима «{mode === "stretch" ? "Растяжка" : "Сила"}»</div>
+      <p className="mb-3 mt-0.5 text-xs text-neutral-500">
+        Кнопки, отметки подходов, схема мышц и графики, пока ты в этом режиме. У {mode === "stretch" ? "силы" : "растяжки"} — свой цвет:
+        переключи режим выше, чтобы выбрать его.
+      </p>
       <div className="grid grid-cols-4 gap-y-3">
         {Object.entries(PALETTES).map(([k, p]) => (
           <button key={k} onClick={() => up((d) => { d.settings[key] = k; })} aria-label={p.name} aria-pressed={k === cur}

@@ -179,7 +179,7 @@ export function ActiveWorkout({ data, up, exMap, open, onPrograms }) {
       </div>
 
       <div className="mt-6 flex gap-2">
-        <DeleteButton inline onConfirm={() => up(A.discardWorkout)} confirmText="Не сохранять?">Отменить</DeleteButton>
+        <DeleteButton inline onConfirm={() => up(A.discardWorkout)} confirmText="Удалить тренировку?">Удалить</DeleteButton>
         {a.paused ? (
           <>
             <Button className="flex-1" onClick={() => up((d) => A.resumeWorkout(d))}>Продолжить</Button>
