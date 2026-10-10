@@ -28,11 +28,3 @@ test("palettes: the classic amber and rose are back next to the new ones, see-th
   assert.equal(PALETTES.amberGlow.base, "transparent");
   assert.equal(PALETTES.amber.base, undefined); // grey
 });
-
-test("the failure colour stays apart from the accent: violet next to a reddish strength palette, red otherwise", async () => {
-  const { failColor } = await import("../../src/ui/palettes.js");
-  assert.equal(failColor({}), "#f87171");
-  assert.equal(failColor({ strengthColor: "red" }), "#a78bfa");
-  assert.equal(failColor({ strengthColor: "pink" }), "#a78bfa");
-  assert.equal(failColor({ strengthColor: "violet" }), "#f87171");
-});

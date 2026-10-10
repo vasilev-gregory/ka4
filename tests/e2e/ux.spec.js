@@ -27,8 +27,8 @@ test("finishing with unticked sets asks first; an empty new program is dropped o
   await ask.getByRole("button", { name: "Продолжить тренировку" }).click();
   await expect(ask).toHaveCount(0);
   await expect.poll(async () => !!(await stored(page)).active).toBe(true);
-  await page.getByRole("button", { name: "Отменить", exact: true }).click();
-  await page.getByRole("button", { name: "Не сохранять?" }).click();
+  await page.getByRole("button", { name: "Удалить", exact: true }).click();
+  await page.getByRole("button", { name: "Удалить тренировку?" }).click();
 
   const before = (await stored(page)).programs.length;
   await page.getByRole("button", { name: "+ Новая программа" }).click();

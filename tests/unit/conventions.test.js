@@ -27,10 +27,9 @@ test("amber / rose / teal appear only in the accent theme (index.css)", () => {
   assert.ok(!/\b(amber|teal|rose)-\d/.test(outside));
 });
 
-test("a set's kind colours (warm-up sky, failure) live in strength/setMarks.js only", () => {
-  const elsewhere = files("src").filter((f) => !f.endsWith(join("strength", "setMarks.js")))
-    .filter((f) => /\b(sky-\d|bg-fail|text-fail)\b/.test(readFileSync(f, "utf8")));
-  assert.deepEqual(elsewhere, []);
+test("a set's kinds are marked in the mode's one colour (fill and icon), never by another hue", () => {
+  const marks = readFileSync(join("src", "strength", "setMarks.js"), "utf8");
+  assert.ok(!/\b(text|bg)-(?!accent|neutral)[a-z]+-\d/.test(marks));
 });
 
 test("new screens use the shared kit for primary buttons instead of copying the classes", () => {

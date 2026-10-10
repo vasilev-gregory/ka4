@@ -30,7 +30,7 @@
 | Задача | Где |
 |---|---|
 | Засечь кардио: ▶ — секундомер, ✓ — минуты | `model/cardioActions.js` (`startCardioTimer`, `minutesSince` в `toggleSet`), ▶ в `SetRow` | |
-| Цвет отметки подхода по виду (разминка / рабочий / в отказ) | `setKind` (`model/workout.js`) → `strength/setMarks.js`; цвет отказа `--fail` — `ui/palettes.js` | ⚙ свои цвета разминки/отказа в экране |
+| Отметка подхода по виду (разминка / рабочий / в отказ): заливка и значок в цвете режима | `setKind` (`model/workout.js`) → `strength/setMarks.js` | ⚙ другой оттенок для вида подхода |
 | Отметить подход с RIR удержанием ✓ (веер) | `strength/workout/RirDial.jsx` → `markSetRir` (`model/workoutActions.js`) | |
 | Подходы, объём, время, отдых тренировки; текст итогов | `model/workout.js` (`stats`, `fmtTotals`, `restStats`) |
 | Как часто и недавно делалось упражнение («твои» вверху выбора) | `model/workout.js` `exerciseUsage` |
