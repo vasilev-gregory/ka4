@@ -4,7 +4,7 @@
 #
 # figures.txt names the Open Exercise Figures pose for each exercise (figures/*.json, CC0); pose.py (MIT-0) solves the
 # joints of its last key pose (the worked position: the squat at the bottom, the curl at the top), and the body is drawn
-# from parts.py. The SVG has no colours of its own, only classes the app styles (src/index.css): the body `b`, a
+# from parts.py. The SVG has no colours of its own, only classes the app styles (src/index.css): the body `bl` (its outline) under `b` (its fill), a
 # muscle `m m-<id>`, the far limbs `far`, equipment `iron steel pad frame band ball`, the floor `floor`.
 import math
 import sys
@@ -63,7 +63,19 @@ def angle(a, b):
     return math.degrees(math.atan2(b[0] - a[0], b[1] - a[1]))
 
 
-def part(c, name, at, ang, cls="", muscles=True, view="side", far=False):
+class Group:
+    """Parts drawn as one silhouette: every part's outline first, then every fill over them, then the muscles, so the
+    joins between parts (hip, knee, elbow) show no seam and only the group's outer edge is outlined."""
+
+    def __init__(self, cls=""):
+        self.cls, self.lines, self.fills, self.muscles = cls, [], [], []
+
+    def flush(self, c):
+        attr = f' class="{self.cls}"' if self.cls else ""
+        c.out.append(f"<g{attr}>" + "".join(self.lines + self.fills + self.muscles) + "</g>")
+
+
+def part(c, g, name, at, ang, muscles=True, view="side", far=False):
     x, y = c.pt(at)
     if view == "front":
         p = FRONT[name]
@@ -71,23 +83,28 @@ def part(c, name, at, ang, cls="", muscles=True, view="side", far=False):
     else:
         p = PARTS[name]
         flip = " scale(-1,1)" if name in ("torso", "neck", "head") else ""  # these point up: their front is the other way
-    attr = f' class="{cls}"' if cls else ""
-    c.out.append(f'<g{attr} transform="translate({x:.1f},{y:.1f}) rotate({ang + 180:.1f}) scale({c.k / 100:.4f}){flip}">')
-    c.out.append(f'<path class="b" d="{smooth(p["o"])}"/>')
-    if muscles:
-        for m, shapes in p["m"].items():
-            for pts in shapes if isinstance(shapes[0], list) else [shapes]:
-                c.out.append(f'<path class="m m-{m}" style="fill:var(--m-{m},transparent)" d="{smooth(pts)}"/>')
-    c.out.append("</g>")
+    t = f'transform="translate({x:.1f},{y:.1f}) rotate({ang + 180:.1f}) scale({c.k / 100:.4f}){flip}"'
+    d = smooth(p["o"])
+    g.lines.append(f'<path class="bl" {t} d="{d}"/>')
+    g.fills.append(f'<path class="b" {t} d="{d}"/>')
+    if muscles and p["m"]:
+        g.muscles.append(f"<g {t}>" + "".join(f'<path class="m m-{m}" style="fill:var(--m-{m},transparent)" d="{smooth(pts)}"/>'
+                                             for m, shapes in p["m"].items()
+                                             for pts in (shapes if isinstance(shapes[0], list) else [shapes])) + "</g>")
 
 
-def limbs(c, j, side, which, view):
+def limbs(c, g, j, side, which, view):
     segs = {"leg": [("thigh", "Hip", "Knee"), ("shin", "Knee", "Ankle"), ("foot", "Ankle", "Toe")],
             "arm": [("upperArm", "Shoulder", "Elbow"), ("forearm", "Elbow", "Wrist"), ("hand", "Wrist", "Hand")]}[which]
     front = view == "front"
-    cls = "far" if side == "far" and not front else ""  # from the side the far limbs are behind the body: dimmed, no muscles
     for name, a, b in reversed(segs) if which == "leg" else segs:
-        part(c, name, j[side + a], angle(j[side + a], j[side + b]), cls, front or side == "near", view, side == "far")
+        part(c, g, name, j[side + a], angle(j[side + a], j[side + b]), front or side == "near", view, side == "far")
+
+
+def limb_group(c, j, side, which, view):
+    g = Group("far" if side == "far" and view != "front" else "")  # from the side the far limbs are behind: dimmed, no muscles
+    limbs(c, g, j, side, which, view)
+    g.flush(c)
 
 
 def draw(fig, pose):
@@ -100,21 +117,23 @@ def draw(fig, pose):
     c = Svg(((min(xs) - .3, min(min(ys) - .25, -.05)), (max(xs) + .3, max(ys) + .3)))  # framed on the body
     c.line((-5, 0), (5, 0), .012, P.FLOOR)
     P.draw_equipment(c, j, posed, "back", view)
+    body = Group()  # legs, torso, neck and head: one silhouette (the arms keep their own edge where they cross it)
     if view == "front":
-        limbs(c, j, "far", "leg", view)
-        limbs(c, j, "near", "leg", view)
+        limbs(c, body, j, "far", "leg", view)
+        limbs(c, body, j, "near", "leg", view)
     else:
-        limbs(c, j, "far", "arm", view)
-        limbs(c, j, "far", "leg", view)
+        limb_group(c, j, "far", "arm", view)
+        limb_group(c, j, "far", "leg", view)
     P.draw_equipment(c, j, posed, "far", view)
     if view != "front":
-        limbs(c, j, "near", "leg", view)
-    part(c, "neck", j["shoulder"], angle(j["shoulder"], j["neckTop"]), view=view)
-    part(c, "torso", j["hip"], angle(j["hip"], j["shoulder"]), view=view)
-    part(c, "head", j["head"], angle(j["neckTop"], j["head"]), view=view)
+        limbs(c, body, j, "near", "leg", view)
+    part(c, body, "neck", j["shoulder"], angle(j["shoulder"], j["neckTop"]), view=view)
+    part(c, body, "torso", j["hip"], angle(j["hip"], j["shoulder"]), view=view)
+    part(c, body, "head", j["head"], angle(j["neckTop"], j["head"]), view=view)
+    body.flush(c)
     if view == "front":
-        limbs(c, j, "far", "arm", view)
-    limbs(c, j, "near", "arm", view)
+        limb_group(c, j, "far", "arm", view)
+    limb_group(c, j, "near", "arm", view)
     P.draw_equipment(c, j, posed, "front", view)
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="fig">' + "".join(c.out) + "</svg>\n"
 
