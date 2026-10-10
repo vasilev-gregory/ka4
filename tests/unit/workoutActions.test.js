@@ -296,3 +296,14 @@ test("partials are never hinted nor filled from last time", () => {
   A.toggleSet(d, 0, 1, T0 + 1000);
   assert.equal(s.p, "");
 });
+
+test("cardio stopwatch: ▶ starts it, ✓ stops it and writes the minutes it ran", async () => {
+  const { startCardioTimer } = await import("../../src/model/cardioActions.js");
+  const d = withWorkout([blank({ hr: "20" })]);
+  startCardioTimer(d, 0, 0, T0);
+  A.toggleSet(d, 0, 0, T0 + 12.5 * 60e3);
+  const s = d.active.exercises[0].sets[0];
+  assert.deepEqual([s.done, s.r, s.from], [true, "12,5", undefined]);
+  startCardioTimer(d, 0, 0, T0 + 1e6); // a done set doesn't start again
+  assert.equal(s.from, undefined);
+});

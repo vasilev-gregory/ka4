@@ -61,7 +61,8 @@ export function ExerciseCard({ e, ei, ex, exData, last, step, records, cols, rir
                 swipe={g.swipe && g.swipe.key === key ? g.swipe : null}
                 swipeProps={g.swipeBind(key, (dir) => act.swipeSet(si, dir))}
                 numberProps={g.numberProps(si)}
-                edit={(patch) => act.editSet(si, patch)} toggle={() => act.toggleSet(si)} rir={(n) => act.rirSet(si, n)} />
+                edit={(patch) => act.editSet(si, patch)} toggle={() => act.toggleSet(si)} rir={(n) => act.rirSet(si, n)}
+                timer={cardio ? () => act.timerSet(si) : null} />
             );
           })}
           {selHere ? (

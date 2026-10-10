@@ -29,6 +29,7 @@
 
 | Задача | Где |
 |---|---|
+| Засечь кардио: ▶ — секундомер, ✓ — минуты | `model/cardioActions.js` (`startCardioTimer`, `minutesSince` в `toggleSet`), ▶ в `SetRow` | |
 | Отметить подход с RIR удержанием ✓ (веер) | `strength/workout/RirDial.jsx` → `markSetRir` (`model/workoutActions.js`) | |
 | Подходы, объём, время, отдых тренировки; текст итогов | `model/workout.js` (`stats`, `fmtTotals`, `restStats`) |
 | Как часто и недавно делалось упражнение («твои» вверху выбора) | `model/workout.js` `exerciseUsage` |
