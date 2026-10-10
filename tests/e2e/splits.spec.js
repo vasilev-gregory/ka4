@@ -129,3 +129,18 @@ test("hold programs to pick them: a new split of them, or into an existing one",
   await row("IV. Грудь и спина").click();
   await expect(page.getByPlaceholder("Название программы")).toHaveValue("IV. Грудь и спина");
 });
+
+test("during a workout «Программы» shows the programs: the running one is marked, ▶ goes back, nothing else starts", async ({ page }) => {
+  await openApp(page);
+  await startWorkout(page);
+  await page.getByRole("button", { name: "Программы" }).click();
+  await expect(page.getByRole("heading", { name: "Программы" })).toBeVisible();
+  await expect(page.getByText("идёт")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Начать" }).first()).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Без программы" })).toBeDisabled();
+  await page.getByText("II. Грудь и спина").click(); // another program opens to look at
+  await expect(page.locator("input").first()).toHaveValue("II. Грудь и спина");
+  await page.goBack();
+  await page.getByTestId("program-group").getByRole("button", { name: "Вернуться" }).click();
+  await expect(page.getByText("Идёт тренировка")).toBeVisible();
+});

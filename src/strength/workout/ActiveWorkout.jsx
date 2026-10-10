@@ -1,7 +1,7 @@
 // The running workout: header with time and volume, exercise cards, add / finish / pause, the
 // "update the program?" question, undo of a deleted set, the exercise picker.
 import { useState } from "react";
-import { ClipboardList, Play, Timer } from "lucide-react";
+import { ClipboardList, ListOrdered, Play, Timer } from "lucide-react";
 import { unlockAudio } from "../../core/sound.js";
 import { fmtDur, plural, progTitle } from "../../core/util.js";
 import {
@@ -139,6 +139,10 @@ export function ActiveWorkout({ data, up, exMap, open }) {
           {/* the card it would get if finished now: muscles, progress, text — without finishing */}
           <button onClick={() => open({ type: "workoutNow" })} className="mt-1 flex w-full items-center justify-end gap-1 text-xs text-accent-400">
             <ClipboardList size={14} /> Итог сейчас
+          </button>
+          {/* the other programs, to look at or edit; none starts until this one ends */}
+          <button onClick={() => open({ type: "programs" })} className="mt-1 flex w-full items-center justify-end gap-1 text-xs text-accent-400">
+            <ListOrdered size={14} /> Программы
           </button>
           {/* the rest strip was hidden: bring it back */}
           {!a.restEndsAt && a.lastSetAt && !a.paused && data.settings.countdown !== false && (
