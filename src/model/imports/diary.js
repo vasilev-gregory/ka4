@@ -7,6 +7,7 @@
 // are whatever was typed there, not an added weight: readImport says so (bodyKg: false).
 import { MEASURES } from "../catalog.js";
 import { parseCsv } from "./csv.js";
+import { exName, str } from "./fields.js";
 
 export const isDiary = (headers) => ["ДАТА", "УПРАЖНЕНИЕ", "ПОДХОДЫ"].every((h) => headers.includes(h));
 
@@ -15,9 +16,6 @@ const day = (s) => {
   return m ? new Date(+m[3], +m[2] - 1, +m[1], 12).getTime() : null;
 };
 const n = (v) => { const x = parseFloat(String(v || "").replace(",", ".")); return Number.isFinite(x) ? x : null; };
-const str = (x) => (x == null ? "" : String(Math.round(x * 100) / 100));
-// "Жим лежа · штанга" → "Жим лежа (штанга)", the way our aliases write equipment
-const exName = (s) => s.replace(/\s*·\s*(.+)$/, " ($1)");
 const MEASURE = Object.fromEntries(MEASURES.map(([id, name]) => [name.toLowerCase(), id]));
 
 // one set from its two value;unit pairs: { w, r, time } or null (nothing done)

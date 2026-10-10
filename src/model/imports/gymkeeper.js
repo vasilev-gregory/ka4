@@ -7,6 +7,7 @@
 // "(1 нога)" marks a one-arm / one-leg set: such sets become "<exercise> одной рукой / ногой".
 import { MEASURES } from "../catalog.js";
 import { parseCsv } from "./csv.js";
+import { exName, str } from "./fields.js";
 
 const HEADERS = ["Date", "Type", "Name", "Val_1", "Unit_1", "Val_2", "Unit_2", "Comment"];
 // GymKeeper measurement names → ours (MEASURES)
@@ -31,9 +32,6 @@ const day = (s) => {
   return us ? new Date(y, +m[1] - 1, +m[2], 12).getTime() : new Date(y, +m[2] - 1, +m[1], 12).getTime();
 };
 const n = (v) => { const x = parseFloat(String(v || "").replace(",", ".")); return Number.isFinite(x) ? x : null; };
-const str = (x) => (x == null ? "" : String(Math.round(x * 100) / 100));
-// "Squat · Barbell" → "Squat (Barbell)", the way Hevy and our aliases write equipment
-const exName = (s) => s.replace(/\s*·\s*(.+)$/, " ($1)");
 
 // Drop sets: consecutive "Drop" sets with falling weight are one drop set; the set before them joins it
 // when it was heavier than the first drop.

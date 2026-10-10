@@ -43,13 +43,13 @@ const GROUP_CHIPS = [["ноги", ["ноги", "икры"]], ["руки", ["би
   ["кардио"]].map(([g, of]) => [g, of || [g]]);
 const GROUP_OF = Object.fromEntries(GROUP_CHIPS);
 
+// the muscle chips, and cardio as one: [value, label, its group]
+const MUSCLE_CHIPS = [...MUSCLES, ["cardio", "кардио", "кардио"]];
+
 const FILTERS = [
   { id: "group", label: "Группа", chips: GROUP_CHIPS.map(([g]) => [g, g]), fits: (e, g) => GROUP_OF[g].includes(e.group) },
-  { id: "muscle", label: "Мышца", chips: [...MUSCLES.map(([m, l]) => [m, l]), ["cardio", "кардио"]],
-    // with a group picked: only its muscles (cardio for «кардио»)
-    within: (picked) => (picked.group
-      ? [...MUSCLES.filter(([, , g]) => GROUP_OF[picked.group].includes(g)).map(([m, l]) => [m, l]), ...(picked.group === "кардио" ? [["cardio", "кардио"]] : [])]
-      : FILTERS[1].chips),
+  { id: "muscle", label: "Мышца", chips: MUSCLE_CHIPS,
+    within: (picked) => (picked.group ? MUSCLE_CHIPS.filter(([, , g]) => GROUP_OF[picked.group].includes(g)) : MUSCLE_CHIPS), // the group's only
     fits: (e, m) => (m === "cardio" ? e.kind === "cardio" : musclesOf(e)[m] >= 1) },
   { id: "equip", label: "Снаряд", chips: EQUIPMENT.map(([k, l]) => [k, l]), fits: (e, k) => equipmentOf(e).includes(k) },
 ];

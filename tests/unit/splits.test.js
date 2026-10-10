@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { activeSplit, splitOf, splitWeek } from "../../src/model/splits.js";
 import { createSplit, dropEmptySplit, removeSplit, setActiveSplit } from "../../src/model/splitActions.js";
-import { removeProgram } from "../../src/model/workoutActions.js";
+import { removeProgram } from "../../src/model/programActions.js";
 import { programLoad } from "../../src/model/muscles.js";
 import { migrate, seed } from "../../src/model/state.js";
 
@@ -65,7 +65,7 @@ test("a program's split: the active one when it holds the program, else the firs
 });
 
 test("several programs deleted at once leave the splits; the undo puts back the programs and their places in splits", async () => {
-  const { removePrograms, restorePrograms } = await import("../../src/model/workoutActions.js");
+  const { removePrograms, restorePrograms } = await import("../../src/model/programActions.js");
   const d = seed();
   const was = structuredClone({ programs: d.programs, splits: d.splits });
   const ids = [d.programs[0].id, d.programs[2].id];

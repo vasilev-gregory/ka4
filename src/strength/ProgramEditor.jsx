@@ -1,7 +1,8 @@
 // Strength program editor on the shared parts (ui/ProgramEdit): exercises with how many sets to prefill (cardio: a
 // plan), replace, the muscles they plan for, start, delete. Saved as you go.
 import { RefreshCw } from "lucide-react";
-import { addProgramItems, dropEmptyProgram, removeProgram, replaceProgramItem, startWorkout } from "../model/workoutActions.js";
+import { addProgramItems, dropEmptyProgram, removeProgram, replaceProgramItem } from "../model/programActions.js";
+import { startWorkout } from "../model/workoutActions.js";
 import { CARDIO_PLAN, runningSession } from "../model/workout.js";
 import { fmtNum, progTitle } from "../core/util.js";
 import { Picker } from "./ExerciseList.jsx";

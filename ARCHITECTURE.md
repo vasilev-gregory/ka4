@@ -15,7 +15,7 @@
 | Форма сохранённых данных | `model/types.js` (JSDoc), умолчания — в `migrate()` (`model/state.js`; слияние дублей каталога — `EX_MERGES`) | новое поле без описания в `types.js` |
 | Чтение / запись на устройство | `src/storage.js` | ⚙ `localStorage` / `indexedDB` / `navigator.storage` в другом месте |
 | Новая версия: проверка, сброс кэша, перезагрузка с «Обновляю приложение…» и «Обновлено ✓» после; обновление по просьбе человека | `core/appUpdate.js` (`updateApp` — кнопка `settings/UpdateButton` и жест `ui/PullToRefresh`; вызывает `main.jsx`) | |
-| Изменение данных силы: тренировка, подходы, отдых, программы (и из тренировки — `programFromWorkout`), свои упражнения, удаление тренировки | `model/workoutActions.js` | ⚙ `d.workouts / d.programs / d.exercises / d.active` менять в экране |
+| Изменение данных силы: тренировка, подходы, отдых, свои упражнения, удаление тренировки | `model/workoutActions.js`; программы (и из тренировки — `programFromWorkout`) — `model/programActions.js`; секундомер кардио — `model/cardioActions.js` | ⚙ `d.workouts / d.programs / d.exercises / d.active` менять в экране |
 | Изменение данных растяжки: программы, растяжки, сессии | `model/stretchActions.js` | ⚙ `s.programs / s.sessions / s.exercises` менять в экране |
 | Идущая растяжка (фазы, часы, пауза, пропуск, конец, отмена, без программы) | `model/stretchRunActions.js` | хранить ход растяжки в состоянии компонента |
 | Замеры (сохранить, удалить) | `model/measureActions.js` | `d.measurements` менять в экране |
@@ -30,6 +30,7 @@
 | Задача | Где |
 |---|---|
 | Засечь кардио: ▶ — секундомер, ✓ — минуты | `model/cardioActions.js` (`startCardioTimer`, `minutesSince` в `toggleSet`), ▶ в `SetRow` | |
+| Цвет отметки подхода по виду (разминка / рабочий / в отказ) | `setKind` (`model/workout.js`) → `strength/setMarks.js`; цвет отказа `--fail` — `ui/palettes.js` | ⚙ свои цвета разминки/отказа в экране |
 | Отметить подход с RIR удержанием ✓ (веер) | `strength/workout/RirDial.jsx` → `markSetRir` (`model/workoutActions.js`) | |
 | Подходы, объём, время, отдых тренировки; текст итогов | `model/workout.js` (`stats`, `fmtTotals`, `restStats`) |
 | Как часто и недавно делалось упражнение («твои» вверху выбора) | `model/workout.js` `exerciseUsage` |

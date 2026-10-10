@@ -2,6 +2,7 @@
 // set_index, set_type (normal / warmup / dropset / failure), weight_kg or weight_lbs, reps,
 // duration_seconds, rpe. Dates like "26 Jan 2024, 18:45" or "3 окт. 2026, 11:35" (local time), or ISO.
 import { parseCsv } from "./csv.js";
+import { str } from "./fields.js";
 
 // month names as Hevy writes them in English and Russian exports ("Jan", "сент.", "мая")
 const MONTHS = [["jan", "янв"], ["feb", "фев"], ["mar", "мар"], ["apr", "апр"], ["may", "ма"], ["jun", "июн"],
@@ -25,7 +26,6 @@ export function parseHevyDate(s) {
 
 const n = (v) => { const x = parseFloat(String(v || "").replace(",", ".")); return Number.isFinite(x) ? x : null; };
 // "72.5" stays, 72.4999 → "72.5": kept as typed numbers, at most two decimals
-const str = (x) => (x == null ? "" : String(Math.round(x * 100) / 100));
 
 // -> [{ name, startedAt, finishedAt, exercises: [{ name, time, sets: [{ w, r, t?, rir?, g? }] }] }]
 export function parseHevy(text) {
