@@ -95,4 +95,11 @@ test("picker filters: buttons opening their chips — by the muscle an exercise 
   await expect(picker.getByText("Сгибание рук со штангой").first()).toBeVisible();
   await expect(picker.getByText("Брусья на трицепс").first()).toBeVisible();
   await expect(picker.getByText("Жим ногами", { exact: false })).toHaveCount(0);
+  // the muscle filter offers the group's muscles only; a muscle of another group goes when the group changes
+  await picker.getByRole("button", { name: /^Мышца: все/ }).click();
+  await expect(picker.getByTestId("filter-muscle").getByRole("button", { name: "грудь" })).toHaveCount(0);
+  await picker.getByTestId("filter-muscle").getByRole("button", { name: "бицепс", exact: true }).click();
+  await picker.getByRole("button", { name: /^Группа: руки/ }).click();
+  await picker.getByTestId("filter-group").getByRole("button", { name: "ноги" }).click();
+  await expect(picker.getByRole("button", { name: /^Мышца: все/ })).toBeVisible();
 });
