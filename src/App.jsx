@@ -20,6 +20,7 @@ import { SplitEditor } from "./strength/SplitEditor.jsx";
 import { RestBar } from "./strength/workout/RestBar.jsx";
 import { WorkoutPill } from "./strength/workout/WorkoutPill.jsx";
 import { WorkoutTab } from "./strength/workout/WorkoutTab.jsx";
+import { ProgramList } from "./strength/workout/ProgramList.jsx";
 import { StretchEditor } from "./stretch/StretchEditor.jsx";
 import { StretchHistory } from "./stretch/StretchHistory.jsx";
 import { StretchSession } from "./stretch/StretchSession.jsx";
@@ -106,6 +107,7 @@ function Shell({ data, up, replace, saved }) {
     workoutNow: () => <WorkoutDetail {...common} live />, // the running workout's card as if finished now
     program: (v) => <ProgramEditor {...common} id={v.id} goWorkout={() => nav.setTab("workout")} />,
     split: (v) => <SplitEditor {...common} id={v.id} />,
+    programs: () => <ProgramList {...common} />, // during a workout
   };
   const TABS = {
     workout: () => (stretchMode ? <StretchHome {...stretchProps} /> : <WorkoutTab {...common} />),
