@@ -1,0 +1,48 @@
+{
+ "view": "side",
+ "anchor": [
+  "hip",
+  [
+   0,
+   0.12
+  ]
+ ],
+ "equipment": [
+  {
+   "type": "medicineBall",
+   "on": [
+    "nearHand"
+   ]
+  }
+ ],
+ "poses": [
+  {
+   "torso": -40,
+   "head": -15,
+   "arms": [
+    118,
+    75,
+    75
+   ],
+   "legs": [
+    42,
+    100,
+    115
+   ]
+  },
+  {
+   "torso": -40,
+   "head": -15,
+   "arms": [
+    150,
+    105,
+    105
+   ],
+   "legs": [
+    42,
+    100,
+    115
+   ]
+  }
+ ]
+}
