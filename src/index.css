@@ -32,9 +32,6 @@ body::before { content: ""; position: fixed; top: 0; left: 0; right: 0; height: 
   --color-accent-900: var(--s-900, #665200);
   --color-accent-950: var(--s-950, #332900);
 }
-/* a set done to failure (--fail from ui/palettes: red, violet next to a reddish accent) */
-@utility bg-fail { background-color: var(--fail, #f87171); }
-@utility text-fail { color: var(--fail, #f87171); }
 /* a soft tint of the accent (a status chip «рост»): mixed into the palette's base (grey; see-through for the classic ones) */
 @utility bg-accent-soft { background-color: color-mix(in oklch, var(--color-accent-500) 35%, var(--accent-base)); }
 .mode-stretch {

@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { Check, Play, Trophy } from "lucide-react";
 import { fmtDur, numericInput } from "../../core/util.js";
 import { setKind } from "../../model/workout.js";
-import { SET_CHECK as DONE_CHECK, SET_LABEL as DONE_LABEL, SET_TEXT as DONE_TEXT } from "../setMarks.js";
+import { SET_CHECK as DONE_CHECK, SET_ICON, SET_LABEL as DONE_LABEL, SET_TEXT as DONE_TEXT } from "../setMarks.js";
 import { useNow } from "../../ui/kit.jsx";
 import { useRirDial } from "./RirDial.jsx";
 
@@ -44,6 +44,7 @@ export function SetRow({ s, ex, cols, rirOn, label, grouped, selected, rest, liv
   const now = useNow(1000, running);
   const live = running ? Math.max(0, now - s.from) : rested; // the cardio stopwatch, else the rest one
   const dial = useRirDial({ onTap: toggle, onPick: rir, enabled: rirOn && s.t !== "w" });
+  const MarkIcon = s.done ? SET_ICON[setKind(s)] : Check;
   const rirLabel = rirOn && s.done && s.rir != null ? (s.rir === 4 ? "4+" : String(s.rir)) : null;
   const shownRest = rest === "drop" || rest >= 1000 ? rest : null; // under a second (warm-up closed by this tick): nothing to show
   // a short flash when the set gets confirmed (phones without vibration still notice)
@@ -83,7 +84,7 @@ export function SetRow({ s, ex, cols, rirOn, label, grouped, selected, rest, liv
             <span className="text-xs font-semibold tabular-nums">{fmtDur(live)}</span>
           ) : (
             <>
-              {rirLabel ? <span className="text-sm font-bold" aria-label={`RIR ${rirLabel}`}>{rirLabel}</span> : <Check size={s.done && shownRest ? 16 : 20} />}
+              {rirLabel ? <span className="text-sm font-bold" aria-label={`RIR ${rirLabel}`}>{rirLabel}</span> : <MarkIcon size={s.done && shownRest ? 16 : 20} />}
               {s.done && shownRest && <span className="mt-0.5 text-[9px] font-semibold tabular-nums">{rest === "drop" ? "↳" : fmtDur(rest)}</span>}
             </>
           )}

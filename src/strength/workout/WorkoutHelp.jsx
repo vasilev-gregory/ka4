@@ -1,8 +1,7 @@
 // What can be done with sets during a workout: gestures and what RIR means. Pops up on the first workout,
 // later from the «?» in the workout header.
-import { Check } from "lucide-react";
 import { Button, Sheet } from "../../ui/kit.jsx";
-import { SET_CHECK } from "../setMarks.js";
+import { SET_CHECK, SET_ICON } from "../setMarks.js";
 
 // a section of the help: a title and its lines (how → what)
 const Part = ({ title, rows }) => (
@@ -17,11 +16,14 @@ const Part = ({ title, rows }) => (
 );
 
 // a done ✓ of each kind, as it looks in the rows
-const Mark = ({ kind, children }) => (
-  <span className="flex items-center gap-1.5">
-    <span className={`flex h-6 w-6 items-center justify-center rounded-md ${SET_CHECK[kind]}`}><Check size={14} /></span>{children}
-  </span>
-);
+const Mark = ({ kind, children }) => {
+  const Icon = SET_ICON[kind];
+  return (
+    <span className="flex items-center gap-1.5">
+      <span className={`flex h-6 w-6 items-center justify-center rounded-md ${SET_CHECK[kind]}`}><Icon size={14} /></span>{children}
+    </span>
+  );
+};
 
 // why switch RIR on (Settings → columns, its «?»): what it gives, said to make it worth a try
 export const RirPitch = () => (
@@ -44,7 +46,7 @@ export function WorkoutHelp({ rirOn, onClose }) {
         ["Вписал частичные", "подход сразу отмечен — до отказа"],
       ]} />
       <div className="mb-3">
-        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Цвет отметки</div>
+        <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-neutral-500">Отметка</div>
         <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-neutral-300">
           <Mark kind="work">рабочий</Mark><Mark kind="warmup">разминка</Mark><Mark kind="fail">до отказа (RIR 0)</Mark>
         </div>
