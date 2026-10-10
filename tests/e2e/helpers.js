@@ -19,7 +19,10 @@ export async function openApp(page) {
 // instance on data that has seen it gets none
 export async function skipTour(page) {
   const tour = page.getByRole("dialog", { name: "Обзор Кача" });
-  if (await tour.count()) await tour.getByRole("button", { name: "Пропустить" }).click();
+  if (!(await tour.count())) return;
+  await tour.getByRole("button", { name: "Пропустить" }).click();
+  // saved before going on: a save still pending would land later and undo what a test seeds (seedStorage)
+  await expect.poll(() => page.evaluate((k) => JSON.parse(localStorage.getItem(k) || "{}").settings?.tourDone, KEY)).toBe(true);
 }
 
 export const tab = (page, name) => page.getByRole("button", { name }).last().click();

@@ -24,6 +24,7 @@
  * @property {number} restSec             rest countdown length
  * @property {boolean} [countdown]        rest countdown on (default) / off
  * @property {boolean} [sound]            timer sounds on (default) / off
+ * @property {boolean} [soundSilent]      iOS: timer sounds through the silent switch (audio session "playback"); off by default
  * @property {"strength"|"stretch"} [mode]
  * @property {"amber"|"amberGlow"|"red"|"roseGlow"|"pink"|"violet"|"teal"|"aurora"} [strengthColor]  strength mode's accent (ui/palettes.js; default amber)
  * @property {"amber"|"amberGlow"|"red"|"roseGlow"|"pink"|"violet"|"teal"|"aurora"} [stretchColor]   stretching mode's accent (default teal)
