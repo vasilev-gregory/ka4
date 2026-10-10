@@ -132,6 +132,7 @@ export const SEED_EX = [
   ["Hammer Strength press", "Жим в рычажном тренажёре Hammer", "грудь"],
   ["One-arm Hammer Strength press", "Жим одной рукой в рычажном тренажёре Hammer", "грудь"],
   ["Decline push-up", "Отжимания с ногами на возвышении", "грудь"],
+  ["Knee push-up", "Отжимания с колен", "грудь"],
   ["T-bar row", "Тяга Т-грифа в наклоне", "спина"],
   ["Incline dumbbell row", "Тяга гантелей лёжа на наклонной", "спина"],
   ["Close-grip lat pulldown", "Тяга верхнего блока узким хватом", "спина"],

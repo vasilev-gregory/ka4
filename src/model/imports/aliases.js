@@ -99,6 +99,8 @@ export const ALIASES = [
   ["Curl (Dumbbell)", "dumbbell-curl"],
   ["Curl (Machine)", "machine-curl"],
   ["Decline Push Up", "decline-push-up"],
+  ["Knee Push Up", "knee-push-up"],
+  ["Push Up (Knees)", "knee-push-up"],
   ["Front Raise (Cable)", "cable-front-raise"],
   ["Front Raise (Dumbbell)", "dumbbell-front-raise"],
   ["Front Squat (Barbell)", "front-squat"],
