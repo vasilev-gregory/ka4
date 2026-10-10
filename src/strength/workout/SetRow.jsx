@@ -4,7 +4,13 @@
 import { useEffect, useRef } from "react";
 import { Check, Trophy } from "lucide-react";
 import { fmtDur, numericInput } from "../../core/util.js";
+import { setKind } from "../../model/workout.js";
 import { useRirDial } from "./RirDial.jsx";
+
+// how a set is marked (model setKind): a warm-up in blue, a working set in the accent, one to failure in its own colour
+const DONE_TEXT = { warmup: "text-sky-300", work: "text-accent-300", fail: "text-fail" };
+const DONE_CHECK = { warmup: "bg-sky-400 text-neutral-900", work: "bg-accent-400 text-neutral-900", fail: "bg-fail text-neutral-900" };
+const DONE_LABEL = { warmup: "text-sky-400", work: "text-accent-400", fail: "text-fail" };
 
 const BOX = "rounded-lg bg-black px-1 py-2.5 text-center text-base tabular-nums outline-hidden placeholder:text-neutral-600 focus:ring-2 focus:ring-accent-400";
 
@@ -17,7 +23,7 @@ const takeHint = (value, hint, key, edit) => (e) => {
 };
 
 function Cell({ col, s, ex, edit }) {
-  const doneText = s.done ? "text-accent-300" : "";
+  const doneText = s.done ? DONE_TEXT[setKind(s)] : "";
   if (col === "w") return (
     <input value={s.w} placeholder={s.hw || ""} inputMode="decimal" onFocus={takeHint(s.w, s.hw, "w", edit)}
       onChange={(e) => edit({ w: numericInput(e.target.value, true) })} className={`min-w-0 flex-1 ${BOX} ${doneText}`} />
@@ -60,12 +66,12 @@ export function SetRow({ s, ex, cols, rirOn, label, grouped, selected, rest, liv
         <button {...numberProps} aria-label="Подход: тап — разминка, удержание — выбрать"
           style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
           className={`flex h-11 w-7 shrink-0 items-center justify-center rounded-lg text-sm font-semibold ${selected ? "bg-accent-400 text-black" : "bg-black"}`}>
-          <span className={selected ? "" : s.t === "w" ? "text-sky-400" : s.done ? "text-accent-400" : "text-neutral-500"}>{s.t === "w" ? "Р" : label}</span>
+          <span className={selected ? "" : s.t === "w" || s.done ? DONE_LABEL[setKind(s)] : "text-neutral-500"}>{s.t === "w" ? "Р" : label}</span>
         </button>
         {cols.map((c) => <Cell key={c} col={c} s={s} ex={ex} edit={edit} />)}
         <button {...dial.bind} aria-label="Подход сделан" style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" }}
           className={`relative flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-lg leading-none ${
-            s.done ? "bg-accent-400 text-neutral-900" : live != null ? "bg-neutral-800 text-accent-400" : "bg-neutral-800 text-neutral-400"}`}>
+            s.done ? DONE_CHECK[setKind(s)] : live != null ? "bg-neutral-800 text-accent-400" : "bg-neutral-800 text-neutral-400"}`}>
           {live != null ? (
             <span className="text-xs font-semibold tabular-nums">{fmtDur(live)}</span>
           ) : (

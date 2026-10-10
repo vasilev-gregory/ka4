@@ -228,6 +228,9 @@ export const rirShown = (settings) => columnConfig(settings).some((c) => c.key =
 
 export const restShown = (settings) => columnConfig(settings).some((c) => c.key === "rest" && c.on);
 
+// what a set is, for how it is marked: a warm-up, a working set, or one to failure (RIR 0)
+export const setKind = (s) => (s.t === "w" ? "warmup" : s.rir === 0 ? "fail" : "work");
+
 // Sets merged into one (a drop set) share a group id `g` and sit next to each other.
 // numbers of the working sets: 1, 2, 3 (a drop set: 2a, 2b); warm-ups aren't counted
 export function setLabels(sets) {

@@ -26,8 +26,13 @@ export const colorOf = (settings, mode) => {
   return DEFAULT_COLOR.stretch !== s ? DEFAULT_COLOR.stretch : DEFAULT_COLOR.strength;
 };
 
+// a set done to failure is marked in its own colour, red — violet when strength is drawn in a reddish palette
+const REDDISH = new Set(["red", "roseGlow", "pink"]);
+export const failColor = (settings) => (REDDISH.has(colorOf(settings, "strength")) ? "#a78bfa" : "#f87171");
+
 export function applyPalettes(settings) {
   const st = document.documentElement.style;
+  st.setProperty("--fail", failColor(settings));
   for (const [mode, pre] of [["strength", "s"], ["stretch", "t"]]) {
     const p = PALETTES[colorOf(settings, mode)];
     p.c.forEach((hex, i) => st.setProperty(`--${pre}-${SHADES[i]}`, hex));
