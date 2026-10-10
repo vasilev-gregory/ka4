@@ -105,3 +105,19 @@ test("picker filters: buttons opening their chips — by the muscle an exercise 
   await picker.getByRole("button", { name: /^Группа: ноги/ }).click();
   await expect(picker.getByTestId("filter-group").getByRole("button", { name: "икры" })).toHaveCount(0); // muscles aren't groups
 });
+
+test("a new exercise gets its muscles right in the form: as the rules see it, a tap cycles main → 50% → 25% → none", async ({ page }) => {
+  await openApp(page);
+  await page.getByText("I. Ноги и плечи", { exact: true }).click();
+  await page.getByRole("button", { name: "Добавить упражнение" }).click();
+  const picker = page.getByTestId("picker");
+  await picker.getByPlaceholder(/Поиск/).fill("Моя тяга");
+  await picker.getByRole("button", { name: "+ Создать «Моя тяга»" }).click();
+  await picker.getByRole("button", { name: "спина", exact: true }).first().click();
+  const muscles = picker.getByTestId("muscle-chips");
+  await expect(muscles.getByRole("button", { name: "широчайшие", exact: true })).toBeVisible(); // a row, as the rules see it:
+  await muscles.getByRole("button", { name: "бицепс 50%", exact: true }).click(); // the biceps helping at 50% → 25%
+  await expect(muscles.getByRole("button", { name: "бицепс 25%", exact: true })).toBeVisible();
+  await picker.getByRole("button", { name: "Создать", exact: true }).click();
+  await expect.poll(async () => (await stored(page)).exercises.find((e) => e.name === "Моя тяга")?.muscles?.biceps).toBe(0.25);
+});
