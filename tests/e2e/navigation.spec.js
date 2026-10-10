@@ -102,4 +102,6 @@ test("picker filters: buttons opening their chips — by the muscle an exercise 
   await picker.getByRole("button", { name: /^Группа: руки/ }).click();
   await picker.getByTestId("filter-group").getByRole("button", { name: "ноги" }).click();
   await expect(picker.getByRole("button", { name: /^Мышца: все/ })).toBeVisible();
+  await picker.getByRole("button", { name: /^Группа: ноги/ }).click();
+  await expect(picker.getByTestId("filter-group").getByRole("button", { name: "икры" })).toHaveCount(0); // muscles aren't groups
 });
